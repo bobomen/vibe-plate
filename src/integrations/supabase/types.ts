@@ -14,13 +14,213 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          restaurant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          city: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      restaurants: {
+        Row: {
+          address: string | null
+          business_hours: Json | null
+          created_at: string
+          google_rating: number | null
+          google_reviews_count: number | null
+          has_500_dishes: boolean | null
+          id: string
+          klook_url: string | null
+          lat: number
+          lng: number
+          michelin_stars: number | null
+          name: string
+          photos: string[] | null
+        }
+        Insert: {
+          address?: string | null
+          business_hours?: Json | null
+          created_at?: string
+          google_rating?: number | null
+          google_reviews_count?: number | null
+          has_500_dishes?: boolean | null
+          id?: string
+          klook_url?: string | null
+          lat: number
+          lng: number
+          michelin_stars?: number | null
+          name: string
+          photos?: string[] | null
+        }
+        Update: {
+          address?: string | null
+          business_hours?: Json | null
+          created_at?: string
+          google_rating?: number | null
+          google_reviews_count?: number | null
+          has_500_dishes?: boolean | null
+          id?: string
+          klook_url?: string | null
+          lat?: number
+          lng?: number
+          michelin_stars?: number | null
+          name?: string
+          photos?: string[] | null
+        }
+        Relationships: []
+      }
+      user_swipes: {
+        Row: {
+          created_at: string
+          id: string
+          liked: boolean
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          liked: boolean
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          liked?: boolean
+          restaurant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_swipes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_group_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
