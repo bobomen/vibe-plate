@@ -1,0 +1,207 @@
+import { useState, useEffect } from 'react';
+import { Heart, X, Star, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+
+interface Restaurant {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  google_rating: number;
+  google_reviews_count: number;
+  michelin_stars: number;
+  has_500_dishes: boolean;
+  photos: string[];
+}
+
+export const SwipeCards = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+
+  useEffect(() => {
+    fetchRestaurants();
+  }, []);
+
+  const fetchRestaurants = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .limit(20);
+
+      if (error) throw error;
+      setRestaurants(data || []);
+    } catch (error) {
+      console.error('Error fetching restaurants:', error);
+      toast({
+        title: "載入失敗",
+        description: "無法載入餐廳資料，請重試",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSwipe = async (liked: boolean) => {
+    if (currentIndex >= restaurants.length) return;
+    
+    const restaurant = restaurants[currentIndex];
+    setSwipeDirection(liked ? 'right' : 'left');
+    
+    try {
+      // Record the swipe
+      await supabase
+        .from('user_swipes')
+        .upsert({
+          user_id: user?.id,
+          restaurant_id: restaurant.id,
+          liked
+        });
+
+      // Add to favorites if liked
+      if (liked) {
+        await supabase
+          .from('favorites')
+          .upsert({
+            user_id: user?.id,
+            restaurant_id: restaurant.id
+          });
+        
+        toast({
+          title: "已收藏！",
+          description: `${restaurant.name} 已加入收藏清單`,
+        });
+      }
+    } catch (error) {
+      console.error('Error recording swipe:', error);
+    }
+
+    // Move to next card after animation
+    setTimeout(() => {
+      setCurrentIndex(prev => prev + 1);
+      setSwipeDirection(null);
+    }, 300);
+  };
+
+  const calculateDistance = (lat: number, lng: number) => {
+    // Mock distance calculation - in real app, use user's location
+    return Math.random() * 1000; // Random distance in meters
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (currentIndex >= restaurants.length) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">沒有更多餐廳了！</h2>
+          <p className="text-muted-foreground mb-6">您已經瀏覽完所有附近的餐廳</p>
+          <Button onClick={() => {
+            setCurrentIndex(0);
+            fetchRestaurants();
+          }}>
+            重新開始
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentRestaurant = restaurants[currentIndex];
+  const distance = calculateDistance(currentRestaurant.lat, currentRestaurant.lng);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="relative w-full max-w-sm">
+        {/* Restaurant Card */}
+        <Card className={`relative w-full bg-card border-0 shadow-2xl overflow-hidden transition-transform duration-300 ${
+          swipeDirection === 'left' ? 'translate-x-[-100%] rotate-[-15deg]' : 
+          swipeDirection === 'right' ? 'translate-x-[100%] rotate-[15deg]' : ''
+        }`}>
+          {/* Restaurant Image */}
+          <div className="relative h-96 bg-gradient-to-b from-transparent to-black/50">
+            <img
+              src={currentRestaurant.photos[0] || '/placeholder.svg'}
+              alt={currentRestaurant.name}
+              className="w-full h-full object-cover"
+            />
+            
+            {/* Overlay Info */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <h3 className="text-2xl font-bold mb-2">{currentRestaurant.name}</h3>
+              
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-1">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm">{currentRestaurant.google_rating}</span>
+                  <span className="text-xs text-gray-300">({currentRestaurant.google_reviews_count})</span>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-sm">{Math.round(distance)}m</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                {currentRestaurant.michelin_stars > 0 && (
+                  <Badge variant="secondary" className="bg-yellow-600 text-white">
+                    米其林 {currentRestaurant.michelin_stars}星
+                  </Badge>
+                )}
+                {currentRestaurant.has_500_dishes && (
+                  <Badge variant="secondary" className="bg-green-600 text-white">
+                    500盤
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-8 mt-8">
+          <Button
+            size="lg"
+            variant="outline"
+            className="rounded-full w-16 h-16 p-0 border-red-200 hover:bg-red-50 hover:border-red-300"
+            onClick={() => handleSwipe(false)}
+          >
+            <X className="h-8 w-8 text-red-500" />
+          </Button>
+          
+          <Button
+            size="lg"
+            variant="outline"
+            className="rounded-full w-16 h-16 p-0 border-green-200 hover:bg-green-50 hover:border-green-300"
+            onClick={() => handleSwipe(true)}
+          >
+            <Heart className="h-8 w-8 text-green-500" />
+          </Button>
+        </div>
+
+        {/* Swipe Instructions */}
+        <p className="text-center text-sm text-muted-foreground mt-4">
+          左滑跳過，右滑收藏
+        </p>
+      </div>
+    </div>
+  );
+};
