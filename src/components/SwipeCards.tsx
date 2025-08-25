@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Heart, X, Star, MapPin } from 'lucide-react';
+import { Heart, X, Star, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface Restaurant {
   id: string;
@@ -23,10 +24,12 @@ interface Restaurant {
 export const SwipeCards = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchRestaurants();
@@ -91,6 +94,7 @@ export const SwipeCards = () => {
     setTimeout(() => {
       setCurrentIndex(prev => prev + 1);
       setSwipeDirection(null);
+      setCurrentPhotoIndex(0); // Reset photo index for next card
     }, 300);
   };
 
@@ -126,22 +130,75 @@ export const SwipeCards = () => {
 
   const currentRestaurant = restaurants[currentIndex];
   const distance = calculateDistance(currentRestaurant.lat, currentRestaurant.lng);
+  const photos = currentRestaurant.photos?.slice(0, 3) || ['/placeholder.svg'];
+
+  const nextPhoto = () => {
+    setCurrentPhotoIndex(prev => (prev + 1) % photos.length);
+  };
+
+  const prevPhoto = () => {
+    setCurrentPhotoIndex(prev => (prev - 1 + photos.length) % photos.length);
+  };
+
+  const handleCardClick = () => {
+    navigate(`/app/restaurant/${currentRestaurant.id}`);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="relative w-full max-w-sm">
         {/* Restaurant Card */}
-        <Card className={`relative w-full bg-card border-0 shadow-2xl overflow-hidden transition-transform duration-300 ${
+        <Card className={`relative w-full bg-card border-0 shadow-2xl overflow-hidden transition-transform duration-300 cursor-pointer ${
           swipeDirection === 'left' ? 'translate-x-[-100%] rotate-[-15deg]' : 
           swipeDirection === 'right' ? 'translate-x-[100%] rotate-[15deg]' : ''
-        }`}>
-          {/* Restaurant Image */}
+        }`} onClick={handleCardClick}>
+          {/* Restaurant Image Carousel */}
           <div className="relative h-96 bg-gradient-to-b from-transparent to-black/50">
             <img
-              src={currentRestaurant.photos[0] || '/placeholder.svg'}
+              src={photos[currentPhotoIndex]}
               alt={currentRestaurant.name}
               className="w-full h-full object-cover"
             />
+            
+            {/* Photo Navigation */}
+            {photos.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white border-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    prevPhoto();
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white border-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nextPhoto();
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                
+                {/* Photo Indicators */}
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1">
+                  {photos.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === currentPhotoIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
             
             {/* Overlay Info */}
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
@@ -182,7 +239,10 @@ export const SwipeCards = () => {
             size="lg"
             variant="outline"
             className="rounded-full w-16 h-16 p-0 border-red-200 hover:bg-red-50 hover:border-red-300"
-            onClick={() => handleSwipe(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSwipe(false);
+            }}
           >
             <X className="h-8 w-8 text-red-500" />
           </Button>
@@ -191,7 +251,10 @@ export const SwipeCards = () => {
             size="lg"
             variant="outline"
             className="rounded-full w-16 h-16 p-0 border-green-200 hover:bg-green-50 hover:border-green-300"
-            onClick={() => handleSwipe(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSwipe(true);
+            }}
           >
             <Heart className="h-8 w-8 text-green-500" />
           </Button>

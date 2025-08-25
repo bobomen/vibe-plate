@@ -5,6 +5,7 @@ import { SwipeCards } from '@/components/SwipeCards';
 import Favorites from './Favorites';
 import Groups from './Groups';
 import Profile from './Profile';
+import RestaurantDetail from './RestaurantDetail';
 
 const App = () => {
   const { user, loading } = useAuth();
@@ -27,12 +28,13 @@ const App = () => {
       <main className="pb-20">
         <Routes>
           <Route path="/app" element={<SwipeCards />} />
+          <Route path="/app/restaurant/:id" element={<RestaurantDetail />} />
           <Route path="/app/favorites" element={<Favorites />} />
           <Route path="/app/groups" element={<Groups />} />
           <Route path="/app/profile" element={<Profile />} />
         </Routes>
       </main>
-      {location.pathname.startsWith('/app') && <BottomNavigation />}
+      {location.pathname.startsWith('/app') && !location.pathname.includes('/restaurant/') && <BottomNavigation />}
     </div>
   );
 };
