@@ -40,12 +40,18 @@ export const SwipeCards = () => {
 
   const fetchRestaurants = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('restaurants')
         .select('*')
         .limit(20);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Fetched restaurants:', data);
       setRestaurants(data || []);
     } catch (error) {
       console.error('Error fetching restaurants:', error);
@@ -108,7 +114,7 @@ export const SwipeCards = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
@@ -116,7 +122,7 @@ export const SwipeCards = () => {
 
   if (currentIndex >= restaurants.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-8">
+      <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">沒有更多餐廳了！</h2>
           <p className="text-muted-foreground mb-6">您已經瀏覽完所有附近的餐廳</p>
@@ -132,6 +138,21 @@ export const SwipeCards = () => {
   }
 
   const currentRestaurant = restaurants[currentIndex];
+  
+  if (!currentRestaurant) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">暫無餐廳資料</h2>
+          <p className="text-muted-foreground mb-6">請稍後再試</p>
+          <Button onClick={fetchRestaurants}>
+            重新載入
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   const distance = calculateDistance(currentRestaurant.lat, currentRestaurant.lng);
   const photos = currentRestaurant.photos?.slice(0, 3) || ['/placeholder.svg'];
 
@@ -220,22 +241,23 @@ export const SwipeCards = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="relative w-full max-w-sm">
-        {/* Restaurant Card */}
-        <Card 
-          className={`relative w-full bg-card border-0 shadow-2xl overflow-hidden cursor-pointer select-none ${
-            !isDragging ? 'transition-transform duration-300' : ''
-          } ${getCardTransform()}`}
-          onClick={handleCardClick}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
+      <div className="relative w-full max-w-sm">{currentRestaurant && (
+        <>
+          {/* Restaurant Card */}
+          <Card 
+            className={`relative w-full bg-card border-0 shadow-2xl overflow-hidden cursor-pointer select-none ${
+              !isDragging ? 'transition-transform duration-300' : ''
+            } ${getCardTransform()}`}
+            onClick={handleCardClick}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
           {/* Restaurant Image Carousel */}
           <div className="relative h-96 bg-gradient-to-b from-transparent to-black/50 card-content">
             <img
@@ -348,6 +370,8 @@ export const SwipeCards = () => {
         <p className="text-center text-sm text-muted-foreground mt-4">
           左滑跳過，右滑收藏，或點擊卡片查看詳情
         </p>
+        </>
+      )}
       </div>
     </div>
   );
