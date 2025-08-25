@@ -30,6 +30,9 @@ export const SwipeCards = () => {
   const [loading, setLoading] = useState(true);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     fetchRestaurants();
@@ -141,19 +144,100 @@ export const SwipeCards = () => {
   };
 
   const handleCardClick = () => {
-    navigate(`/app/restaurant/${currentRestaurant.id}`);
+    if (!isDragging) {
+      navigate(`/app/restaurant/${currentRestaurant.id}`);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.target !== e.currentTarget && !(e.target as Element).closest('.card-content')) return;
+    setIsDragging(false);
+    setStartPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (startPos.x === 0) return;
+    
+    const deltaX = e.clientX - startPos.x;
+    const deltaY = e.clientY - startPos.y;
+    
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      setIsDragging(true);
+      setDragOffset({ x: deltaX, y: deltaY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging && Math.abs(dragOffset.x) > 100) {
+      const liked = dragOffset.x > 0;
+      handleSwipe(liked);
+    }
+    
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
+    setStartPos({ x: 0, y: 0 });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(false);
+    setStartPos({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startPos.x === 0) return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - startPos.x;
+    const deltaY = touch.clientY - startPos.y;
+    
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      setIsDragging(true);
+      setDragOffset({ x: deltaX, y: deltaY });
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isDragging && Math.abs(dragOffset.x) > 100) {
+      const liked = dragOffset.x > 0;
+      handleSwipe(liked);
+    }
+    
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
+    setStartPos({ x: 0, y: 0 });
+  };
+
+  const getCardTransform = () => {
+    if (swipeDirection === 'left') return 'translate-x-[-100%] rotate-[-15deg]';
+    if (swipeDirection === 'right') return 'translate-x-[100%] rotate-[15deg]';
+    if (isDragging) {
+      const rotation = dragOffset.x * 0.1;
+      return `translate(${dragOffset.x}px, ${dragOffset.y * 0.5}px) rotate(${rotation}deg)`;
+    }
+    return '';
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="relative w-full max-w-sm">
         {/* Restaurant Card */}
-        <Card className={`relative w-full bg-card border-0 shadow-2xl overflow-hidden transition-transform duration-300 cursor-pointer ${
-          swipeDirection === 'left' ? 'translate-x-[-100%] rotate-[-15deg]' : 
-          swipeDirection === 'right' ? 'translate-x-[100%] rotate-[15deg]' : ''
-        }`} onClick={handleCardClick}>
+        <Card 
+          className={`relative w-full bg-card border-0 shadow-2xl overflow-hidden cursor-pointer select-none ${
+            !isDragging ? 'transition-transform duration-300' : ''
+          } ${getCardTransform()}`}
+          onClick={handleCardClick}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Restaurant Image Carousel */}
-          <div className="relative h-96 bg-gradient-to-b from-transparent to-black/50">
+          <div className="relative h-96 bg-gradient-to-b from-transparent to-black/50 card-content">
             <img
               src={photos[currentPhotoIndex]}
               alt={currentRestaurant.name}
@@ -262,7 +346,7 @@ export const SwipeCards = () => {
 
         {/* Swipe Instructions */}
         <p className="text-center text-sm text-muted-foreground mt-4">
-          左滑跳過，右滑收藏
+          左滑跳過，右滑收藏，或點擊卡片查看詳情
         </p>
       </div>
     </div>
