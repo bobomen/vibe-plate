@@ -38,30 +38,66 @@ export const SwipeCards = () => {
     fetchRestaurants();
   }, []);
 
+  // Debug effect to track component state
+  useEffect(() => {
+    console.log('SwipeCards state update:', {
+      restaurantsCount: restaurants.length,
+      currentIndex,
+      loading,
+      hasUser: !!user,
+      currentRestaurant: currentIndex < restaurants.length ? restaurants[currentIndex]?.name : 'N/A'
+    });
+  }, [restaurants, currentIndex, loading, user]);
+
   const fetchRestaurants = async () => {
     try {
+      console.log('Starting to fetch restaurants...');
       setLoading(true);
+      
+      // First check if we have a user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('Auth error:', userError);
+      }
+      console.log('Current user:', user?.id ? 'Authenticated' : 'Not authenticated');
+      
       const { data, error } = await supabase
         .from('restaurants')
         .select('*')
         .limit(20);
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase query error:', error);
         throw error;
       }
       
-      console.log('Fetched restaurants:', data);
-      setRestaurants(data || []);
+      console.log('Fetched restaurants count:', data?.length || 0);
+      console.log('Sample restaurant data:', data?.[0]);
+      
+      if (!data || data.length === 0) {
+        console.warn('No restaurants found in database');
+        toast({
+          title: "暫無餐廳資料",
+          description: "目前沒有餐廳資料，請稍後再試",
+          variant: "destructive",
+        });
+        setRestaurants([]);
+        return;
+      }
+      
+      setRestaurants(data);
+      console.log('Successfully set restaurants state');
     } catch (error) {
       console.error('Error fetching restaurants:', error);
       toast({
         title: "載入失敗",
-        description: "無法載入餐廳資料，請重試",
+        description: "無法載入餐廳資料，請稍後再試",
         variant: "destructive",
       });
+      setRestaurants([]);
     } finally {
       setLoading(false);
+      console.log('Fetch restaurants completed');
     }
   };
 
