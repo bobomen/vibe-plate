@@ -15,7 +15,6 @@ createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/app" element={<App />} />
           <Route path="/app/*" element={<App />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

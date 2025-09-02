@@ -27,11 +27,11 @@ const App = () => {
     <div className="min-h-screen bg-background">
       <main className="pb-20">
         <Routes>
-          <Route path="/app" element={<SwipeCards />} />
-          <Route path="/app/restaurant/:id" element={<RestaurantDetail />} />
-          <Route path="/app/favorites" element={<Favorites />} />
-          <Route path="/app/groups" element={<Groups />} />
-          <Route path="/app/profile" element={<Profile />} />
+          <Route path="/" element={<SwipeCards />} />
+          <Route path="/restaurant/:id" element={<RestaurantDetail />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
       {location.pathname.startsWith('/app') && !location.pathname.includes('/restaurant/') && <BottomNavigation />}
