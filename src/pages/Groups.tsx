@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { BottomNavigation } from '@/components/BottomNavigation';
 
 interface Group {
   id: string;
@@ -39,24 +38,34 @@ const Groups = () => {
   }, [user]);
 
   const fetchGroups = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      // First get groups where user is a member
-      const { data: memberGroups, error: memberError } = await supabase
+      setLoading(true);
+      
+      // First, get all groups where the user is a member
+      const { data: memberData, error: memberError } = await supabase
         .from('group_members')
         .select('group_id')
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('Error fetching user groups:', memberError);
+        throw memberError;
+      }
 
-      const groupIds = memberGroups?.map(m => m.group_id) || [];
-
-      if (groupIds.length === 0) {
+      if (!memberData || memberData.length === 0) {
         setGroups([]);
         return;
       }
 
-      // Then get the groups
-      const { data, error } = await supabase
+      const groupIds = memberData.map(m => m.group_id);
+
+      // Then get the group details
+      const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
         .select(`
           id,
@@ -68,22 +77,54 @@ const Groups = () => {
         .in('id', groupIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (groupsError) {
+        console.error('Error fetching groups:', groupsError);
+        throw groupsError;
+      }
 
-      // Get member details separately
+      // Finally, get all members for these groups with their profile data
       const groupsWithMembers = await Promise.all(
-        (data || []).map(async (group) => {
-          const { data: members } = await supabase
+        (groupsData || []).map(async (group) => {
+          // Get all members for this group
+          const { data: membersData, error: membersError } = await supabase
             .from('group_members')
             .select('user_id')
             .eq('group_id', group.id);
 
+          if (membersError) {
+            console.warn('Error fetching group members:', membersError);
+            return {
+              ...group,
+              group_members: []
+            };
+          }
+
+          if (!membersData || membersData.length === 0) {
+            return {
+              ...group,
+              group_members: []
+            };
+          }
+
+          // Get profiles for all member user_ids
+          const userIds = membersData.map(m => m.user_id);
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('user_id, display_name')
+            .in('user_id', userIds);
+
+          // Combine member data with profile data
+          const membersWithProfiles = membersData.map(member => {
+            const profile = profilesData?.find(p => p.user_id === member.user_id);
+            return {
+              user_id: member.user_id,
+              profiles: profile ? { display_name: profile.display_name || '未知用戶' } : null
+            };
+          });
+
           return {
             ...group,
-            group_members: (members || []).map(member => ({
-              user_id: member.user_id,
-              profiles: null
-            }))
+            group_members: membersWithProfiles
           };
         })
       );
@@ -96,6 +137,7 @@ const Groups = () => {
         description: "無法載入群組清單，請重試",
         variant: "destructive",
       });
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -359,7 +401,6 @@ const Groups = () => {
           </div>
         )}
       </div>
-      <BottomNavigation />
     </div>
   );
 };
