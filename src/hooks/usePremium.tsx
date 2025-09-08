@@ -42,17 +42,28 @@ export const usePremium = () => {
     } else {
       setShowFirstTimeModal(false);
     }
-  }, [user, profile, isPremium]);
+  }, [user, profile, isPremium, subscription]);
 
-  // Check if we should show the nag modal based on 7-day rule
+  // Check if we should show the nag modal - prioritize non-premium users
   const shouldShowNagModal = (): boolean => {
     if (!profile || isPremium) return false;
     if (!profile.should_nag) return false;
     
-    // If never nagged before, show it
+    // For non-premium users, always show on login if:
+    // 1. Never nagged before (first time login)
+    // 2. User has cancelled subscription (show immediately after cancellation)
+    // 3. Or 7 days have passed since last nag
+    
+    // If never nagged before, always show
     if (!profile.last_nag_at) return true;
     
-    // Check if 7 days have passed since last nag
+    // If user has a cancelled subscription, show modal immediately
+    if (subscription && subscription.status === 'cancelled') return true;
+    
+    // If user has no subscription at all (never subscribed), show modal
+    if (!subscription) return true;
+    
+    // For regular cases, check 7-day rule
     const lastNagDate = new Date(profile.last_nag_at);
     const now = new Date();
     const daysDiff = (now.getTime() - lastNagDate.getTime()) / (1000 * 60 * 60 * 24);
