@@ -101,22 +101,23 @@ const Profile = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user?.id,
+        .update({
           display_name: displayName,
-        });
+        })
+        .eq('user_id', user?.id);
 
       if (error) throw error;
 
       setProfile(prev => ({ ...prev, display_name: displayName }));
       toast({
         title: "個人資料已更新",
+        description: "顯示名稱更新成功",
       });
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: "更新失敗",
-        description: "無法更新個人資料，請重試",
+        description: "無法更新顯示名稱，請重試",
         variant: "destructive",
       });
     } finally {
