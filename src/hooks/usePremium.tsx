@@ -26,15 +26,11 @@ export const usePremium = () => {
     }
   }, [user]);
 
-  // Determine if modal should show based on subscription status (not localStorage)
+  // Determine if modal should show based on subscription status (no localStorage)
   useEffect(() => {
     if (user && subscription !== null && !isPremium) {
-      // Show modal after a short delay for non-premium users
-      const timer = setTimeout(() => {
-        setShowFirstTimeModal(true);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+      // Show modal immediately for non-premium users after login
+      setShowFirstTimeModal(true);
     } else {
       setShowFirstTimeModal(false);
     }

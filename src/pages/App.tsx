@@ -37,7 +37,7 @@ const App = () => {
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
-      {location.pathname.startsWith('/app') && !location.pathname.includes('/restaurant/') && <BottomNavigation />}
+      {!location.pathname.includes('/restaurant/') && <BottomNavigation />}
       
       <PremiumModal
         open={showFirstTimeModal}
