@@ -101,10 +101,15 @@ export type Database = {
           avatar_url: string | null
           city: string | null
           created_at: string
+          dietary_preferences: Json | null
           display_name: string | null
+          favorite_cuisines: Json | null
           id: string
           location_lat: number | null
           location_lng: number | null
+          preferences: Json | null
+          preferred_price_max: number | null
+          preferred_price_min: number | null
           updated_at: string
           user_id: string
         }
@@ -112,10 +117,15 @@ export type Database = {
           avatar_url?: string | null
           city?: string | null
           created_at?: string
+          dietary_preferences?: Json | null
           display_name?: string | null
+          favorite_cuisines?: Json | null
           id?: string
           location_lat?: number | null
           location_lng?: number | null
+          preferences?: Json | null
+          preferred_price_max?: number | null
+          preferred_price_min?: number | null
           updated_at?: string
           user_id: string
         }
@@ -123,10 +133,15 @@ export type Database = {
           avatar_url?: string | null
           city?: string | null
           created_at?: string
+          dietary_preferences?: Json | null
           display_name?: string | null
+          favorite_cuisines?: Json | null
           id?: string
           location_lat?: number | null
           location_lng?: number | null
+          preferences?: Json | null
+          preferred_price_max?: number | null
+          preferred_price_min?: number | null
           updated_at?: string
           user_id?: string
         }

@@ -40,6 +40,7 @@ export const SwipeCards = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [userPreferences, setUserPreferences] = useState<any>(null);
   const [filters, setFilters] = useState<FilterOptions>({
     searchTerm: '',
     priceRange: [1, 4],
@@ -54,13 +55,16 @@ export const SwipeCards = () => {
   useEffect(() => {
     fetchRestaurants();
     getUserLocation();
-  }, []);
+    if (user) {
+      fetchUserPreferences();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (allRestaurants.length > 0) {
       applyFilters();
     }
-  }, [filters, allRestaurants]);
+  }, [filters, allRestaurants, userPreferences]);
 
   // Debug effect to track component state
   useEffect(() => {
@@ -94,6 +98,37 @@ export const SwipeCards = () => {
     }
   };
 
+  const fetchUserPreferences = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('dietary_preferences, preferred_price_min, preferred_price_max, favorite_cuisines, preferences')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user preferences:', error);
+        return;
+      }
+
+      if (data) {
+        setUserPreferences(data);
+        // 套用用戶偏好到預設篩選條件
+        setFilters(prev => ({
+          ...prev,
+          priceRange: [data.preferred_price_min || 1, data.preferred_price_max || 4],
+          hasMichelinStars: (data.preferences as any)?.michelin_stars || false,
+          has500Dishes: (data.preferences as any)?.has_500_dishes || false,
+          hasBibGourmand: (data.preferences as any)?.bib_gourmand || false,
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching user preferences:', error);
+    }
+  };
+
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371; // 地球半徑（公里）
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -120,10 +155,22 @@ export const SwipeCards = () => {
       );
     }
 
-    // 菜系篩選 - 暫時移除，專注於用戶要求的篩選條件
-    // if (filters.cuisineType) {
-    //   filtered = filtered.filter(restaurant => restaurant.cuisine_type === filters.cuisineType);
-    // }
+    // 菜系篩選 - 基於用戶偏好
+    if (userPreferences?.favorite_cuisines && Array.isArray(userPreferences.favorite_cuisines) && userPreferences.favorite_cuisines.length > 0) {
+      // 如果用戶有設定菜系偏好，優先推薦這些菜系
+      const preferredRestaurants = filtered.filter(restaurant => 
+        userPreferences.favorite_cuisines.some((cuisine: string) => 
+          restaurant.cuisine_type?.toLowerCase().includes(cuisine.toLowerCase())
+        )
+      );
+      const otherRestaurants = filtered.filter(restaurant => 
+        !userPreferences.favorite_cuisines.some((cuisine: string) => 
+          restaurant.cuisine_type?.toLowerCase().includes(cuisine.toLowerCase())
+        )
+      );
+      // 將偏好的餐廳排在前面
+      filtered = [...preferredRestaurants, ...otherRestaurants];
+    }
 
     // 價位篩選
     filtered = filtered.filter(restaurant => 

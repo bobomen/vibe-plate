@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BottomNavigation } from '@/components/BottomNavigation';
+import { PreferenceSettings } from '@/components/PreferenceSettings';
 
 interface Profile {
   display_name: string;
@@ -15,12 +16,32 @@ interface Profile {
   location_lat?: number;
   location_lng?: number;
   city?: string;
+  dietary_preferences: string[];
+  preferred_price_min: number;
+  preferred_price_max: number;
+  favorite_cuisines: string[];
+  preferences: {
+    michelin_stars: boolean;
+    bib_gourmand: boolean;
+    has_500_dishes: boolean;
+  };
 }
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<Profile>({ display_name: '' });
+  const [profile, setProfile] = useState<Profile>({ 
+    display_name: '',
+    dietary_preferences: [],
+    preferred_price_min: 1,
+    preferred_price_max: 4,
+    favorite_cuisines: [],
+    preferences: {
+      michelin_stars: false,
+      bib_gourmand: false,
+      has_500_dishes: false,
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -44,7 +65,23 @@ const Profile = () => {
       }
 
       if (data) {
-        setProfile(data);
+        const profileData: Profile = {
+          display_name: data.display_name || '',
+          avatar_url: data.avatar_url,
+          location_lat: data.location_lat,
+          location_lng: data.location_lng,
+          city: data.city,
+          dietary_preferences: Array.isArray(data.dietary_preferences) ? data.dietary_preferences as string[] : [],
+          preferred_price_min: data.preferred_price_min || 1,
+          preferred_price_max: data.preferred_price_max || 4,
+          favorite_cuisines: Array.isArray(data.favorite_cuisines) ? data.favorite_cuisines as string[] : [],
+          preferences: {
+            michelin_stars: (data.preferences as any)?.michelin_stars || false,
+            bib_gourmand: (data.preferences as any)?.bib_gourmand || false,
+            has_500_dishes: (data.preferences as any)?.has_500_dishes || false,
+          }
+        };
+        setProfile(profileData);
         setDisplayName(data.display_name || '');
       }
     } catch (error) {
@@ -79,6 +116,27 @@ const Profile = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updatePreferences = async (updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user?.id,
+          ...updates,
+        });
+
+      if (error) throw error;
+
+      setProfile(prev => ({ ...prev, ...updates }));
+      toast({
+        title: "偏好設定已更新",
+      });
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      throw error;
     }
   };
 
@@ -225,6 +283,18 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Preferences */}
+          <PreferenceSettings
+            preferences={{
+              dietary_preferences: profile.dietary_preferences,
+              preferred_price_min: profile.preferred_price_min,
+              preferred_price_max: profile.preferred_price_max,
+              favorite_cuisines: profile.favorite_cuisines,
+              preferences: profile.preferences,
+            }}
+            onUpdate={updatePreferences}
+          />
 
           {/* Settings */}
           <Card>
