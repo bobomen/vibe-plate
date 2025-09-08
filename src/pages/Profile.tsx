@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { PreferenceSettings } from '@/components/PreferenceSettings';
 import PremiumModal from '@/components/PremiumModal';
+import { usePremium } from '@/hooks/usePremium';
 
 interface Profile {
   display_name: string;
@@ -31,6 +32,8 @@ interface Profile {
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { isPremium, showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [profile, setProfile] = useState<Profile>({ 
     display_name: '',
     dietary_preferences: [],
@@ -318,6 +321,8 @@ const Profile = () => {
               preferences: profile.preferences,
             }}
             onUpdate={updatePreferences}
+            isPremium={isPremium}
+            onUpgrade={() => setShowUpgradeModal(true)}
           />
 
           {/* Settings */}
@@ -344,12 +349,14 @@ const Profile = () => {
       <BottomNavigation />
       
       <PremiumModal
-        open={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
+        open={showFirstTimeModal || showUpgradeModal}
+        onClose={() => {
+          if (showFirstTimeModal) markModalAsSeen();
+          if (showUpgradeModal) setShowUpgradeModal(false);
+        }}
         onUpgrade={() => {
-          // TODO: Implement payment logic
-          console.log('Upgrade to premium');
-          setShowPremiumModal(false);
+          upgradeToPremium();
+          setShowUpgradeModal(false);
         }}
       />
     </div>

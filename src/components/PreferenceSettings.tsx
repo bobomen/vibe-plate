@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChefHat, DollarSign, Star, Award } from 'lucide-react';
+import { ChefHat, DollarSign, Star, Award, Lock, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,8 @@ interface PreferenceSettingsProps {
     };
   };
   onUpdate: (preferences: any) => Promise<void>;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
 const DIETARY_OPTIONS = [
@@ -47,12 +49,16 @@ const CUISINE_OPTIONS = [
 
 const PRICE_LABELS = ['$', '$$', '$$$', '$$$$'];
 
-export const PreferenceSettings = ({ preferences, onUpdate }: PreferenceSettingsProps) => {
+export const PreferenceSettings = ({ preferences, onUpdate, isPremium = false, onUpgrade }: PreferenceSettingsProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [priceRange, setPriceRange] = useState([preferences.preferred_price_min, preferences.preferred_price_max]);
 
   const toggleDietaryPreference = (preferenceId: string) => {
+    if (!isPremium) {
+      onUpgrade?.();
+      return;
+    }
     const updated = preferences.dietary_preferences.includes(preferenceId)
       ? preferences.dietary_preferences.filter(p => p !== preferenceId)
       : [...preferences.dietary_preferences, preferenceId];
@@ -61,6 +67,10 @@ export const PreferenceSettings = ({ preferences, onUpdate }: PreferenceSettings
   };
 
   const toggleCuisine = (cuisineId: string) => {
+    if (!isPremium) {
+      onUpgrade?.();
+      return;
+    }
     const updated = preferences.favorite_cuisines.includes(cuisineId)
       ? preferences.favorite_cuisines.filter(c => c !== cuisineId)
       : [...preferences.favorite_cuisines, cuisineId];
@@ -69,6 +79,10 @@ export const PreferenceSettings = ({ preferences, onUpdate }: PreferenceSettings
   };
 
   const updatePreference = (key: string, value: boolean) => {
+    if (!isPremium) {
+      onUpgrade?.();
+      return;
+    }
     handleUpdate({
       preferences: {
         ...preferences.preferences,
@@ -78,6 +92,10 @@ export const PreferenceSettings = ({ preferences, onUpdate }: PreferenceSettings
   };
 
   const handlePriceRangeChange = (values: number[]) => {
+    if (!isPremium) {
+      onUpgrade?.();
+      return;
+    }
     setPriceRange(values);
     handleUpdate({
       preferred_price_min: values[0],
@@ -101,14 +119,28 @@ export const PreferenceSettings = ({ preferences, onUpdate }: PreferenceSettings
   };
 
   return (
-    <Card>
+    <Card className="relative">
+      {!isPremium && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+          <div className="text-center p-6">
+            <Crown className="h-12 w-12 text-primary mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Premium 專屬功能</h3>
+            <p className="text-muted-foreground mb-4">升級會員即可自訂飲食偏好</p>
+            <Button onClick={onUpgrade} className="gap-2">
+              <Crown className="h-4 w-4" />
+              立即升級
+            </Button>
+          </div>
+        </div>
+      )}
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ChefHat className="h-5 w-5" />
           飲食偏好
+          {!isPremium && <Lock className="h-4 w-4 text-muted-foreground" />}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className={`space-y-6 ${!isPremium ? 'pointer-events-none select-none' : ''}`}>
         {/* Dietary Preferences */}
         <div>
           <Label className="text-base font-medium">飲食限制</Label>
