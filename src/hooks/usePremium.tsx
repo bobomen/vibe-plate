@@ -1,328 +1,110 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
-interface SubscriptionData {
-  id: string;
-  subscription_type: string;
-  status: string;
-  started_at: string;
-  expires_at: string | null;
-  cancelled_at: string | null;
-  auto_renew: boolean;
-}
-
-interface ProfileData {
-  is_premium: boolean;
-  should_nag: boolean;
-  last_nag_at: string | null;
-  nag_variant: string;
-}
+import { useSubscription } from './useSubscription';
+import { usePremiumModal } from './usePremiumModal';
 
 export const usePremium = () => {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
-  const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [sessionDismissed, setSessionDismissed] = useState(false); // Track if user dismissed modal in current session
 
-  // Fetch user's subscription status from database
-  useEffect(() => {
-    if (user) {
-      fetchSubscriptionStatus();
-    }
-  }, [user]);
+  const {
+    subscription,
+    loading: subscriptionLoading,
+    createSubscription,
+    cancelSubscription,
+    daysUntilExpiry,
+    refreshSubscription
+  } = useSubscription();
 
-  // Determine if modal should show based on premium status and nag settings
-  useEffect(() => {
-    // Add a small delay to prevent flickering during initial load
-    const timer = setTimeout(() => {
-      if (user && profile !== null && !isPremium && !sessionDismissed) {
-        const shouldShowModal = shouldShowNagModal();
-        setShowFirstTimeModal(shouldShowModal);
-      } else {
-        setShowFirstTimeModal(false);
-      }
-    }, 100);
+  const { showFirstTimeModal, markModalAsSeen } = usePremiumModal(isPremium, subscription);
 
-    return () => clearTimeout(timer);
-  }, [user, profile, isPremium, subscription, sessionDismissed]);
-
-  // Check if we should show the nag modal - prioritize showing to non-premium users
-  const shouldShowNagModal = (): boolean => {
-    if (!profile || isPremium) return false;
-    if (!profile.should_nag) return false;
+  // Check if subscription is active
+  const checkPremiumStatus = useCallback(() => {
+    if (!subscription) return false;
     
-    // If never nagged before, always show (first time users)
-    if (!profile.last_nag_at) return true;
-    
-    // For non-premium users (cancelled or no subscription), show modal immediately on login
-    // This ensures cancelled subscribers and new users always see the upgrade option
-    if (subscription && subscription.status === 'cancelled') {
-      return true; // Always show for cancelled users
-    }
-    
-    // If user has no subscription at all, always show
-    if (!subscription) {
-      return true; // Always show for users without subscription
-    }
-    
-    // For other cases (expired subscriptions), check timing
-    const lastNagDate = new Date(profile.last_nag_at);
-    const now = new Date();
-    const daysDiff = (now.getTime() - lastNagDate.getTime()) / (1000 * 60 * 60 * 24);
-    
-    // For expired subscriptions, show after 7 days
-    return daysDiff >= 7;
-  };
-
-  const fetchSubscriptionStatus = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      // Batch both queries for better performance
-      const [profileResult, subscriptionResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('is_premium, should_nag, last_nag_at, nag_variant')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-      ]);
-
-      const { data: profileData, error: profileError } = profileResult;
-      const { data: subscriptionData, error: subError } = subscriptionResult;
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return;
-      }
-
-      if (profileData) {
-        setProfile(profileData);
-      }
-
-      if (subError && subError.code !== 'PGRST116') {
-        console.error('Error fetching subscription:', subError);
-        return;
-      }
-
-      let hasActiveSubscription = false;
-      let currentSubscription = null;
-      
-      if (subscriptionData && subscriptionData.length > 0) {
-        const sub = subscriptionData[0];
-        currentSubscription = sub;
-        
-        // Check if subscription is truly active and not expired
-        if (sub.status === 'active') {
-          if (sub.expires_at) {
-            const expiryDate = new Date(sub.expires_at);
-            const now = new Date();
-            hasActiveSubscription = expiryDate > now;
-            
-            // If expired, update subscription status
-            if (expiryDate <= now) {
-              await supabase
-                .from('subscriptions')
-                .update({ status: 'expired' })
-                .eq('id', sub.id);
-              currentSubscription = { ...sub, status: 'expired' };
-            }
-          } else {
-            // No expiry date means permanent subscription
-            hasActiveSubscription = true;
-          }
-        }
-      }
-      
-      setSubscription(currentSubscription);
-      
-      // CRITICAL: Subscription table is the source of truth
-      const actualPremiumStatus = hasActiveSubscription;
-      setIsPremium(actualPremiumStatus);
-      
-      // Fix inconsistent profile data if needed
-      if (profileData && profileData.is_premium !== actualPremiumStatus) {
-        console.log('Fixing inconsistent premium status in profile');
-        await supabase
-          .from('profiles')
-          .update({ is_premium: actualPremiumStatus })
-          .eq('user_id', user.id);
-          
-        // Update local profile state
-        setProfile({
-          ...profileData,
-          is_premium: actualPremiumStatus
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching subscription status:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const markNagAsSeen = async () => {
-    if (!user) return;
-    
-    try {
-      // Optimistically update UI first for better UX
-      setShowFirstTimeModal(false);
-      
-      // Update local state immediately
-      if (profile) {
-        setProfile({
-          ...profile,
-          last_nag_at: new Date().toISOString()
-        });
-      }
-      
-      // Call edge function to update nag timestamp
-      const { error } = await supabase.functions.invoke('update-nag-seen');
-      
-      if (error) {
-        console.error('Error marking nag as seen:', error);
-        // Don't revert UI since user wanted to dismiss
-      }
-    } catch (error) {
-      console.error('Error calling update-nag-seen:', error);
-      // UI already updated optimistically
-    }
-  };
-
-  const markModalAsSeen = () => {
-    setSessionDismissed(true); // Mark as dismissed for current session
-    setShowFirstTimeModal(false); // Immediately hide modal
-    markNagAsSeen(); // Update database
-  };
-
-  const upgradeToPremium = async () => {
-    if (!user || loading) return;
-    
-    setLoading(true);
-    try {
-      // Create a new subscription record
-      const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 month from now
-      
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: user.id,
-          subscription_type: 'premium',
-          status: 'active',
-          expires_at: expiryDate.toISOString(),
-          auto_renew: true
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Also update the profile for backward compatibility
-      await supabase
-        .from('profiles')
-        .update({ is_premium: true })
-        .eq('user_id', user.id);
-
-      setSubscription(data);
-      setIsPremium(true);
-      setSessionDismissed(true); // Mark as dismissed since user upgraded
-      markNagAsSeen();
-    } catch (error) {
-      console.error('Error upgrading to premium:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cancelSubscription = async () => {
-    if (!user || !subscription || loading) return;
-    
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({ 
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          auto_renew: false
-        })
-        .eq('id', subscription.id);
-
-      if (error) throw error;
-
-      // Update local subscription state
-      const updatedSubscription = {
-        ...subscription,
-        status: 'cancelled',
-        cancelled_at: new Date().toISOString(),
-        auto_renew: false
-      };
-      setSubscription(updatedSubscription);
-      
-      // Check if subscription has already expired or expires immediately
-      let shouldLosePremium = false;
+    if (subscription.status === 'active') {
       if (subscription.expires_at) {
         const expiryDate = new Date(subscription.expires_at);
         const now = new Date();
-        shouldLosePremium = expiryDate <= now;
-      } else {
-        // No expiry date means immediate cancellation
-        shouldLosePremium = true;
+        return expiryDate > now;
       }
-      
-      if (shouldLosePremium) {
-        setIsPremium(false);
-        await supabase
-          .from('profiles')
-          .update({ is_premium: false })
-          .eq('user_id', user.id);
-          
-        // Update local profile state
-        if (profile) {
-          setProfile({
-            ...profile,
-            is_premium: false
-          });
-        }
-      }
+      return true; // No expiry date means permanent
+    }
+    
+    return false;
+  }, [subscription]);
+
+  // Update premium status when subscription changes
+  useEffect(() => {
+    const premiumStatus = checkPremiumStatus();
+    setIsPremium(premiumStatus);
+    
+    // Sync with profile if needed
+    if (user && subscription) {
+      supabase
+        .from('profiles')
+        .update({ is_premium: premiumStatus })
+        .eq('user_id', user.id)
+        .then(({ error }) => {
+          if (error) console.error('Error syncing premium status:', error);
+        });
+    }
+  }, [subscription, checkPremiumStatus, user]);
+
+  const upgradeToPremium = useCallback(async () => {
+    if (!user || loading || subscriptionLoading) return;
+    
+    setLoading(true);
+    try {
+      await createSubscription();
+      await refreshSubscription();
     } catch (error) {
-      console.error('Error cancelling subscription:', error);
+      console.error('Error upgrading to premium:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, loading, subscriptionLoading, createSubscription, refreshSubscription]);
 
-  const getDaysUntilExpiry = () => {
-    if (!subscription?.expires_at) return null;
+  const handleCancelSubscription = useCallback(async () => {
+    if (!user || loading || subscriptionLoading) return;
     
-    const expiryDate = new Date(subscription.expires_at);
-    const now = new Date();
-    const diffTime = expiryDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays > 0 ? diffDays : 0;
-  };
+    setLoading(true);
+    try {
+      await cancelSubscription();
+      await refreshSubscription();
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, loading, subscriptionLoading, cancelSubscription, refreshSubscription]);
 
-  return {
+  const memoizedReturn = useMemo(() => ({
     isPremium,
     showFirstTimeModal,
     markModalAsSeen,
     upgradeToPremium,
-    cancelSubscription,
-    loading,
+    cancelSubscription: handleCancelSubscription,
+    loading: loading || subscriptionLoading,
     subscription,
-    daysUntilExpiry: getDaysUntilExpiry(),
-    refreshSubscription: fetchSubscriptionStatus
-  };
+    daysUntilExpiry,
+    refreshSubscription
+  }), [
+    isPremium,
+    showFirstTimeModal,
+    markModalAsSeen,
+    upgradeToPremium,
+    handleCancelSubscription,
+    loading,
+    subscriptionLoading,
+    subscription,
+    daysUntilExpiry,
+    refreshSubscription
+  ]);
+
+  return memoizedReturn;
 };

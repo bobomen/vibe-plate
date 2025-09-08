@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -9,7 +10,7 @@ import Groups from './Groups';
 import Profile from './Profile';
 import RestaurantDetail from './RestaurantDetail';
 
-const App = () => {
+const App = memo(() => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
@@ -46,6 +47,8 @@ const App = () => {
       />
     </div>
   );
-};
+});
+
+App.displayName = 'App';
 
 export default App;
