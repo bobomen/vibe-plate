@@ -228,28 +228,30 @@ const Profile = () => {
 
         <div className="space-y-6">
           {/* Premium Upgrade Banner */}
-          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
-                    <span className="text-lg">💎</span>
+          {!isPremium && (
+            <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-lg">💎</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm">解鎖 Premium</h3>
+                      <p className="text-xs text-muted-foreground">吃飯更快、更聰明、更有意義</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">解鎖 Premium</h3>
-                    <p className="text-xs text-muted-foreground">吃飯更快、更聰明、更有意義</p>
-                  </div>
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="bg-gradient-to-r from-primary to-primary/80"
+                  >
+                    升級
+                  </Button>
                 </div>
-                <Button 
-                  size="sm"
-                  onClick={() => setShowPremiumModal(true)}
-                  className="bg-gradient-to-r from-primary to-primary/80"
-                >
-                  升級
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Profile Info */}
           <Card>
