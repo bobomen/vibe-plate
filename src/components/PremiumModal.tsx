@@ -38,15 +38,6 @@ const PremiumModal = ({ open, onClose, onUpgrade }: PremiumModalProps) => {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md mx-4 rounded-2xl">
         <DialogHeader className="text-center space-y-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4 rounded-full"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          
           <div className="pt-4">
             <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">💎</span>
