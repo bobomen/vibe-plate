@@ -361,11 +361,8 @@ const Profile = () => {
       <BottomNavigation />
       
       <PremiumModal
-        open={showFirstTimeModal || showUpgradeModal}
-        onClose={() => {
-          if (showFirstTimeModal) markModalAsSeen();
-          if (showUpgradeModal) setShowUpgradeModal(false);
-        }}
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
         onUpgrade={async () => {
           await upgradeToPremium();
           setShowUpgradeModal(false);
