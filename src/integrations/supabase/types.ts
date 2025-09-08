@@ -153,11 +153,14 @@ export type Database = {
           favorite_cuisines: Json | null
           id: string
           is_premium: boolean | null
+          last_nag_at: string | null
           location_lat: number | null
           location_lng: number | null
+          nag_variant: string | null
           preferences: Json | null
           preferred_price_max: number | null
           preferred_price_min: number | null
+          should_nag: boolean | null
           updated_at: string
           user_id: string
         }
@@ -170,11 +173,14 @@ export type Database = {
           favorite_cuisines?: Json | null
           id?: string
           is_premium?: boolean | null
+          last_nag_at?: string | null
           location_lat?: number | null
           location_lng?: number | null
+          nag_variant?: string | null
           preferences?: Json | null
           preferred_price_max?: number | null
           preferred_price_min?: number | null
+          should_nag?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -187,11 +193,14 @@ export type Database = {
           favorite_cuisines?: Json | null
           id?: string
           is_premium?: boolean | null
+          last_nag_at?: string | null
           location_lat?: number | null
           location_lng?: number | null
+          nag_variant?: string | null
           preferences?: Json | null
           preferred_price_max?: number | null
           preferred_price_min?: number | null
+          should_nag?: boolean | null
           updated_at?: string
           user_id?: string
         }
@@ -333,6 +342,10 @@ export type Database = {
       generate_group_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      update_nag_seen: {
+        Args: { user_uuid: string }
+        Returns: undefined
       }
       user_is_in_group: {
         Args: { target_group_id: string; target_user_id: string }

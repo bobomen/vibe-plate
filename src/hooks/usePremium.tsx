@@ -12,12 +12,20 @@ interface SubscriptionData {
   auto_renew: boolean;
 }
 
+interface ProfileData {
+  is_premium: boolean;
+  should_nag: boolean;
+  last_nag_at: string | null;
+  nag_variant: string;
+}
+
 export const usePremium = () => {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
   const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
 
   // Fetch user's subscription status from database
   useEffect(() => {
@@ -26,20 +34,53 @@ export const usePremium = () => {
     }
   }, [user]);
 
-  // Determine if modal should show based on subscription status (no localStorage)
+  // Determine if modal should show based on premium status and nag settings
   useEffect(() => {
-    if (user && subscription !== null && !isPremium) {
-      // Show modal immediately for non-premium users after login
-      setShowFirstTimeModal(true);
+    if (user && profile !== null && !isPremium) {
+      const shouldShowModal = shouldShowNagModal();
+      setShowFirstTimeModal(shouldShowModal);
     } else {
       setShowFirstTimeModal(false);
     }
-  }, [user, subscription, isPremium]);
+  }, [user, profile, isPremium]);
+
+  // Check if we should show the nag modal based on 7-day rule
+  const shouldShowNagModal = (): boolean => {
+    if (!profile || isPremium) return false;
+    if (!profile.should_nag) return false;
+    
+    // If never nagged before, show it
+    if (!profile.last_nag_at) return true;
+    
+    // Check if 7 days have passed since last nag
+    const lastNagDate = new Date(profile.last_nag_at);
+    const now = new Date();
+    const daysDiff = (now.getTime() - lastNagDate.getTime()) / (1000 * 60 * 60 * 24);
+    
+    return daysDiff >= 7;
+  };
 
   const fetchSubscriptionStatus = async () => {
     if (!user) return;
     
     try {
+      // Get profile data including nag settings
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_premium, should_nag, last_nag_at, nag_variant')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return;
+      }
+
+      if (profileData) {
+        setProfile(profileData);
+        setIsPremium(profileData.is_premium || false);
+      }
+
       // Get active subscription
       const { data: subscriptionData, error: subError } = await supabase
         .from('subscriptions')
@@ -73,14 +114,50 @@ export const usePremium = () => {
         setSubscription(null);
       }
       
-      setIsPremium(hasActiveSubscription);
+      // Update premium status based on subscription
+      if (hasActiveSubscription && !isPremium) {
+        setIsPremium(true);
+        // Update profile is_premium if needed
+        await supabase
+          .from('profiles')
+          .update({ is_premium: true })
+          .eq('user_id', user.id);
+      }
     } catch (error) {
       console.error('Error fetching subscription status:', error);
     }
   };
 
+  const markNagAsSeen = async () => {
+    if (!user) return;
+    
+    try {
+      // Call edge function to update nag timestamp
+      const { data, error } = await supabase.functions.invoke('update-nag-seen');
+      
+      if (error) {
+        console.error('Error marking nag as seen:', error);
+        return;
+      }
+      
+      // Update local state
+      if (profile) {
+        setProfile({
+          ...profile,
+          last_nag_at: new Date().toISOString()
+        });
+      }
+      
+      setShowFirstTimeModal(false);
+    } catch (error) {
+      console.error('Error calling update-nag-seen:', error);
+      // Fallback to just hiding modal
+      setShowFirstTimeModal(false);
+    }
+  };
+
   const markModalAsSeen = () => {
-    setShowFirstTimeModal(false);
+    markNagAsSeen();
   };
 
   const upgradeToPremium = async () => {
