@@ -137,6 +137,7 @@ export type Database = {
           address: string | null
           business_hours: Json | null
           created_at: string
+          cuisine_type: string | null
           google_rating: number | null
           google_reviews_count: number | null
           has_500_dishes: boolean | null
@@ -147,11 +148,13 @@ export type Database = {
           michelin_stars: number | null
           name: string
           photos: string[] | null
+          price_range: number | null
         }
         Insert: {
           address?: string | null
           business_hours?: Json | null
           created_at?: string
+          cuisine_type?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
@@ -162,11 +165,13 @@ export type Database = {
           michelin_stars?: number | null
           name: string
           photos?: string[] | null
+          price_range?: number | null
         }
         Update: {
           address?: string | null
           business_hours?: Json | null
           created_at?: string
+          cuisine_type?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
@@ -177,6 +182,7 @@ export type Database = {
           michelin_stars?: number | null
           name?: string
           photos?: string[] | null
+          price_range?: number | null
         }
         Relationships: []
       }
