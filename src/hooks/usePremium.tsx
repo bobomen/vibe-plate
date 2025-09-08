@@ -78,15 +78,13 @@ export const usePremium = () => {
 
       if (profileData) {
         setProfile(profileData);
-        setIsPremium(profileData.is_premium || false);
       }
 
-      // Get active subscription
+      // Get ALL subscriptions (active, cancelled, etc.) to check actual status
       const { data: subscriptionData, error: subError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -96,32 +94,53 @@ export const usePremium = () => {
       }
 
       let hasActiveSubscription = false;
+      let currentSubscription = null;
       
       if (subscriptionData && subscriptionData.length > 0) {
         const sub = subscriptionData[0];
-        setSubscription(sub);
+        currentSubscription = sub;
         
-        // Check if subscription is still valid
-        if (sub.expires_at) {
-          const expiryDate = new Date(sub.expires_at);
-          const now = new Date();
-          hasActiveSubscription = expiryDate > now;
-        } else {
-          // No expiry date means permanent subscription
-          hasActiveSubscription = true;
+        // Check if subscription is truly active and not expired
+        if (sub.status === 'active') {
+          if (sub.expires_at) {
+            const expiryDate = new Date(sub.expires_at);
+            const now = new Date();
+            hasActiveSubscription = expiryDate > now;
+            
+            // If expired, update subscription status
+            if (expiryDate <= now) {
+              await supabase
+                .from('subscriptions')
+                .update({ status: 'expired' })
+                .eq('id', sub.id);
+              currentSubscription = { ...sub, status: 'expired' };
+            }
+          } else {
+            // No expiry date means permanent subscription
+            hasActiveSubscription = true;
+          }
         }
-      } else {
-        setSubscription(null);
       }
       
-      // Update premium status based on subscription
-      if (hasActiveSubscription && !isPremium) {
-        setIsPremium(true);
-        // Update profile is_premium if needed
+      setSubscription(currentSubscription);
+      
+      // CRITICAL: Subscription table is the source of truth
+      const actualPremiumStatus = hasActiveSubscription;
+      setIsPremium(actualPremiumStatus);
+      
+      // Fix inconsistent profile data if needed
+      if (profileData && profileData.is_premium !== actualPremiumStatus) {
+        console.log('Fixing inconsistent premium status in profile');
         await supabase
           .from('profiles')
-          .update({ is_premium: true })
+          .update({ is_premium: actualPremiumStatus })
           .eq('user_id', user.id);
+          
+        // Update local profile state
+        setProfile({
+          ...profileData,
+          is_premium: actualPremiumStatus
+        });
       }
     } catch (error) {
       console.error('Error fetching subscription status:', error);
@@ -215,24 +234,39 @@ export const usePremium = () => {
 
       if (error) throw error;
 
-      // Update local state
-      setSubscription({
+      // Update local subscription state
+      const updatedSubscription = {
         ...subscription,
         status: 'cancelled',
         cancelled_at: new Date().toISOString(),
         auto_renew: false
-      });
+      };
+      setSubscription(updatedSubscription);
       
-      // If subscription expired, also update premium status
+      // Check if subscription has already expired or expires immediately
+      let shouldLosePremium = false;
       if (subscription.expires_at) {
         const expiryDate = new Date(subscription.expires_at);
         const now = new Date();
-        if (expiryDate <= now) {
-          setIsPremium(false);
-          await supabase
-            .from('profiles')
-            .update({ is_premium: false })
-            .eq('user_id', user.id);
+        shouldLosePremium = expiryDate <= now;
+      } else {
+        // No expiry date means immediate cancellation
+        shouldLosePremium = true;
+      }
+      
+      if (shouldLosePremium) {
+        setIsPremium(false);
+        await supabase
+          .from('profiles')
+          .update({ is_premium: false })
+          .eq('user_id', user.id);
+          
+        // Update local profile state
+        if (profile) {
+          setProfile({
+            ...profile,
+            is_premium: false
+          });
         }
       }
     } catch (error) {
