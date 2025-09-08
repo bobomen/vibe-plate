@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { PreferenceSettings } from '@/components/PreferenceSettings';
 import PremiumModal from '@/components/PremiumModal';
+import { SubscriptionManagement } from '@/components/SubscriptionManagement';
 import { usePremium } from '@/hooks/usePremium';
 
 interface Profile {
@@ -228,7 +230,7 @@ const Profile = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Premium Upgrade Banner */}
+          {/* Premium Banner - Only show if not premium */}
           {!isPremium && (
             <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
               <CardContent className="p-4">
@@ -252,6 +254,13 @@ const Profile = () => {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Subscription Management - Only show if premium */}
+          {isPremium && (
+            <div className="mb-6">
+              <SubscriptionManagement />
+            </div>
           )}
 
           {/* Profile Info */}

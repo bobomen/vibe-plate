@@ -2,58 +2,88 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
+interface SubscriptionData {
+  id: string;
+  subscription_type: string;
+  status: string;
+  started_at: string;
+  expires_at: string | null;
+  cancelled_at: string | null;
+  auto_renew: boolean;
+}
+
 export const usePremium = () => {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
   const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
 
-  // Fetch user's premium status from database
+  // Fetch user's subscription status from database
   useEffect(() => {
     if (user) {
-      fetchPremiumStatus();
-      
-      // Check if user has seen the premium modal before
-      const hasSeenPremiumModal = localStorage.getItem(`premium_modal_seen_${user.id}`);
-      
-      if (!hasSeenPremiumModal) {
-        // Show modal after a short delay to let the app load
-        const timer = setTimeout(() => {
-          setShowFirstTimeModal(true);
-        }, 2000);
-        
-        return () => clearTimeout(timer);
-      }
+      fetchSubscriptionStatus();
     }
   }, [user]);
 
-  const fetchPremiumStatus = async () => {
+  // Determine if modal should show based on subscription status (not localStorage)
+  useEffect(() => {
+    if (user && subscription !== null && !isPremium) {
+      // Show modal after a short delay for non-premium users
+      const timer = setTimeout(() => {
+        setShowFirstTimeModal(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowFirstTimeModal(false);
+    }
+  }, [user, subscription, isPremium]);
+
+  const fetchSubscriptionStatus = async () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('is_premium')
+      // Get active subscription
+      const { data: subscriptionData, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
         .eq('user_id', user.id)
-        .single();
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching premium status:', error);
+      if (subError && subError.code !== 'PGRST116') {
+        console.error('Error fetching subscription:', subError);
         return;
       }
 
-      if (data) {
-        setIsPremium(data.is_premium || false);
+      let hasActiveSubscription = false;
+      
+      if (subscriptionData && subscriptionData.length > 0) {
+        const sub = subscriptionData[0];
+        setSubscription(sub);
+        
+        // Check if subscription is still valid
+        if (sub.expires_at) {
+          const expiryDate = new Date(sub.expires_at);
+          const now = new Date();
+          hasActiveSubscription = expiryDate > now;
+        } else {
+          // No expiry date means permanent subscription
+          hasActiveSubscription = true;
+        }
+      } else {
+        setSubscription(null);
       }
+      
+      setIsPremium(hasActiveSubscription);
     } catch (error) {
-      console.error('Error fetching premium status:', error);
+      console.error('Error fetching subscription status:', error);
     }
   };
 
   const markModalAsSeen = () => {
-    if (user) {
-      localStorage.setItem(`premium_modal_seen_${user.id}`, 'true');
-    }
     setShowFirstTimeModal(false);
   };
 
@@ -62,13 +92,31 @@ export const usePremium = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Create a new subscription record
+      const expiryDate = new Date();
+      expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 month from now
+      
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: user.id,
+          subscription_type: 'premium',
+          status: 'active',
+          expires_at: expiryDate.toISOString(),
+          auto_renew: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Also update the profile for backward compatibility
+      await supabase
         .from('profiles')
         .update({ is_premium: true })
         .eq('user_id', user.id);
 
-      if (error) throw error;
-
+      setSubscription(data);
       setIsPremium(true);
       markModalAsSeen();
     } catch (error) {
@@ -78,11 +126,69 @@ export const usePremium = () => {
     }
   };
 
+  const cancelSubscription = async () => {
+    if (!user || !subscription || loading) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({ 
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          auto_renew: false
+        })
+        .eq('id', subscription.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setSubscription({
+        ...subscription,
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        auto_renew: false
+      });
+      
+      // If subscription expired, also update premium status
+      if (subscription.expires_at) {
+        const expiryDate = new Date(subscription.expires_at);
+        const now = new Date();
+        if (expiryDate <= now) {
+          setIsPremium(false);
+          await supabase
+            .from('profiles')
+            .update({ is_premium: false })
+            .eq('user_id', user.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDaysUntilExpiry = () => {
+    if (!subscription?.expires_at) return null;
+    
+    const expiryDate = new Date(subscription.expires_at);
+    const now = new Date();
+    const diffTime = expiryDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
+
   return {
     isPremium,
     showFirstTimeModal,
     markModalAsSeen,
     upgradeToPremium,
-    loading
+    cancelSubscription,
+    loading,
+    subscription,
+    daysUntilExpiry: getDaysUntilExpiry(),
+    refreshSubscription: fetchSubscriptionStatus
   };
 };
