@@ -37,39 +37,44 @@ export const usePremium = () => {
 
   // Determine if modal should show based on premium status and nag settings
   useEffect(() => {
-    if (user && profile !== null && !isPremium && !sessionDismissed) {
-      const shouldShowModal = shouldShowNagModal();
-      setShowFirstTimeModal(shouldShowModal);
-    } else {
-      setShowFirstTimeModal(false);
-    }
+    // Add a small delay to prevent flickering during initial load
+    const timer = setTimeout(() => {
+      if (user && profile !== null && !isPremium && !sessionDismissed) {
+        const shouldShowModal = shouldShowNagModal();
+        setShowFirstTimeModal(shouldShowModal);
+      } else {
+        setShowFirstTimeModal(false);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [user, profile, isPremium, subscription, sessionDismissed]);
 
-  // Check if we should show the nag modal - optimized logic
+  // Check if we should show the nag modal - prioritize showing to non-premium users
   const shouldShowNagModal = (): boolean => {
     if (!profile || isPremium) return false;
     if (!profile.should_nag) return false;
     
-    // If never nagged before, show it (first time users)
+    // If never nagged before, always show (first time users)
     if (!profile.last_nag_at) return true;
     
-    // Calculate time since last nag
+    // For non-premium users (cancelled or no subscription), show modal immediately on login
+    // This ensures cancelled subscribers and new users always see the upgrade option
+    if (subscription && subscription.status === 'cancelled') {
+      return true; // Always show for cancelled users
+    }
+    
+    // If user has no subscription at all, always show
+    if (!subscription) {
+      return true; // Always show for users without subscription
+    }
+    
+    // For other cases (expired subscriptions), check timing
     const lastNagDate = new Date(profile.last_nag_at);
     const now = new Date();
     const daysDiff = (now.getTime() - lastNagDate.getTime()) / (1000 * 60 * 60 * 24);
     
-    // For users with cancelled subscription or no subscription, still respect nag timing
-    // Only show if it's been at least 1 day since last nag (prevent immediate re-showing)
-    if (subscription && subscription.status === 'cancelled') {
-      return daysDiff >= 1; // Show after 1 day for cancelled users
-    }
-    
-    // For users with no subscription, show after 1 day
-    if (!subscription) {
-      return daysDiff >= 1;
-    }
-    
-    // For regular cases, check 7-day rule
+    // For expired subscriptions, show after 7 days
     return daysDiff >= 7;
   };
 
@@ -196,7 +201,8 @@ export const usePremium = () => {
 
   const markModalAsSeen = () => {
     setSessionDismissed(true); // Mark as dismissed for current session
-    markNagAsSeen();
+    setShowFirstTimeModal(false); // Immediately hide modal
+    markNagAsSeen(); // Update database
   };
 
   const upgradeToPremium = async () => {
