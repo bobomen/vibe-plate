@@ -26,6 +26,7 @@ export const usePremium = () => {
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [sessionDismissed, setSessionDismissed] = useState(false); // Track if user dismissed modal in current session
 
   // Fetch user's subscription status from database
   useEffect(() => {
@@ -36,51 +37,64 @@ export const usePremium = () => {
 
   // Determine if modal should show based on premium status and nag settings
   useEffect(() => {
-    if (user && profile !== null && !isPremium) {
+    if (user && profile !== null && !isPremium && !sessionDismissed) {
       const shouldShowModal = shouldShowNagModal();
       setShowFirstTimeModal(shouldShowModal);
     } else {
       setShowFirstTimeModal(false);
     }
-  }, [user, profile, isPremium, subscription]);
+  }, [user, profile, isPremium, subscription, sessionDismissed]);
 
-  // Check if we should show the nag modal - prioritize non-premium users
+  // Check if we should show the nag modal - optimized logic
   const shouldShowNagModal = (): boolean => {
     if (!profile || isPremium) return false;
     if (!profile.should_nag) return false;
     
-    // For non-premium users, always show on login if:
-    // 1. Never nagged before (first time login)
-    // 2. User has cancelled subscription (show immediately after cancellation)
-    // 3. Or 7 days have passed since last nag
-    
-    // If never nagged before, always show
+    // If never nagged before, show it (first time users)
     if (!profile.last_nag_at) return true;
     
-    // If user has a cancelled subscription, show modal immediately
-    if (subscription && subscription.status === 'cancelled') return true;
-    
-    // If user has no subscription at all (never subscribed), show modal
-    if (!subscription) return true;
-    
-    // For regular cases, check 7-day rule
+    // Calculate time since last nag
     const lastNagDate = new Date(profile.last_nag_at);
     const now = new Date();
     const daysDiff = (now.getTime() - lastNagDate.getTime()) / (1000 * 60 * 60 * 24);
     
+    // For users with cancelled subscription or no subscription, still respect nag timing
+    // Only show if it's been at least 1 day since last nag (prevent immediate re-showing)
+    if (subscription && subscription.status === 'cancelled') {
+      return daysDiff >= 1; // Show after 1 day for cancelled users
+    }
+    
+    // For users with no subscription, show after 1 day
+    if (!subscription) {
+      return daysDiff >= 1;
+    }
+    
+    // For regular cases, check 7-day rule
     return daysDiff >= 7;
   };
 
   const fetchSubscriptionStatus = async () => {
     if (!user) return;
     
+    setLoading(true);
     try {
-      // Get profile data including nag settings
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_premium, should_nag, last_nag_at, nag_variant')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Batch both queries for better performance
+      const [profileResult, subscriptionResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('is_premium, should_nag, last_nag_at, nag_variant')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+      ]);
+
+      const { data: profileData, error: profileError } = profileResult;
+      const { data: subscriptionData, error: subError } = subscriptionResult;
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
@@ -90,14 +104,6 @@ export const usePremium = () => {
       if (profileData) {
         setProfile(profileData);
       }
-
-      // Get ALL subscriptions (active, cancelled, etc.) to check actual status
-      const { data: subscriptionData, error: subError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
 
       if (subError && subError.code !== 'PGRST116') {
         console.error('Error fetching subscription:', subError);
@@ -155,6 +161,8 @@ export const usePremium = () => {
       }
     } catch (error) {
       console.error('Error fetching subscription status:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -162,15 +170,10 @@ export const usePremium = () => {
     if (!user) return;
     
     try {
-      // Call edge function to update nag timestamp
-      const { data, error } = await supabase.functions.invoke('update-nag-seen');
+      // Optimistically update UI first for better UX
+      setShowFirstTimeModal(false);
       
-      if (error) {
-        console.error('Error marking nag as seen:', error);
-        return;
-      }
-      
-      // Update local state
+      // Update local state immediately
       if (profile) {
         setProfile({
           ...profile,
@@ -178,15 +181,21 @@ export const usePremium = () => {
         });
       }
       
-      setShowFirstTimeModal(false);
+      // Call edge function to update nag timestamp
+      const { error } = await supabase.functions.invoke('update-nag-seen');
+      
+      if (error) {
+        console.error('Error marking nag as seen:', error);
+        // Don't revert UI since user wanted to dismiss
+      }
     } catch (error) {
       console.error('Error calling update-nag-seen:', error);
-      // Fallback to just hiding modal
-      setShowFirstTimeModal(false);
+      // UI already updated optimistically
     }
   };
 
   const markModalAsSeen = () => {
+    setSessionDismissed(true); // Mark as dismissed for current session
     markNagAsSeen();
   };
 
@@ -221,7 +230,8 @@ export const usePremium = () => {
 
       setSubscription(data);
       setIsPremium(true);
-      markModalAsSeen();
+      setSessionDismissed(true); // Mark as dismissed since user upgraded
+      markNagAsSeen();
     } catch (error) {
       console.error('Error upgrading to premium:', error);
     } finally {
