@@ -105,6 +105,7 @@ export type Database = {
           display_name: string | null
           favorite_cuisines: Json | null
           id: string
+          is_premium: boolean | null
           location_lat: number | null
           location_lng: number | null
           preferences: Json | null
@@ -121,6 +122,7 @@ export type Database = {
           display_name?: string | null
           favorite_cuisines?: Json | null
           id?: string
+          is_premium?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           preferences?: Json | null
@@ -137,6 +139,7 @@ export type Database = {
           display_name?: string | null
           favorite_cuisines?: Json | null
           id?: string
+          is_premium?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           preferences?: Json | null

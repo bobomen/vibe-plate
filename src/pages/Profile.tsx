@@ -32,7 +32,7 @@ interface Profile {
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { isPremium, showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
+  const { isPremium, showFirstTimeModal, markModalAsSeen, upgradeToPremium, loading: premiumLoading } = usePremium();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [profile, setProfile] = useState<Profile>({ 
     display_name: '',
@@ -357,8 +357,8 @@ const Profile = () => {
           if (showFirstTimeModal) markModalAsSeen();
           if (showUpgradeModal) setShowUpgradeModal(false);
         }}
-        onUpgrade={() => {
-          upgradeToPremium();
+        onUpgrade={async () => {
+          await upgradeToPremium();
           setShowUpgradeModal(false);
         }}
       />

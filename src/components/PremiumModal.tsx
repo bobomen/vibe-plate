@@ -7,10 +7,22 @@ import { X, Infinity, Search, Users, Heart } from 'lucide-react';
 interface PremiumModalProps {
   open: boolean;
   onClose: () => void;
-  onUpgrade: () => void;
+  onUpgrade: () => void | Promise<void>;
 }
 
 const PremiumModal = ({ open, onClose, onUpgrade }: PremiumModalProps) => {
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const handleUpgrade = async () => {
+    if (isUpgrading) return;
+    
+    setIsUpgrading(true);
+    try {
+      await onUpgrade();
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
   const features = [
     {
       icon: <Infinity className="h-6 w-6 text-primary" />,
@@ -67,10 +79,11 @@ const PremiumModal = ({ open, onClose, onUpgrade }: PremiumModalProps) => {
 
         <div className="space-y-3 pt-4">
           <Button 
-            onClick={onUpgrade}
+            onClick={handleUpgrade}
+            disabled={isUpgrading}
             className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
           >
-            升級 Premium
+            {isUpgrading ? "升級中..." : "升級 Premium"}
           </Button>
           <Button 
             variant="ghost" 
