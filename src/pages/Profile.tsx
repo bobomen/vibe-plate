@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { PreferenceSettings } from '@/components/PreferenceSettings';
+import PremiumModal from '@/components/PremiumModal';
 
 interface Profile {
   display_name: string;
@@ -45,6 +46,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -222,6 +224,30 @@ const Profile = () => {
         </div>
 
         <div className="space-y-6">
+          {/* Premium Upgrade Banner */}
+          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
+                    <span className="text-lg">💎</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">解鎖 Premium</h3>
+                    <p className="text-xs text-muted-foreground">吃飯更快、更聰明、更有意義</p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => setShowPremiumModal(true)}
+                  className="bg-gradient-to-r from-primary to-primary/80"
+                >
+                  升級
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Profile Info */}
           <Card>
             <CardHeader>
@@ -316,6 +342,16 @@ const Profile = () => {
         </div>
       </div>
       <BottomNavigation />
+      
+      <PremiumModal
+        open={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        onUpgrade={() => {
+          // TODO: Implement payment logic
+          console.log('Upgrade to premium');
+          setShowPremiumModal(false);
+        }}
+      />
     </div>
   );
 };

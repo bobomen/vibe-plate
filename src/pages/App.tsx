@@ -1,6 +1,8 @@
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { BottomNavigation } from '@/components/BottomNavigation';
+import PremiumModal from '@/components/PremiumModal';
+import { usePremium } from '@/hooks/usePremium';
 import { SwipeCards } from '@/components/SwipeCards';
 import Favorites from './Favorites';
 import Groups from './Groups';
@@ -10,6 +12,7 @@ import RestaurantDetail from './RestaurantDetail';
 const App = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const { showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
 
   if (loading) {
     return (
@@ -35,6 +38,12 @@ const App = () => {
         </Routes>
       </main>
       {location.pathname.startsWith('/app') && !location.pathname.includes('/restaurant/') && <BottomNavigation />}
+      
+      <PremiumModal
+        open={showFirstTimeModal}
+        onClose={markModalAsSeen}
+        onUpgrade={upgradeToPremium}
+      />
     </div>
   );
 };
