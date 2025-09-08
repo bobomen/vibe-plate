@@ -230,74 +230,6 @@ const Profile = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Premium Banner - Only show if not premium */}
-          {!isPremium && (
-            <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-lg">💎</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm">解鎖 Premium</h3>
-                      <p className="text-xs text-muted-foreground">吃飯更快、更聰明、更有意義</p>
-                    </div>
-                  </div>
-                  <Button 
-                    size="sm"
-                    onClick={() => setShowUpgradeModal(true)}
-                    className="bg-gradient-to-r from-primary to-primary/80"
-                  >
-                    升級
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Subscription Management - Only show if premium */}
-          {isPremium && (
-            <div className="mb-6">
-              <SubscriptionManagement />
-            </div>
-          )}
-
-          {/* Profile Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                基本資料
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="email">電子郵件</Label>
-                <Input
-                  id="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="displayName">顯示名稱</Label>
-                <Input
-                  id="displayName"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="請輸入顯示名稱"
-                />
-              </div>
-
-              <Button onClick={updateProfile} disabled={saving}>
-                {saving ? "更新中..." : "更新資料"}
-              </Button>
-            </CardContent>
-          </Card>
-
           {/* Location */}
           <Card>
             <CardHeader>
@@ -337,6 +269,67 @@ const Profile = () => {
             onUpgrade={() => setShowUpgradeModal(true)}
           />
 
+          {/* Profile Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                基本資料
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="email">電子郵件</Label>
+                <Input
+                  id="email"
+                  value={user?.email || ''}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="displayName">顯示名稱</Label>
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="請輸入顯示名稱"
+                />
+              </div>
+
+              <Button onClick={updateProfile} disabled={saving}>
+                {saving ? "更新中..." : "更新資料"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Premium Banner - Only show if not premium */}
+          {!isPremium && (
+            <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-lg">💎</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm">解鎖 Premium</h3>
+                      <p className="text-xs text-muted-foreground">吃飯更快、更聰明、更有意義</p>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="bg-gradient-to-r from-primary to-primary/80"
+                  >
+                    升級
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Settings */}
           <Card>
             <CardHeader>
@@ -356,6 +349,13 @@ const Profile = () => {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Subscription Management - Only show if premium - Move to bottom */}
+          {isPremium && (
+            <div>
+              <SubscriptionManagement />
+            </div>
+          )}
         </div>
       </div>
       <BottomNavigation />
