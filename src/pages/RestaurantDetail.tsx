@@ -4,6 +4,8 @@ import { ArrowLeft, Star, MapPin, Clock, Heart, ExternalLink } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LazyImage } from '@/components/ui/LazyImage';
+import { RestaurantDetailSkeleton } from '@/components/ui/RestaurantDetailSkeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -125,11 +127,7 @@ export default function RestaurantDetail() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <RestaurantDetailSkeleton />;
   }
 
   if (!restaurant) {
@@ -170,10 +168,10 @@ export default function RestaurantDetail() {
       {/* Photos */}
       <div className="relative">
         <div className="aspect-[4/3] bg-muted">
-          <img
+          <LazyImage
             src={photos[selectedPhoto]}
             alt={restaurant.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full"
           />
         </div>
         
@@ -281,10 +279,10 @@ export default function RestaurantDetail() {
                     index === selectedPhoto ? 'border-primary' : 'border-transparent'
                   }`}
                 >
-                  <img
+                  <LazyImage
                     src={photo}
                     alt={`${restaurant.name} 照片 ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
                   />
                 </button>
               ))}

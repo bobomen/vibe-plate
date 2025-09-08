@@ -3,6 +3,8 @@ import { Heart, MapPin, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LazyImage } from '@/components/ui/LazyImage';
+import { FavoriteListSkeleton } from '@/components/ui/FavoriteListSkeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -111,11 +113,7 @@ const Favorites = () => {
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <FavoriteListSkeleton />;
   }
 
   return (
@@ -152,10 +150,10 @@ const Favorites = () => {
                 <CardContent className="p-0">
                   <div className="flex">
                     <div className="w-24 h-24 flex-shrink-0">
-                      <img
+                      <LazyImage
                         src={favorite.restaurants.photos[0] || '/placeholder.svg'}
                         alt={favorite.restaurants.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full"
                       />
                     </div>
                     

@@ -3,6 +3,8 @@ import { Heart, X, Star, MapPin, ChevronLeft, ChevronRight, Utensils } from 'luc
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LazyImage } from '@/components/ui/LazyImage';
+import { RestaurantCardSkeleton } from '@/components/ui/RestaurantCardSkeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -273,8 +275,18 @@ export const SwipeCards = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <SearchAndFilter
+          filters={filters}
+          onFiltersChange={setFilters}
+          onSearch={handleSearch}
+          resultsCount={0}
+        />
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-4">
+          <div className="relative w-full max-w-sm">
+            <RestaurantCardSkeleton />
+          </div>
+        </div>
       </div>
     );
   }
@@ -478,10 +490,10 @@ export const SwipeCards = () => {
           >
           {/* Restaurant Image Carousel */}
           <div className="relative h-96 bg-gradient-to-b from-transparent to-black/50 card-content">
-            <img
+            <LazyImage
               src={photos[currentPhotoIndex]}
               alt={currentRestaurant.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full"
             />
             
             {/* Photo Navigation */}
