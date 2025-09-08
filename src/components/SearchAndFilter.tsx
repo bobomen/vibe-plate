@@ -10,12 +10,12 @@ import { Separator } from '@/components/ui/separator';
 
 export interface FilterOptions {
   searchTerm: string;
-  cuisineType: string;
   priceRange: number[];
   distanceRange: number;
   minRating: number;
   hasMichelinStars: boolean;
   has500Dishes: boolean;
+  hasBibGourmand: boolean;
 }
 
 interface SearchAndFilterProps {
@@ -25,21 +25,11 @@ interface SearchAndFilterProps {
   resultsCount?: number;
 }
 
-const CUISINE_TYPES = [
-  { value: '', label: '所有菜系' },
-  { value: '日式', label: '日式料理' },
-  { value: '中式', label: '中式料理' },
-  { value: '西式', label: '西式料理' },
-  { value: '韓式', label: '韓式料理' },
-  { value: '泰式', label: '泰式料理' },
-  { value: '其他', label: '其他料理' },
-];
-
 const DISTANCE_OPTIONS = [
-  { value: 0.5, label: '500公尺' },
-  { value: 1, label: '1公里' },
-  { value: 2, label: '2公里' },
-  { value: 5, label: '5公里' },
+  { value: 0.5, label: '500公尺內' },
+  { value: 1, label: '1公里內' },
+  { value: 2, label: '2公里內' },
+  { value: 5, label: '5公里內' },
   { value: 999, label: '不限距離' },
 ];
 
@@ -63,24 +53,24 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const clearAllFilters = () => {
     onFiltersChange({
       searchTerm: '',
-      cuisineType: '',
       priceRange: [1, 4],
       distanceRange: 999,
       minRating: 0,
       hasMichelinStars: false,
       has500Dishes: false,
+      hasBibGourmand: false,
     });
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.searchTerm) count++;
-    if (filters.cuisineType) count++;
     if (filters.priceRange[0] > 1 || filters.priceRange[1] < 4) count++;
     if (filters.distanceRange < 999) count++;
     if (filters.minRating > 0) count++;
     if (filters.hasMichelinStars) count++;
     if (filters.has500Dishes) count++;
+    if (filters.hasBibGourmand) count++;
     return count;
   };
 
@@ -115,22 +105,23 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[80vh]">
-              <SheetHeader>
-                <SheetTitle>篩選條件</SheetTitle>
+            <SheetContent side="bottom" className="h-[85vh] bg-background z-[100] border-t">
+              <SheetHeader className="pb-4">
+                <SheetTitle className="text-lg font-semibold">篩選條件</SheetTitle>
               </SheetHeader>
-              <div className="py-6 space-y-6">
-                {/* Cuisine Type */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">菜系類型</label>
-                  <Select value={filters.cuisineType} onValueChange={(value) => handleFilterChange('cuisineType', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="選擇菜系" />
+              <div className="py-2 space-y-6 overflow-y-auto max-h-[calc(85vh-100px)]">
+                
+                {/* Distance Range */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">📍 離使用者的距離</label>
+                  <Select value={filters.distanceRange.toString()} onValueChange={(value) => handleFilterChange('distanceRange', parseFloat(value))}>
+                    <SelectTrigger className="bg-background border-input">
+                      <SelectValue placeholder="選擇距離範圍" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {CUISINE_TYPES.map((cuisine) => (
-                        <SelectItem key={cuisine.value} value={cuisine.value}>
-                          {cuisine.label}
+                    <SelectContent className="bg-background border-input z-[110]">
+                      {DISTANCE_OPTIONS.map((distance) => (
+                        <SelectItem key={distance.value} value={distance.value.toString()}>
+                          {distance.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -139,7 +130,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
 
                 {/* Price Range */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">價位範圍</label>
+                  <label className="text-sm font-medium text-foreground">💰 價格範圍</label>
                   <div className="px-2">
                     <Slider
                       value={filters.priceRange}
@@ -163,61 +154,80 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                   </div>
                 </div>
 
-                {/* Distance Range */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">距離範圍</label>
-                  <Select value={filters.distanceRange.toString()} onValueChange={(value) => handleFilterChange('distanceRange', parseFloat(value))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="選擇距離" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DISTANCE_OPTIONS.map((distance) => (
-                        <SelectItem key={distance.value} value={distance.value.toString()}>
-                          {distance.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Minimum Rating */}
+                {/* Minimum Rating - Google 4+ stars */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">最低評分: {filters.minRating > 0 ? filters.minRating.toFixed(1) : '不限'}</label>
-                  <Slider
-                    value={[filters.minRating]}
-                    onValueChange={(value) => handleFilterChange('minRating', value[0])}
-                    max={5}
-                    min={0}
-                    step={0.5}
-                    className="w-full"
-                  />
-                </div>
-
-                <Separator />
-
-                {/* Special Tags */}
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">特殊標籤</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-foreground">⭐ Google評分</label>
                     <Button
-                      variant={filters.hasMichelinStars ? "default" : "outline"}
+                      variant={filters.minRating >= 4.0 ? "default" : "outline"}
                       size="sm"
-                      onClick={() => handleFilterChange('hasMichelinStars', !filters.hasMichelinStars)}
+                      onClick={() => handleFilterChange('minRating', filters.minRating >= 4.0 ? 0 : 4.0)}
+                      className="h-8"
                     >
-                      ⭐ 米其林星級
+                      {filters.minRating >= 4.0 ? '✓ 四顆星以上' : '四顆星以上'}
                     </Button>
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                {/* Special Recognition */}
+                <div className="space-y-4">
+                  <label className="text-sm font-medium text-foreground">🏆 特殊認證</label>
+                  
+                  <div className="grid grid-cols-1 gap-3">
                     <Button
                       variant={filters.has500Dishes ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleFilterChange('has500Dishes', !filters.has500Dishes)}
+                      className="justify-start h-12 text-left"
                     >
-                      🏆 500盤認證
+                      <div className="flex items-center">
+                        <span className="text-lg mr-3">🍽️</span>
+                        <div>
+                          <div className="font-medium">500盤</div>
+                          <div className="text-xs opacity-70">台灣500盤認證餐廳</div>
+                        </div>
+                        {filters.has500Dishes && <span className="ml-auto">✓</span>}
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      variant={filters.hasMichelinStars ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleFilterChange('hasMichelinStars', !filters.hasMichelinStars)}
+                      className="justify-start h-12 text-left"
+                    >
+                      <div className="flex items-center">
+                        <span className="text-lg mr-3">⭐</span>
+                        <div>
+                          <div className="font-medium">米其林星級</div>
+                          <div className="text-xs opacity-70">米其林指南星級餐廳</div>
+                        </div>
+                        {filters.hasMichelinStars && <span className="ml-auto">✓</span>}
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      variant={filters.hasBibGourmand ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleFilterChange('hasBibGourmand', !filters.hasBibGourmand)}
+                      className="justify-start h-12 text-left"
+                    >
+                      <div className="flex items-center">
+                        <span className="text-lg mr-3">🍴</span>
+                        <div>
+                          <div className="font-medium">必比登推介</div>
+                          <div className="text-xs opacity-70">米其林必比登推介餐廳</div>
+                        </div>
+                        {filters.hasBibGourmand && <span className="ml-auto">✓</span>}
+                      </div>
                     </Button>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 pt-4">
+                <div className="flex gap-3 pt-6 pb-4">
                   <Button onClick={clearAllFilters} variant="outline" className="flex-1">
                     清除所有篩選
                   </Button>
@@ -228,7 +238,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                     }} 
                     className="flex-1"
                   >
-                    套用篩選
+                    套用篩選 ({getActiveFiltersCount()})
                   </Button>
                 </div>
               </div>
@@ -265,15 +275,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 <X 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => handleFilterChange('searchTerm', '')}
-                />
-              </Badge>
-            )}
-            {filters.cuisineType && (
-              <Badge variant="secondary" className="text-xs">
-                {CUISINE_TYPES.find(c => c.value === filters.cuisineType)?.label}
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => handleFilterChange('cuisineType', '')}
                 />
               </Badge>
             )}
@@ -319,6 +320,15 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 <X 
                   className="h-3 w-3 ml-1 cursor-pointer" 
                   onClick={() => handleFilterChange('has500Dishes', false)}
+                />
+              </Badge>
+            )}
+            {filters.hasBibGourmand && (
+              <Badge variant="secondary" className="text-xs">
+                必比登推介
+                <X 
+                  className="h-3 w-3 ml-1 cursor-pointer" 
+                  onClick={() => handleFilterChange('hasBibGourmand', false)}
                 />
               </Badge>
             )}

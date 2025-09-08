@@ -135,6 +135,7 @@ export type Database = {
       restaurants: {
         Row: {
           address: string | null
+          bib_gourmand: boolean | null
           business_hours: Json | null
           created_at: string
           cuisine_type: string | null
@@ -152,6 +153,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          bib_gourmand?: boolean | null
           business_hours?: Json | null
           created_at?: string
           cuisine_type?: string | null
@@ -169,6 +171,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          bib_gourmand?: boolean | null
           business_hours?: Json | null
           created_at?: string
           cuisine_type?: string | null

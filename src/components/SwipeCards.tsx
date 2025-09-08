@@ -22,6 +22,7 @@ interface Restaurant {
   photos: string[];
   cuisine_type: string;
   price_range: number;
+  bib_gourmand: boolean;
 }
 
 export const SwipeCards = () => {
@@ -39,12 +40,12 @@ export const SwipeCards = () => {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [filters, setFilters] = useState<FilterOptions>({
     searchTerm: '',
-    cuisineType: '',
     priceRange: [1, 4],
     distanceRange: 999,
     minRating: 0,
     hasMichelinStars: false,
     has500Dishes: false,
+    hasBibGourmand: false,
   });
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
@@ -117,10 +118,10 @@ export const SwipeCards = () => {
       );
     }
 
-    // 菜系篩選
-    if (filters.cuisineType) {
-      filtered = filtered.filter(restaurant => restaurant.cuisine_type === filters.cuisineType);
-    }
+    // 菜系篩選 - 暫時移除，專注於用戶要求的篩選條件
+    // if (filters.cuisineType) {
+    //   filtered = filtered.filter(restaurant => restaurant.cuisine_type === filters.cuisineType);
+    // }
 
     // 價位篩選
     filtered = filtered.filter(restaurant => 
@@ -153,6 +154,10 @@ export const SwipeCards = () => {
 
     if (filters.has500Dishes) {
       filtered = filtered.filter(restaurant => restaurant.has_500_dishes === true);
+    }
+
+    if (filters.hasBibGourmand) {
+      filtered = filtered.filter(restaurant => restaurant.bib_gourmand === true);
     }
 
     setRestaurants(filtered);
@@ -292,12 +297,12 @@ export const SwipeCards = () => {
           <Button 
             onClick={() => setFilters({
               searchTerm: '',
-              cuisineType: '',
               priceRange: [1, 4],
               distanceRange: 999,
               minRating: 0,
               hasMichelinStars: false,
               has500Dishes: false,
+              hasBibGourmand: false,
             })}
             className="mt-4"
           >
@@ -553,6 +558,11 @@ export const SwipeCards = () => {
                  {currentRestaurant.has_500_dishes && (
                    <Badge variant="secondary" className="bg-green-600 text-white">
                      500盤
+                   </Badge>
+                 )}
+                 {currentRestaurant.bib_gourmand && (
+                   <Badge variant="secondary" className="bg-orange-600 text-white">
+                     必比登
                    </Badge>
                  )}
                </div>
