@@ -24,7 +24,7 @@ const Auth = () => {
   }
 
   if (user) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/app/" replace />;
   }
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
