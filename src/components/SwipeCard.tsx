@@ -219,6 +219,15 @@ export const SwipeCard = memo(({
         </div>
 
         <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full border-2 border-red-200 hover:bg-red-50 hover:border-red-300"
+            onClick={handleDislikeClick}
+          >
+            <X className="h-5 w-5 text-red-500" />
+          </Button>
+          
           <div className="flex items-center gap-1">
             <span className="text-sm font-medium">價位：</span>
             {[...Array(4)].map((_, i) => (
@@ -233,24 +242,14 @@ export const SwipeCard = memo(({
             ))}
           </div>
           
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full border-2 border-red-200 hover:bg-red-50 hover:border-red-300"
-              onClick={handleDislikeClick}
-            >
-              <X className="h-5 w-5 text-red-500" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full border-2 border-green-200 hover:bg-green-50 hover:border-green-300"
-              onClick={handleLikeClick}
-            >
-              <Heart className="h-5 w-5 text-green-500" />
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full border-2 border-green-200 hover:bg-green-50 hover:border-green-300"
+            onClick={handleLikeClick}
+          >
+            <Heart className="h-5 w-5 text-green-500" />
+          </Button>
         </div>
       </div>
     </Card>
