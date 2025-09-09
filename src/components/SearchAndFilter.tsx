@@ -35,7 +35,7 @@ const DISTANCE_OPTIONS = [
   { value: 999, label: '不限距離' },
 ];
 
-const PRICE_LABELS = ['$', '$$', '$$$', '$$$$'];
+const PRICE_LABELS = ['$0', '$100', '$200', '$300', '$400', '$500', '$600', '$700', '$800', '$900', '$1000+'];
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   filters,
@@ -76,7 +76,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const clearAllFilters = () => {
     onFiltersChange({
       searchTerm: '',
-      priceRange: [1, 4],
+      priceRange: [0, 10],
       distanceRange: 999,
       minRating: 0,
       hasMichelinStars: false,
@@ -88,7 +88,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.searchTerm) count++;
-    if (filters.priceRange[0] > 1 || filters.priceRange[1] < 4) count++;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 10) count++;
     if (filters.distanceRange < 999) count++;
     if (filters.minRating > 0) count++;
     if (filters.hasMichelinStars) count++;
@@ -158,21 +158,20 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                     <Slider
                       value={filters.priceRange}
                       onValueChange={(value) => handleFilterChange('priceRange', value)}
-                      max={4}
-                      min={1}
+                      max={10}
+                      min={0}
                       step={1}
                       className="w-full"
                     />
                     <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                      {PRICE_LABELS.map((label, index) => (
-                        <span key={label} className={
-                          filters.priceRange[0] <= index + 1 && filters.priceRange[1] >= index + 1 
-                            ? 'text-primary font-semibold' 
-                            : ''
-                        }>
-                          {label}
-                        </span>
-                      ))}
+                      <span className={filters.priceRange[0] <= 0 ? 'text-primary font-semibold' : ''}>$0</span>
+                      <span className={filters.priceRange[0] <= 2 && filters.priceRange[1] >= 2 ? 'text-primary font-semibold' : ''}>$200</span>
+                      <span className={filters.priceRange[0] <= 5 && filters.priceRange[1] >= 5 ? 'text-primary font-semibold' : ''}>$500</span>
+                      <span className={filters.priceRange[0] <= 7 && filters.priceRange[1] >= 7 ? 'text-primary font-semibold' : ''}>$700</span>
+                      <span className={filters.priceRange[1] >= 10 ? 'text-primary font-semibold' : ''}>$1000+</span>
+                    </div>
+                    <div className="mt-2 text-center text-sm text-foreground">
+                      選擇範圍: ${filters.priceRange[0] * 100} - {filters.priceRange[1] === 10 ? '$1000+' : `$${filters.priceRange[1] * 100}`}
                     </div>
                   </div>
                 </div>
@@ -325,12 +324,12 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 />
               </Badge>
             )}
-            {(filters.priceRange[0] > 1 || filters.priceRange[1] < 4) && (
+            {(filters.priceRange[0] > 0 || filters.priceRange[1] < 10) && (
               <Badge variant="secondary" className="text-xs">
-                {PRICE_LABELS[filters.priceRange[0] - 1]} - {PRICE_LABELS[filters.priceRange[1] - 1]}
+                ${filters.priceRange[0] * 100} - {filters.priceRange[1] === 10 ? '$1000+' : `$${filters.priceRange[1] * 100}`}
                 <X 
                   className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => handleFilterChange('priceRange', [1, 4])}
+                  onClick={() => handleFilterChange('priceRange', [0, 10])}
                 />
               </Badge>
             )}

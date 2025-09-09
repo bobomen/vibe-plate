@@ -47,7 +47,7 @@ const CUISINE_OPTIONS = [
   { id: 'mediterranean', label: '地中海', icon: '🫒' },
 ];
 
-const PRICE_LABELS = ['$', '$$', '$$$', '$$$$'];
+const PRICE_LABELS = ['$0', '$100', '$200', '$300', '$400', '$500', '$600', '$700', '$800', '$900', '$1000+'];
 
 export const PreferenceSettings = ({ preferences, onUpdate, isPremium = false, onUpgrade }: PreferenceSettingsProps) => {
   const { toast } = useToast();
@@ -167,20 +167,22 @@ export const PreferenceSettings = ({ preferences, onUpdate, isPremium = false, o
             價位偏好
           </Label>
           <p className="text-sm text-muted-foreground mb-3">
-            從 {PRICE_LABELS[priceRange[0] - 1]} 到 {PRICE_LABELS[priceRange[1] - 1]}
+            從 ${priceRange[0] * 100} 到 {priceRange[1] === 10 ? '$1000+' : `$${priceRange[1] * 100}`}
           </p>
           <Slider
             value={priceRange}
             onValueChange={handlePriceRangeChange}
-            min={1}
-            max={4}
+            min={0}
+            max={10}
             step={1}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
-            {PRICE_LABELS.map((label, index) => (
-              <span key={index}>{label}</span>
-            ))}
+            <span>$0</span>
+            <span>$200</span>
+            <span>$500</span>
+            <span>$700</span>
+            <span>$1000+</span>
           </div>
         </div>
 

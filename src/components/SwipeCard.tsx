@@ -230,16 +230,14 @@ export const SwipeCard = memo(({
           
           <div className="flex items-center gap-1">
             <span className="text-sm font-medium">價位：</span>
-            {[...Array(4)].map((_, i) => (
-              <span
-                key={i}
-                className={`text-sm ${
-                  i < restaurant.price_range ? 'text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                $
-              </span>
-            ))}
+            <span className="text-sm font-medium text-primary">
+              {(() => {
+                const priceRanges = [
+                  '$0-100', '$100-200', '$200-300', '$300+'
+                ];
+                return priceRanges[Math.min(restaurant.price_range - 1, 3)] || '$0-100';
+              })()}
+            </span>
           </div>
           
           <Button
