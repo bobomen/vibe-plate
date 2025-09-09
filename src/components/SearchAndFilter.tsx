@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import { usePremium } from '@/hooks/usePremium';
+import PremiumModal from '@/components/PremiumModal';
 
 export interface FilterOptions {
   searchTerm: string;
@@ -42,12 +44,27 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   resultsCount,
 }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const { isPremium } = usePremium();
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+    if (!isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    
     onFiltersChange({
       ...filters,
       [key]: value,
     });
+  };
+
+  const handleFilterSheetOpen = (open: boolean) => {
+    if (open && !isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    setIsFilterOpen(open);
   };
 
   const clearAllFilters = () => {
@@ -93,7 +110,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
 
         {/* Filter Button and Active Filters */}
         <div className="flex items-center gap-2">
-          <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <Sheet open={isFilterOpen} onOpenChange={handleFilterSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="relative">
                 <Filter className="h-4 w-4 mr-2" />
@@ -109,8 +126,27 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-lg font-semibold">篩選條件</SheetTitle>
               </SheetHeader>
-              <div className="py-2 space-y-6 overflow-y-auto max-h-[calc(85vh-100px)]">
+              <div className={`py-2 space-y-6 overflow-y-auto max-h-[calc(85vh-100px)] relative ${!isPremium ? 'pointer-events-none' : ''}`}>
                 
+                {/* Premium blur overlay */}
+                {!isPremium && (
+                  <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <div className="text-center p-6 bg-card rounded-lg shadow-lg border max-w-sm">
+                      <div className="text-2xl mb-3">🔒</div>
+                      <h3 className="text-lg font-semibold mb-2">會員專屬功能</h3>
+                      <p className="text-muted-foreground text-sm mb-4">
+                        進階篩選功能僅限會員使用
+                      </p>
+                      <Button 
+                        onClick={() => setShowPremiumModal(true)}
+                        className="w-full"
+                      >
+                        升級會員
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Distance Range */}
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-foreground">📍 離使用者的距離</label>
@@ -335,6 +371,12 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           </div>
         )}
       </div>
+      
+      <PremiumModal 
+        open={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        onUpgrade={() => setShowPremiumModal(false)}
+      />
     </div>
   );
 };
