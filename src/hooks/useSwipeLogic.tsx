@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,7 @@ export const useSwipeLogic = () => {
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const startPosRef = useRef({ x: 0, y: 0 });
 
   const handleSwipe = useCallback(async (restaurant: Restaurant, liked: boolean, onNext: () => void) => {
     setSwipeDirection(liked ? 'right' : 'left');
@@ -57,20 +57,20 @@ export const useSwipeLogic = () => {
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.target !== e.currentTarget && !(e.target as Element).closest('.card-content')) return;
     setIsDragging(false);
-    setStartPos({ x: e.clientX, y: e.clientY });
+    startPosRef.current = { x: e.clientX, y: e.clientY };
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (startPos.x === 0) return;
+    if (startPosRef.current.x === 0) return;
     
-    const deltaX = e.clientX - startPos.x;
-    const deltaY = e.clientY - startPos.y;
+    const deltaX = e.clientX - startPosRef.current.x;
+    const deltaY = e.clientY - startPosRef.current.y;
     
     if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
       setIsDragging(true);
       setDragOffset({ x: deltaX, y: deltaY });
     }
-  }, [startPos]);
+  }, []);
 
   const handleMouseUp = useCallback((restaurant: Restaurant, onNext: () => void) => {
     const currentDragOffset = dragOffset;
@@ -118,28 +118,28 @@ export const useSwipeLogic = () => {
     
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
-    setStartPos({ x: 0, y: 0 });
+    startPosRef.current = { x: 0, y: 0 };
   }, [isDragging, dragOffset, user?.id, toast]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     setIsDragging(false);
-    setStartPos({ x: touch.clientX, y: touch.clientY });
+    startPosRef.current = { x: touch.clientX, y: touch.clientY };
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (startPos.x === 0) return;
+    if (startPosRef.current.x === 0) return;
     
     const touch = e.touches[0];
-    const deltaX = touch.clientX - startPos.x;
-    const deltaY = touch.clientY - startPos.y;
+    const deltaX = touch.clientX - startPosRef.current.x;
+    const deltaY = touch.clientY - startPosRef.current.y;
     
     if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
       setIsDragging(true);
       setDragOffset({ x: deltaX, y: deltaY });
       e.preventDefault();
     }
-  }, [startPos]);
+  }, []);
 
   const handleTouchEnd = useCallback((restaurant: Restaurant, onNext: () => void) => {
     const currentDragOffset = dragOffset;
@@ -187,7 +187,7 @@ export const useSwipeLogic = () => {
     
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
-    setStartPos({ x: 0, y: 0 });
+    startPosRef.current = { x: 0, y: 0 };
   }, [isDragging, dragOffset, user?.id, toast]);
 
   return {
