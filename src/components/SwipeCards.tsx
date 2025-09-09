@@ -37,7 +37,7 @@ export const SwipeCards = React.memo(() => {
   const [userPreferences, setUserPreferences] = useState<any>(null);
   const [filters, setFilters] = useState<FilterOptions>({
     searchTerm: '',
-    priceRange: [1, 4],
+    priceRange: [0, 10],
     distanceRange: 999,
     minRating: 0,
     hasMichelinStars: false,
@@ -82,6 +82,81 @@ export const SwipeCards = React.memo(() => {
     return R * c;
   }, []);
 
+  const applyFilters = useCallback(() => {
+    let filtered = [...allRestaurants];
+
+    // Convert UI price range (0-10) to database price range (1-4)
+    const convertPriceRange = (uiRange: number[]): number[] => {
+      const [min, max] = uiRange;
+      // UI: 0=$0-100, 1=$100-200, 2=$200-300, 3=$300-400, etc.
+      // DB: 1=$0-100, 2=$100-200, 3=$200-300, 4=$300+
+      const dbMin = Math.max(1, min === 0 ? 1 : min);
+      const dbMax = Math.min(4, max === 10 ? 4 : max);
+      return [dbMin, dbMax];
+    };
+
+    const [dbMinPrice, dbMaxPrice] = convertPriceRange(filters.priceRange);
+
+    // Apply search term filter
+    if (filters.searchTerm.trim()) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(restaurant => 
+        restaurant.name.toLowerCase().includes(searchLower) ||
+        restaurant.address.toLowerCase().includes(searchLower) ||
+        restaurant.cuisine_type.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply price range filter
+    filtered = filtered.filter(restaurant => 
+      restaurant.price_range >= dbMinPrice && restaurant.price_range <= dbMaxPrice
+    );
+
+    // Apply distance filter
+    if (userLocation && filters.distanceRange < 999) {
+      filtered = filtered.filter(restaurant => {
+        const dist = calculateDistance(
+          userLocation.lat, 
+          userLocation.lng, 
+          restaurant.lat, 
+          restaurant.lng
+        );
+        return dist <= filters.distanceRange;
+      });
+    }
+
+    // Apply rating filter
+    if (filters.minRating > 0) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.google_rating >= filters.minRating
+      );
+    }
+
+    // Apply Michelin stars filter
+    if (filters.hasMichelinStars) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.michelin_stars > 0
+      );
+    }
+
+    // Apply 500 dishes filter
+    if (filters.has500Dishes) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.has_500_dishes === true
+      );
+    }
+
+    // Apply Bib Gourmand filter
+    if (filters.hasBibGourmand) {
+      filtered = filtered.filter(restaurant => 
+        restaurant.bib_gourmand === true
+      );
+    }
+
+    setRestaurants(filtered);
+    setCurrentIndex(0); // Reset to first card when filters change
+  }, [allRestaurants, filters, userLocation, calculateDistance]);
+
   const fetchRestaurants = useCallback(async () => {
     try {
       setLoading(true);
@@ -121,6 +196,30 @@ export const SwipeCards = React.memo(() => {
     fetchRestaurants();
   }, [fetchRestaurants]);
 
+  // Apply filters when filters or restaurants data changes
+  useEffect(() => {
+    if (allRestaurants.length > 0) {
+      applyFilters();
+    }
+  }, [applyFilters, allRestaurants]);
+
+  // Get user location for distance filtering
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Location access denied or unavailable:', error);
+        }
+      );
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
@@ -148,7 +247,7 @@ export const SwipeCards = React.memo(() => {
       <SearchAndFilter
         filters={filters}
         onFiltersChange={setFilters}
-        onSearch={() => {}}
+        onSearch={applyFilters}
         resultsCount={restaurants.length}
       />
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-4">
