@@ -60,17 +60,6 @@ export const SwipeCards = React.memo(() => {
     handleTouchEnd
   } = useSwipeLogic();
 
-  const currentRestaurant = useMemo(() => 
-    restaurants[currentIndex], [restaurants, currentIndex]
-  );
-
-  const distance = useMemo(() => 
-    userLocation && currentRestaurant ? 
-      calculateDistance(userLocation.lat, userLocation.lng, currentRestaurant.lat, currentRestaurant.lng) : 
-      null, 
-    [userLocation, currentRestaurant]
-  );
-
   const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -82,6 +71,17 @@ export const SwipeCards = React.memo(() => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }, []);
+
+  const currentRestaurant = useMemo(() => 
+    restaurants[currentIndex], [restaurants, currentIndex]
+  );
+
+  const distance = useMemo(() => 
+    userLocation && currentRestaurant ? 
+      calculateDistance(userLocation.lat, userLocation.lng, currentRestaurant.lat, currentRestaurant.lng) : 
+      null, 
+    [userLocation, currentRestaurant, calculateDistance]
+  );
 
   const applyFilters = useCallback(() => {
     console.log('Starting filter application...', { 
