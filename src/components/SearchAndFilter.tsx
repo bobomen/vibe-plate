@@ -45,7 +45,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
 }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const { isPremium } = usePremium();
+  const { isPremium, upgradeToPremium } = usePremium();
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
     // Allow basic filters (search, price, distance) for everyone
@@ -261,7 +261,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                           評分與特殊認證篩選僅限會員使用
                         </p>
                         <Button 
-                          onClick={() => setShowPremiumModal(true)}
+                          onClick={upgradeToPremium}
                           className="w-full"
                           size="sm"
                         >
@@ -272,103 +272,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                   )}
                 </div>
 
-                {/* Price Range */}
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-foreground">💰 價格範圍</label>
-                  <div className="px-2">
-                    <Slider
-                      value={filters.priceRange}
-                      onValueChange={(value) => handleFilterChange('priceRange', value)}
-                      max={4}
-                      min={1}
-                      step={1}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                      {PRICE_LABELS.map((label, index) => (
-                        <span key={label} className={
-                          filters.priceRange[0] <= index + 1 && filters.priceRange[1] >= index + 1 
-                            ? 'text-primary font-semibold' 
-                            : ''
-                        }>
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Minimum Rating - Google 4+ stars */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-foreground">⭐ Google評分</label>
-                    <Button
-                      variant={filters.minRating >= 4.0 ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleFilterChange('minRating', filters.minRating >= 4.0 ? 0 : 4.0)}
-                      className="h-8"
-                    >
-                      {filters.minRating >= 4.0 ? '✓ 四顆星以上' : '四顆星以上'}
-                    </Button>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                {/* Special Recognition */}
-                <div className="space-y-4">
-                  <label className="text-sm font-medium text-foreground">🏆 特殊認證</label>
-                  
-                  <div className="grid grid-cols-1 gap-3">
-                    <Button
-                      variant={filters.has500Dishes ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleFilterChange('has500Dishes', !filters.has500Dishes)}
-                      className="justify-start h-12 text-left"
-                    >
-                      <div className="flex items-center">
-                        <span className="text-lg mr-3">🍽️</span>
-                        <div>
-                          <div className="font-medium">500盤</div>
-                          <div className="text-xs opacity-70">台灣500盤認證餐廳</div>
-                        </div>
-                        {filters.has500Dishes && <span className="ml-auto">✓</span>}
-                      </div>
-                    </Button>
-                    
-                    <Button
-                      variant={filters.hasMichelinStars ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleFilterChange('hasMichelinStars', !filters.hasMichelinStars)}
-                      className="justify-start h-12 text-left"
-                    >
-                      <div className="flex items-center">
-                        <span className="text-lg mr-3">⭐</span>
-                        <div>
-                          <div className="font-medium">米其林星級</div>
-                          <div className="text-xs opacity-70">米其林指南星級餐廳</div>
-                        </div>
-                        {filters.hasMichelinStars && <span className="ml-auto">✓</span>}
-                      </div>
-                    </Button>
-                    
-                    <Button
-                      variant={filters.hasBibGourmand ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleFilterChange('hasBibGourmand', !filters.hasBibGourmand)}
-                      className="justify-start h-12 text-left"
-                    >
-                      <div className="flex items-center">
-                        <span className="text-lg mr-3">🍴</span>
-                        <div>
-                          <div className="font-medium">必比登推介</div>
-                          <div className="text-xs opacity-70">米其林必比登推介餐廳</div>
-                        </div>
-                        {filters.hasBibGourmand && <span className="ml-auto">✓</span>}
-                      </div>
-                    </Button>
-                  </div>
-                </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-6 pb-4">
@@ -483,7 +386,14 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       <PremiumModal 
         open={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
-        onUpgrade={() => setShowPremiumModal(false)}
+        onUpgrade={async () => {
+          try {
+            await upgradeToPremium();
+            setShowPremiumModal(false);
+          } catch (error) {
+            console.error('Upgrade failed:', error);
+          }
+        }}
       />
     </div>
   );
