@@ -73,15 +73,53 @@ export const useSwipeLogic = () => {
   }, [startPos]);
 
   const handleMouseUp = useCallback((restaurant: Restaurant, onNext: () => void) => {
-    if (isDragging && Math.abs(dragOffset.x) > 100) {
-      const liked = dragOffset.x > 0;
-      handleSwipe(restaurant, liked, onNext);
+    const currentDragOffset = dragOffset;
+    const currentIsDragging = isDragging;
+    
+    if (currentIsDragging && Math.abs(currentDragOffset.x) > 100) {
+      const liked = currentDragOffset.x > 0;
+      setSwipeDirection(liked ? 'right' : 'left');
+      
+      // Record the swipe async
+      (async () => {
+        try {
+          await supabase
+            .from('user_swipes')
+            .upsert({
+              user_id: user?.id,
+              restaurant_id: restaurant.id,
+              liked
+            });
+
+          if (liked) {
+            await supabase
+              .from('favorites')
+              .upsert({
+                user_id: user?.id,
+                restaurant_id: restaurant.id
+              });
+            
+            toast({
+              title: "已收藏！",
+              description: `${restaurant.name} 已加入收藏清單`,
+            });
+          }
+        } catch (error) {
+          console.error('Error recording swipe:', error);
+        }
+      })();
+
+      // Move to next card after animation
+      setTimeout(() => {
+        onNext();
+        setSwipeDirection(null);
+      }, 300);
     }
     
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
     setStartPos({ x: 0, y: 0 });
-  }, [isDragging, dragOffset.x, handleSwipe]);
+  }, [isDragging, dragOffset, user?.id, toast]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -104,15 +142,53 @@ export const useSwipeLogic = () => {
   }, [startPos]);
 
   const handleTouchEnd = useCallback((restaurant: Restaurant, onNext: () => void) => {
-    if (isDragging && Math.abs(dragOffset.x) > 100) {
-      const liked = dragOffset.x > 0;
-      handleSwipe(restaurant, liked, onNext);
+    const currentDragOffset = dragOffset;
+    const currentIsDragging = isDragging;
+    
+    if (currentIsDragging && Math.abs(currentDragOffset.x) > 100) {
+      const liked = currentDragOffset.x > 0;
+      setSwipeDirection(liked ? 'right' : 'left');
+      
+      // Record the swipe async
+      (async () => {
+        try {
+          await supabase
+            .from('user_swipes')
+            .upsert({
+              user_id: user?.id,
+              restaurant_id: restaurant.id,
+              liked
+            });
+
+          if (liked) {
+            await supabase
+              .from('favorites')
+              .upsert({
+                user_id: user?.id,
+                restaurant_id: restaurant.id
+              });
+            
+            toast({
+              title: "已收藏！",
+              description: `${restaurant.name} 已加入收藏清單`,
+            });
+          }
+        } catch (error) {
+          console.error('Error recording swipe:', error);
+        }
+      })();
+
+      // Move to next card after animation
+      setTimeout(() => {
+        onNext();
+        setSwipeDirection(null);
+      }, 300);
     }
     
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
     setStartPos({ x: 0, y: 0 });
-  }, [isDragging, dragOffset.x, handleSwipe]);
+  }, [isDragging, dragOffset, user?.id, toast]);
 
   return {
     swipeDirection,
