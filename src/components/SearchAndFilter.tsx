@@ -48,6 +48,16 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const { isPremium } = usePremium();
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+    // Allow basic filters (search, price, distance) for everyone
+    if (key === 'searchTerm' || key === 'priceRange' || key === 'distanceRange') {
+      onFiltersChange({
+        ...filters,
+        [key]: value,
+      });
+      return;
+    }
+    
+    // Premium-only filters
     if (!isPremium) {
       setShowPremiumModal(true);
       return;
@@ -60,10 +70,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   };
 
   const handleFilterSheetOpen = (open: boolean) => {
-    if (open && !isPremium) {
-      setShowPremiumModal(true);
-      return;
-    }
     setIsFilterOpen(open);
   };
 
@@ -126,27 +132,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-lg font-semibold">篩選條件</SheetTitle>
               </SheetHeader>
-              <div className={`py-2 space-y-6 overflow-y-auto max-h-[calc(85vh-100px)] relative ${!isPremium ? 'pointer-events-none' : ''}`}>
+              <div className="py-2 space-y-6 overflow-y-auto max-h-[calc(85vh-100px)]">
                 
-                {/* Premium blur overlay */}
-                {!isPremium && (
-                  <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
-                    <div className="text-center p-6 bg-card rounded-lg shadow-lg border max-w-sm">
-                      <div className="text-2xl mb-3">🔒</div>
-                      <h3 className="text-lg font-semibold mb-2">會員專屬功能</h3>
-                      <p className="text-muted-foreground text-sm mb-4">
-                        進階篩選功能僅限會員使用
-                      </p>
-                      <Button 
-                        onClick={() => setShowPremiumModal(true)}
-                        className="w-full"
-                      >
-                        升級會員
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Distance Range */}
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-foreground">📍 離使用者的距離</label>
@@ -162,6 +149,127 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Price Range */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">💰 價格範圍</label>
+                  <div className="px-2">
+                    <Slider
+                      value={filters.priceRange}
+                      onValueChange={(value) => handleFilterChange('priceRange', value)}
+                      max={4}
+                      min={1}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                      {PRICE_LABELS.map((label, index) => (
+                        <span key={label} className={
+                          filters.priceRange[0] <= index + 1 && filters.priceRange[1] >= index + 1 
+                            ? 'text-primary font-semibold' 
+                            : ''
+                        }>
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Premium Features with Blur Overlay */}
+                <div className="relative">
+                  {/* Minimum Rating - Google 4+ stars */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-foreground">⭐ Google評分</label>
+                      <Button
+                        variant={filters.minRating >= 4.0 ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleFilterChange('minRating', filters.minRating >= 4.0 ? 0 : 4.0)}
+                        className="h-8"
+                      >
+                        {filters.minRating >= 4.0 ? '✓ 四顆星以上' : '四顆星以上'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  {/* Special Recognition */}
+                  <div className="space-y-4">
+                    <label className="text-sm font-medium text-foreground">🏆 特殊認證</label>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      <Button
+                        variant={filters.has500Dishes ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleFilterChange('has500Dishes', !filters.has500Dishes)}
+                        className="justify-start h-12 text-left"
+                      >
+                        <div className="flex items-center">
+                          <span className="text-lg mr-3">🍽️</span>
+                          <div>
+                            <div className="font-medium">500盤</div>
+                            <div className="text-xs opacity-70">台灣500盤認證餐廳</div>
+                          </div>
+                          {filters.has500Dishes && <span className="ml-auto">✓</span>}
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        variant={filters.hasMichelinStars ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleFilterChange('hasMichelinStars', !filters.hasMichelinStars)}
+                        className="justify-start h-12 text-left"
+                      >
+                        <div className="flex items-center">
+                          <span className="text-lg mr-3">⭐</span>
+                          <div>
+                            <div className="font-medium">米其林星級</div>
+                            <div className="text-xs opacity-70">米其林指南星級餐廳</div>
+                          </div>
+                          {filters.hasMichelinStars && <span className="ml-auto">✓</span>}
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        variant={filters.hasBibGourmand ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleFilterChange('hasBibGourmand', !filters.hasBibGourmand)}
+                        className="justify-start h-12 text-left"
+                      >
+                        <div className="flex items-center">
+                          <span className="text-lg mr-3">🍴</span>
+                          <div>
+                            <div className="font-medium">必比登推介</div>
+                            <div className="text-xs opacity-70">米其林必比登推介餐廳</div>
+                          </div>
+                          {filters.hasBibGourmand && <span className="ml-auto">✓</span>}
+                        </div>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Premium blur overlay for advanced filters only */}
+                  {!isPremium && (
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg border border-border/50">
+                      <div className="text-center p-6 bg-card rounded-lg shadow-lg border max-w-sm mx-4">
+                        <div className="text-2xl mb-3">🔒</div>
+                        <h3 className="text-lg font-semibold mb-2">會員專屬功能</h3>
+                        <p className="text-muted-foreground text-sm mb-4">
+                          評分與特殊認證篩選僅限會員使用
+                        </p>
+                        <Button 
+                          onClick={() => setShowPremiumModal(true)}
+                          className="w-full"
+                          size="sm"
+                        >
+                          立即升級
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Price Range */}
