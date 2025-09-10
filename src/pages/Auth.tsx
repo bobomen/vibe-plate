@@ -11,7 +11,7 @@ import { Heart, UtensilsCrossed, KeyRound, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
-  const { user, signUp, signIn, resetPassword, loading } = useAuth();
+  const { user, signUp, signIn, resetPassword, loading, authLoading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
@@ -21,15 +21,27 @@ const Auth = () => {
   useEffect(() => {
     // Check for auth callback parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const type = urlParams.get('type');
+    const code = urlParams.get('code');
     const error = urlParams.get('error');
     const errorDescription = urlParams.get('error_description');
     
     if (error) {
       let message = '驗證失敗';
-      if (errorDescription) {
+      
+      // Provide more specific error messages
+      if (error === 'access_denied') {
+        message = '訪問被拒絕，請重新嘗試驗證';
+      } else if (error === 'server_error') {
+        message = '服務器錯誤，請稍後重試';
+      } else if (error === 'exchange_failed') {
+        message = '驗證失敗，請重新點擊郵件中的驗證連結';
+      } else if (error === 'processing_failed') {
+        message = '驗證處理失敗，請重新嘗試或聯繫客服';
+      } else if (errorDescription) {
         if (errorDescription.includes('expired') || errorDescription.includes('token')) {
           message = '驗證連結已過期，請重新申請重設密碼或重新註冊';
+        } else if (errorDescription.includes('invalid') || errorDescription.includes('not found')) {
+          message = '無效的驗證連結，請檢查郵件中的連結或重新申請';
         } else {
           message = errorDescription;
         }
@@ -44,45 +56,51 @@ const Auth = () => {
         duration: 10000,
       });
       
-      // Clear URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (type) {
-      if (type === 'signup') {
-        setAuthMessage({ 
-          type: 'success', 
-          message: '郵件驗證成功！您現在可以使用您的帳號登入了' 
-        });
-        
-        toast({
-          title: "驗證成功！",
-          description: "郵件驗證完成，請使用您的帳號登入",
-          duration: 8000,
-        });
-      } else if (type === 'recovery') {
-        setAuthMessage({ 
-          type: 'success', 
-          message: '密碼重設驗證成功！請設定您的新密碼' 
-        });
-        
-        toast({
-          title: "驗證成功！",
-          description: "請在下方設定您的新密碼",
-          duration: 8000,
-        });
-      }
-      
-      // Clear URL parameters after processing
+      // Clear error parameters after a delay
       setTimeout(() => {
-        window.history.replaceState({}, document.title, window.location.pathname);
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('error');
+        newUrl.searchParams.delete('error_description');
+        window.history.replaceState({}, document.title, newUrl.toString());
         setAuthMessage(null);
-      }, 10000);
+      }, 12000);
+      
+    } else if (code && !authLoading) {
+      // Code is being processed, show loading message
+      setAuthMessage({ 
+        type: 'success', 
+        message: '正在處理驗證，請稍候...' 
+      });
+      
+    } else if (!code && !error && user) {
+      // Successfully authenticated
+      setAuthMessage({ 
+        type: 'success', 
+        message: '驗證成功！歡迎使用美食滑卡' 
+      });
+      
+      toast({
+        title: "驗證成功！",
+        description: "歡迎使用美食滑卡，立即開始探索美食",
+        duration: 5000,
+      });
+      
+      // Clear success message after redirect
+      setTimeout(() => {
+        setAuthMessage(null);
+      }, 3000);
     }
-  }, [toast]);
+  }, [toast, authLoading, user]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">
+            {authLoading ? '正在驗證您的帳號...' : '載入中...'}
+          </p>
+        </div>
       </div>
     );
   }

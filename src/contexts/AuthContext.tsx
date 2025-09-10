@@ -10,6 +10,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   loading: boolean;
+  authLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -26,30 +27,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
-    // Check for auth callback first
+    let isHandlingCallback = false;
+
+    // Handle PKCE auth callback with proper error handling
     const handleAuthCallback = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token');
-      const type = urlParams.get('type');
+      if (isHandlingCallback) return;
+      isHandlingCallback = true;
       
-      if (accessToken && refreshToken) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const error = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
+      
+      // Handle errors first
+      if (error) {
+        console.error('Auth callback error:', error, errorDescription);
+        // Let the Auth component handle error display
+        return;
+      }
+      
+      // Handle PKCE code exchange
+      if (code) {
+        setAuthLoading(true);
         try {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
-          if (error) {
-            console.error('Auth callback error:', error);
+          if (exchangeError) {
+            console.error('Code exchange error:', exchangeError);
+            // Add error to URL for Auth component to handle
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('error', 'exchange_failed');
+            newUrl.searchParams.set('error_description', exchangeError.message);
+            newUrl.searchParams.delete('code');
+            window.history.replaceState({}, document.title, newUrl.toString());
           } else if (data.session) {
-            // Clear URL parameters after successful auth
+            // Success - clear URL parameters
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         } catch (error) {
-          console.error('Auth callback processing error:', error);
+          console.error('Code exchange processing error:', error);
+          // Add error to URL for Auth component to handle
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('error', 'processing_failed');
+          newUrl.searchParams.set('error_description', 'Authentication processing failed');
+          newUrl.searchParams.delete('code');
+          window.history.replaceState({}, document.title, newUrl.toString());
+        } finally {
+          setAuthLoading(false);
         }
       }
     };
@@ -57,12 +84,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Handle auth callback before setting up listeners
     handleAuthCallback();
 
-    // Set up auth state listener
+    // Set up auth state listener with proper error handling
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+        
+        // Only synchronous state updates here to prevent deadlocks
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle different auth events
+        if (event === 'SIGNED_IN') {
+          console.log('User signed in successfully');
+        } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed');
+        }
       }
     );
 
@@ -70,6 +109,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch((error) => {
+      console.error('Error getting initial session:', error);
       setLoading(false);
     });
 
@@ -79,35 +121,80 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/auth`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+      } else {
+        console.log('Sign up successful, confirmation email sent to:', email);
       }
-    });
-    return { error };
+      
+      return { error };
+    } catch (error) {
+      console.error('Sign up processing error:', error);
+      return { error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+      } else {
+        console.log('Sign in successful for:', email);
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('Sign in processing error:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      } else {
+        console.log('Sign out successful');
+      }
+    } catch (error) {
+      console.error('Sign out processing error:', error);
+    }
   };
 
   const resetPassword = async (email: string) => {
     const redirectUrl = `${window.location.origin}/auth`;
     
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
-    return { error };
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+      
+      if (error) {
+        console.error('Reset password error:', error);
+      } else {
+        console.log('Reset password email sent to:', email);
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('Reset password processing error:', error);
+      return { error };
+    }
   };
 
   const value = {
@@ -118,6 +205,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signOut,
     resetPassword,
     loading,
+    authLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
