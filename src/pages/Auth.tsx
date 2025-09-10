@@ -7,13 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, UtensilsCrossed } from 'lucide-react';
+import { Heart, UtensilsCrossed, KeyRound } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
-  const { user, signUp, signIn, loading } = useAuth();
+  const { user, signUp, signIn, resetPassword, loading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   if (loading) {
     return (
@@ -88,19 +90,23 @@ const Auth = () => {
     if (error) {
       let errorMessage = error.message;
       
-      // 提供更明確的錯誤訊息
+      // 提供更明確的錯誤訊息和解決方案
       if (error.message.includes('Invalid login credentials')) {
-        errorMessage = "電子郵件或密碼錯誤，請檢查您的登入資訊";
+        errorMessage = "電子郵件或密碼錯誤。如果您忘記密碼，請點擊下方的「忘記密碼？」重設密碼";
+        // 自動設定重設密碼的信箱
+        const email = formData.get('email') as string;
+        if (email) setResetEmail(email);
       } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = "請先到您的信箱點擊驗證連結完成帳號驗證";
+        errorMessage = "請先到您的信箱點擊驗證連結完成帳號驗證，如仍無法登入請重設密碼";
       } else if (error.message.includes('Too many requests')) {
-        errorMessage = "登入嘗試次數過多，請稍後再試";
+        errorMessage = "登入嘗試次數過多，請稍後再試或重設密碼";
       }
       
       toast({
         title: "登入失敗",
         description: errorMessage,
         variant: "destructive",
+        duration: 8000,
       });
     }
     setIsLoading(false);
@@ -120,6 +126,33 @@ const Auth = () => {
       title: "功能開發中", 
       description: "Apple 登入功能即將推出",
     });
+  };
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('resetEmail') as string;
+
+    const { error } = await resetPassword(email);
+    
+    if (error) {
+      toast({
+        title: "重設密碼失敗",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "重設密碼郵件已發送！",
+        description: "請檢查您的信箱，點擊郵件中的連結來重設密碼",
+        duration: 10000,
+      });
+      setShowResetForm(false);
+      setResetEmail('');
+    }
+    setIsLoading(false);
   };
 
   const GoogleIcon = () => (
@@ -190,36 +223,98 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">電子郵件</Label>
-                  <Input
-                    id="signin-email"
-                    name="email"
-                    type="email"
-                    placeholder="請輸入電子郵件"
-                    required
-                  />
+              {!showResetForm ? (
+                <>
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email">電子郵件</Label>
+                      <Input
+                        id="signin-email"
+                        name="email"
+                        type="email"
+                        placeholder="請輸入電子郵件"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password">密碼</Label>
+                      <Input
+                        id="signin-password"
+                        name="password"
+                        type="password"
+                        placeholder="請輸入密碼"
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "登入中..." : "登入"}
+                    </Button>
+                  </form>
+                  
+                  <div className="mt-4 text-center">
+                    <Button
+                      variant="link"
+                      onClick={() => setShowResetForm(true)}
+                      className="text-sm text-muted-foreground hover:text-primary"
+                    >
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      忘記密碼？
+                    </Button>
+                  </div>
+                  
+                  <SocialAuthButtons />
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-semibold">重設密碼</h3>
+                    <p className="text-sm text-muted-foreground">
+                      請輸入您的電子郵件地址，我們將發送重設密碼的連結給您
+                    </p>
+                  </div>
+                  
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email">電子郵件</Label>
+                      <Input
+                        id="reset-email"
+                        name="resetEmail"
+                        type="email"
+                        placeholder="請輸入電子郵件"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowResetForm(false);
+                          setResetEmail('');
+                        }}
+                        className="flex-1"
+                        disabled={isLoading}
+                      >
+                        返回登入
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="flex-1" 
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "發送中..." : "發送重設郵件"}
+                      </Button>
+                    </div>
+                  </form>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">密碼</Label>
-                  <Input
-                    id="signin-password"
-                    name="password"
-                    type="password"
-                    placeholder="請輸入密碼"
-                    required
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? "登入中..." : "登入"}
-                </Button>
-              </form>
-              <SocialAuthButtons />
+              )}
             </TabsContent>
             
             <TabsContent value="signup">
