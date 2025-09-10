@@ -163,11 +163,25 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
 
   // Apply filters to restaurants
   const applyFilters = useCallback(() => {
-    if (!allRestaurants.length) return;
+    console.log('[applyFilters] Starting with:', {
+      allRestaurants: allRestaurants.length,
+      userSwipes: userSwipes.size,
+      filters
+    });
+    
+    if (!allRestaurants.length) {
+      console.log('[applyFilters] No restaurants available');
+      setRestaurants([]);
+      setCurrentIndex(0);
+      return;
+    }
 
     let filtered = allRestaurants.filter(restaurant => {
       // Exclude swiped restaurants
-      if (userSwipes.has(restaurant.id)) return false;
+      if (userSwipes.has(restaurant.id)) {
+        console.log('[applyFilters] Excluding swiped restaurant:', restaurant.name);
+        return false;
+      }
 
       // Search filter
       if (filters.searchTerm) {
@@ -206,6 +220,12 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       return true;
     });
 
+    console.log('[applyFilters] Filtered results:', {
+      originalCount: allRestaurants.length,
+      filteredCount: filtered.length,
+      swipedCount: userSwipes.size
+    });
+
     setRestaurants(filtered);
     setCurrentIndex(0);
   }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance]);
@@ -216,11 +236,9 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
   const resetPersonalSwipes = useCallback(async () => {
     if (!user?.id || groupId) return false; // Only for personal swipes
 
-    setLoading(true);
+    console.log('[resetPersonalSwipes] Starting reset for user:', user.id);
     
     try {
-      console.log('[resetPersonalSwipes] Starting reset for user:', user.id);
-      
       const operation = async () => {
         // INVARIANT: Only delete personal swipes (group_id IS NULL), not favorites
         const { error, count } = await supabase
@@ -236,26 +254,29 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
 
       const deletedCount = await withRetry(operation);
       
-      // Clear local state immediately
+      console.log('[resetPersonalSwipes] Clearing local state...');
+      
+      // Clear local state immediately and force rerender
       setUserSwipes(new Set());
       setUserPreference({});
       setCurrentIndex(0);
       
-      console.log('[resetPersonalSwipes] Reloading data...');
-      
-      // Reload data sequentially to ensure proper state updates
-      await fetchRestaurants();
-      await fetchUserSwipes();
-      
-      // Apply filters after data is loaded - use a callback to ensure state is updated
-      await new Promise<void>((resolve) => {
-        // Force a rerender cycle before applying filters
-        setTimeout(() => {
-          console.log('[resetPersonalSwipes] Applying filters to', allRestaurants.length, 'restaurants');
-          applyFilters();
-          resolve();
-        }, 50);
-      });
+      // Force immediate re-application of filters with cleared state
+      setTimeout(() => {
+        console.log('[resetPersonalSwipes] Re-applying filters with cleared state');
+        console.log('[resetPersonalSwipes] Available restaurants:', allRestaurants.length);
+        
+        // Manually apply filter logic to check what should be available
+        const availableRestaurants = allRestaurants.filter(restaurant => {
+          // Since we just cleared userSwipes, all restaurants should be available
+          return true;
+        });
+        
+        console.log('[resetPersonalSwipes] Should have restaurants:', availableRestaurants.length);
+        
+        setRestaurants(availableRestaurants);
+        setCurrentIndex(0);
+      }, 50);
       
       toast({
         title: "重置成功",
@@ -271,10 +292,8 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
         variant: "destructive"
       });
       return false;
-    } finally {
-      setLoading(false);
     }
-  }, [user?.id, groupId, withRetry, fetchRestaurants, fetchUserSwipes, applyFilters, allRestaurants.length, toast]);
+  }, [user?.id, groupId, withRetry, allRestaurants, setUserSwipes, setUserPreference, setCurrentIndex, setRestaurants, toast]);
 
   // Get current restaurant
   const currentRestaurant = useMemo(() => 

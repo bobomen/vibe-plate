@@ -46,7 +46,7 @@ export const useSwipeLogic = () => {
           .select('id')
           .eq('group_id', groupId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
           
         if (membershipError || !membership) {
           throw new Error('您不是此群組的成員，無法投票');
@@ -54,7 +54,7 @@ export const useSwipeLogic = () => {
         console.log('[handleSwipe] Group membership validated');
       }
 
-      // Record the swipe with explicit group_id handling
+      // Record the swipe - use insert instead of upsert to handle conflicts better
       const swipeData = {
         user_id: user.id,
         restaurant_id: restaurant.id,
@@ -64,20 +64,32 @@ export const useSwipeLogic = () => {
       
       console.log('[handleSwipe] Inserting swipe data:', swipeData);
       
-      const { data, error } = await supabase
+      // Try insert first, if conflict then update
+      const { data: insertData, error: insertError } = await supabase
         .from('user_swipes')
-        .upsert(swipeData, { 
-          onConflict: 'user_id,restaurant_id,group_id',
-          ignoreDuplicates: false 
-        })
+        .insert(swipeData)
         .select();
 
-      if (error) {
-        console.error('[handleSwipe] Database error:', error);
-        throw error;
+      if (insertError) {
+        // If it's a duplicate error, try update instead
+        if (insertError.code === '23505') {
+          console.log('[handleSwipe] Duplicate found, updating existing record');
+          const { data: updateData, error: updateError } = await supabase
+            .from('user_swipes')
+            .update({ liked })
+            .eq('user_id', user.id)
+            .eq('restaurant_id', restaurant.id)
+            .eq('group_id', groupId || null)
+            .select();
+            
+          if (updateError) throw updateError;
+          console.log('[handleSwipe] Swipe updated successfully:', updateData);
+        } else {
+          throw insertError;
+        }
+      } else {
+        console.log('[handleSwipe] Swipe recorded successfully:', insertData);
       }
-      
-      console.log('[handleSwipe] Swipe recorded successfully:', data);
 
       // Add to favorites if liked (only for personal swipes)
       if (liked && !groupId) {
@@ -149,96 +161,15 @@ export const useSwipeLogic = () => {
     
     if (currentIsDragging && Math.abs(currentDragOffset.x) > 100) {
       const liked = currentDragOffset.x > 0;
-      setSwipeDirection(liked ? 'right' : 'left');
       
-      // Record the swipe async with proper validation
-      (async () => {
-        try {
-          if (!user?.id) {
-            throw new Error('用戶未登入');
-          }
-          
-          console.log('[handleMouseUp] Recording mouse swipe:', {
-            userId: user.id,
-            restaurantId: restaurant.id,
-            liked,
-            groupId: groupId || 'null (personal)'
-          });
-          
-          // Validate group membership for group swipes
-          if (groupId) {
-            const { data: membership, error: membershipError } = await supabase
-              .from('group_members')
-              .select('id')
-              .eq('group_id', groupId)
-              .eq('user_id', user.id)
-              .single();
-              
-            if (membershipError || !membership) {
-              throw new Error('您不是此群組的成員，無法投票');
-            }
-          }
-          
-          const { data, error } = await supabase
-            .from('user_swipes')
-            .upsert({
-              user_id: user.id,
-              restaurant_id: restaurant.id,
-              liked,
-              group_id: groupId || null
-            }, { 
-              onConflict: 'user_id,restaurant_id,group_id',
-              ignoreDuplicates: false 
-            })
-            .select();
-
-          if (error) throw error;
-          console.log('[handleMouseUp] Swipe recorded:', data);
-
-          if (liked && !groupId) {
-            await supabase
-              .from('favorites')
-              .upsert({
-                user_id: user.id,
-                restaurant_id: restaurant.id
-              });
-            
-            toast({
-              title: "已收藏！",
-              description: `${restaurant.name} 已加入收藏清單`,
-            });
-          } else if (liked && groupId) {
-            toast({
-              title: "已投票！",
-              description: `你對 ${restaurant.name} 投了讚成票`,
-            });
-          } else if (!liked && groupId) {
-            toast({
-              title: "已投票！",
-              description: `你對 ${restaurant.name} 投了反對票`,
-            });
-          }
-        } catch (error) {
-          console.error('[handleMouseUp] Error recording swipe:', error);
-          toast({
-            title: "操作失敗",
-            description: `無法記錄您的選擇：${error.message}`,
-            variant: "destructive"
-          });
-        }
-      })();
-
-      // Move to next card after animation
-      setTimeout(() => {
-        onNext();
-        setSwipeDirection(null);
-      }, 300);
+      // Use the same handleSwipe function for consistency
+      handleSwipe(restaurant, liked, onNext, groupId);
     }
     
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
     startPosRef.current = { x: 0, y: 0 };
-  }, [isDragging, dragOffset, user?.id, toast]);
+  }, [isDragging, dragOffset, handleSwipe]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -266,96 +197,15 @@ export const useSwipeLogic = () => {
     
     if (currentIsDragging && Math.abs(currentDragOffset.x) > 100) {
       const liked = currentDragOffset.x > 0;
-      setSwipeDirection(liked ? 'right' : 'left');
       
-      // Record the swipe async with proper validation
-      (async () => {
-        try {
-          if (!user?.id) {
-            throw new Error('用戶未登入');
-          }
-          
-          console.log('[handleTouchEnd] Recording touch swipe:', {
-            userId: user.id,
-            restaurantId: restaurant.id,
-            liked,
-            groupId: groupId || 'null (personal)'
-          });
-          
-          // Validate group membership for group swipes
-          if (groupId) {
-            const { data: membership, error: membershipError } = await supabase
-              .from('group_members')
-              .select('id')
-              .eq('group_id', groupId)
-              .eq('user_id', user.id)
-              .single();
-              
-            if (membershipError || !membership) {
-              throw new Error('您不是此群組的成員，無法投票');
-            }
-          }
-          
-          const { data, error } = await supabase
-            .from('user_swipes')
-            .upsert({
-              user_id: user.id,
-              restaurant_id: restaurant.id,
-              liked,
-              group_id: groupId || null
-            }, { 
-              onConflict: 'user_id,restaurant_id,group_id',
-              ignoreDuplicates: false 
-            })
-            .select();
-
-          if (error) throw error;
-          console.log('[handleTouchEnd] Swipe recorded:', data);
-
-          if (liked && !groupId) {
-            await supabase
-              .from('favorites')
-              .upsert({
-                user_id: user.id,
-                restaurant_id: restaurant.id
-              });
-            
-            toast({
-              title: "已收藏！",
-              description: `${restaurant.name} 已加入收藏清單`,
-            });
-          } else if (liked && groupId) {
-            toast({
-              title: "已投票！",
-              description: `你對 ${restaurant.name} 投了讚成票`,
-            });
-          } else if (!liked && groupId) {
-            toast({
-              title: "已投票！",
-              description: `你對 ${restaurant.name} 投了反對票`,
-            });
-          }
-        } catch (error) {
-          console.error('[handleTouchEnd] Error recording swipe:', error);
-          toast({
-            title: "操作失敗",
-            description: `無法記錄您的選擇：${error.message}`,
-            variant: "destructive"
-          });
-        }
-      })();
-
-      // Move to next card after animation
-      setTimeout(() => {
-        onNext();
-        setSwipeDirection(null);
-      }, 300);
+      // Use the same handleSwipe function for consistency
+      handleSwipe(restaurant, liked, onNext, groupId);
     }
     
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
     startPosRef.current = { x: 0, y: 0 };
-  }, [isDragging, dragOffset, user?.id, toast]);
+  }, [isDragging, dragOffset, handleSwipe]);
 
   return {
     swipeDirection,
