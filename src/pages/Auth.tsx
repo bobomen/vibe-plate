@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, UtensilsCrossed, KeyRound } from 'lucide-react';
+import { Heart, UtensilsCrossed, KeyRound, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
@@ -16,6 +16,68 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [authMessage, setAuthMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  useEffect(() => {
+    // Check for auth callback parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+    
+    if (error) {
+      let message = '驗證失敗';
+      if (errorDescription) {
+        if (errorDescription.includes('expired') || errorDescription.includes('token')) {
+          message = '驗證連結已過期，請重新申請重設密碼或重新註冊';
+        } else {
+          message = errorDescription;
+        }
+      }
+      
+      setAuthMessage({ type: 'error', message });
+      
+      toast({
+        title: "驗證失敗",
+        description: message,
+        variant: "destructive",
+        duration: 10000,
+      });
+      
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (type) {
+      if (type === 'signup') {
+        setAuthMessage({ 
+          type: 'success', 
+          message: '郵件驗證成功！您現在可以使用您的帳號登入了' 
+        });
+        
+        toast({
+          title: "驗證成功！",
+          description: "郵件驗證完成，請使用您的帳號登入",
+          duration: 8000,
+        });
+      } else if (type === 'recovery') {
+        setAuthMessage({ 
+          type: 'success', 
+          message: '密碼重設驗證成功！請設定您的新密碼' 
+        });
+        
+        toast({
+          title: "驗證成功！",
+          description: "請在下方設定您的新密碼",
+          duration: 8000,
+        });
+      }
+      
+      // Clear URL parameters after processing
+      setTimeout(() => {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setAuthMessage(null);
+      }, 10000);
+    }
+  }, [toast]);
 
   if (loading) {
     return (
@@ -216,6 +278,19 @@ const Auth = () => {
           <CardDescription>發現你喜愛的餐廳，與朋友分享美食體驗</CardDescription>
         </CardHeader>
         <CardContent>
+          {authMessage && (
+            <div className={`mb-4 p-3 rounded-lg border ${
+              authMessage.type === 'success' 
+                ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' 
+                : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300'
+            }`}>
+              <div className="flex items-center gap-2">
+                {authMessage.type === 'success' && <CheckCircle className="h-4 w-4" />}
+                <span className="text-sm font-medium">{authMessage.message}</span>
+              </div>
+            </div>
+          )}
+          
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">登入</TabsTrigger>
