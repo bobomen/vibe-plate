@@ -217,9 +217,19 @@ const Groups = () => {
         .from('groups')
         .select('id')
         .eq('code', joinCode.trim())
-        .single();
+        .maybeSingle();
 
-      if (groupError || !groupData) {
+      if (groupError) {
+        console.error('Error finding group:', groupError);
+        toast({
+          title: "查詢失敗",
+          description: "無法查詢群組，請重試",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!groupData) {
         toast({
           title: "無效的群組代碼",
           description: "請檢查代碼是否正確",
