@@ -49,15 +49,27 @@ const Auth = () => {
     const { error } = await signUp(email, password);
     
     if (error) {
+      let errorMessage = error.message;
+      
+      // 提供更明確的錯誤訊息
+      if (error.message.includes('User already registered')) {
+        errorMessage = "此電子郵件已經註冊過，請直接登入或重設密碼";
+      } else if (error.message.includes('Invalid email')) {
+        errorMessage = "請輸入有效的電子郵件地址";
+      } else if (error.message.includes('Password')) {
+        errorMessage = "密碼至少需要6個字元";
+      }
+      
       toast({
         title: "註冊失敗",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } else {
       toast({
         title: "註冊成功！",
-        description: "請檢查您的郵箱並點擊驗證鏈接",
+        description: "請檢查您的郵箱並點擊驗證鏈接，驗證完成後即可登入",
+        duration: 8000, // 延長顯示時間
       });
     }
     setIsLoading(false);
@@ -74,9 +86,20 @@ const Auth = () => {
     const { error } = await signIn(email, password);
     
     if (error) {
+      let errorMessage = error.message;
+      
+      // 提供更明確的錯誤訊息
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = "電子郵件或密碼錯誤，請檢查您的登入資訊";
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = "請先到您的信箱點擊驗證連結完成帳號驗證";
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = "登入嘗試次數過多，請稍後再試";
+      }
+      
       toast({
         title: "登入失敗",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     }
