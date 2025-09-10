@@ -16,17 +16,18 @@ export const useSwipeLogic = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const startPosRef = useRef({ x: 0, y: 0 });
 
-  const handleSwipe = useCallback(async (restaurant: Restaurant, liked: boolean, onNext: () => void) => {
+  const handleSwipe = useCallback(async (restaurant: Restaurant, liked: boolean, onNext: () => void, groupId?: string) => {
     setSwipeDirection(liked ? 'right' : 'left');
     
     try {
-      // Record the swipe
+      // Record the swipe with optional group_id
       await supabase
         .from('user_swipes')
         .upsert({
           user_id: user?.id,
           restaurant_id: restaurant.id,
-          liked
+          liked,
+          group_id: groupId || null
         });
 
       // Add to favorites if liked
@@ -72,7 +73,7 @@ export const useSwipeLogic = () => {
     }
   }, []);
 
-  const handleMouseUp = useCallback((restaurant: Restaurant, onNext: () => void) => {
+  const handleMouseUp = useCallback((restaurant: Restaurant, onNext: () => void, groupId?: string) => {
     const currentDragOffset = dragOffset;
     const currentIsDragging = isDragging;
     
@@ -88,7 +89,8 @@ export const useSwipeLogic = () => {
             .upsert({
               user_id: user?.id,
               restaurant_id: restaurant.id,
-              liked
+              liked,
+              group_id: groupId || null
             });
 
           if (liked) {
@@ -141,7 +143,7 @@ export const useSwipeLogic = () => {
     }
   }, []);
 
-  const handleTouchEnd = useCallback((restaurant: Restaurant, onNext: () => void) => {
+  const handleTouchEnd = useCallback((restaurant: Restaurant, onNext: () => void, groupId?: string) => {
     const currentDragOffset = dragOffset;
     const currentIsDragging = isDragging;
     
@@ -157,7 +159,8 @@ export const useSwipeLogic = () => {
             .upsert({
               user_id: user?.id,
               restaurant_id: restaurant.id,
-              liked
+              liked,
+              group_id: groupId || null
             });
 
           if (liked) {

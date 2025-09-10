@@ -305,6 +305,7 @@ export type Database = {
       user_swipes: {
         Row: {
           created_at: string
+          group_id: string | null
           id: string
           liked: boolean
           restaurant_id: string
@@ -312,6 +313,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          group_id?: string | null
           id?: string
           liked: boolean
           restaurant_id: string
@@ -319,12 +321,20 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          group_id?: string | null
           id?: string
           liked?: boolean
           restaurant_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_swipes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_swipes_restaurant_id_fkey"
             columns: ["restaurant_id"]

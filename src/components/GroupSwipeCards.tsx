@@ -134,29 +134,27 @@ export const GroupSwipeCards = React.memo(() => {
     }
   }, [groupId, user?.id, toast, navigate]);
 
-  // Fetch user's group swipes and preferences
+  // Fetch user's group swipes for this specific group
   const fetchUserSwipes = useCallback(async () => {
     if (!user?.id || !groupId) return;
 
     try {
-      // Get user's swipes in this group context (we'll track by group context later)
-      // For now, get all user swipes to show their previous preferences
+      // Get user's swipes in this specific group
       const { data: swipeData, error: swipeError } = await supabase
         .from('user_swipes')
         .select('restaurant_id, liked')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('group_id', groupId);
 
       if (swipeError) throw swipeError;
 
-      // Build preference map and swipe set
+      // Build preference map and swipe set for this group only
       const preferences: { [key: string]: boolean } = {};
       const groupSwipeSet = new Set<string>();
 
       if (swipeData) {
         swipeData.forEach(swipe => {
           preferences[swipe.restaurant_id] = swipe.liked;
-          // For now, consider all swipes as group swipes
-          // Later we can add group_id to user_swipes table if needed
           groupSwipeSet.add(swipe.restaurant_id);
         });
       }
@@ -260,13 +258,14 @@ export const GroupSwipeCards = React.memo(() => {
   }, []);
 
   const handleCardSwipe = useCallback((liked: boolean) => {
-    if (currentRestaurant) {
-      handleSwipe(currentRestaurant, liked, handleNext);
+    if (currentRestaurant && groupId) {
+      // Pass groupId for group swipes
+      handleSwipe(currentRestaurant, liked, handleNext, groupId);
       // Update user group swipes
       setUserGroupSwipes(prev => new Set([...prev, currentRestaurant.id]));
       setUserPreference(prev => ({ ...prev, [currentRestaurant.id]: liked }));
     }
-  }, [currentRestaurant, handleSwipe, handleNext]);
+  }, [currentRestaurant, groupId, handleSwipe, handleNext]);
 
   const handleCardClick = useCallback(() => {
     if (!isDragging && currentRestaurant) {
@@ -422,10 +421,10 @@ export const GroupSwipeCards = React.memo(() => {
             dragOffset={dragOffset}
             onMouseDown={handleMouseDown}
             onMouseMove={(e) => handleMouseMove(e)}
-            onMouseUp={() => handleMouseUp(currentRestaurant, handleNext)}
+            onMouseUp={() => handleMouseUp(currentRestaurant, handleNext, groupId)}
             onTouchStart={handleTouchStart}
             onTouchMove={(e) => handleTouchMove(e)}
-            onTouchEnd={() => handleTouchEnd(currentRestaurant, handleNext)}
+            onTouchEnd={() => handleTouchEnd(currentRestaurant, handleNext, groupId)}
           />
           <div className="text-center text-sm text-muted-foreground mt-4">
             {currentIndex + 1} / {restaurants.length}

@@ -35,7 +35,7 @@ export const SwipeCards = React.memo(() => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [userPreferences, setUserPreferences] = useState<any>(null);
+  const [userPersonalSwipes, setUserPersonalSwipes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterOptions>({
     searchTerm: '',
     priceRange: [0, 10],
@@ -83,6 +83,29 @@ export const SwipeCards = React.memo(() => {
     [userLocation, currentRestaurant, calculateDistance]
   );
 
+  // Fetch user's personal swipes (group_id IS NULL)
+  const fetchUserPersonalSwipes = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_swipes')
+        .select('restaurant_id')
+        .eq('user_id', user.id)
+        .is('group_id', null);
+
+      if (error) throw error;
+
+      const swipeSet = new Set<string>();
+      if (data) {
+        data.forEach(swipe => swipeSet.add(swipe.restaurant_id));
+      }
+      setUserPersonalSwipes(swipeSet);
+    } catch (error) {
+      console.error('Error fetching personal swipes:', error);
+    }
+  }, [user?.id]);
+
   const applyFilters = useCallback(() => {
     console.log('Starting filter application...', { 
       totalRestaurants: allRestaurants.length,
@@ -91,6 +114,9 @@ export const SwipeCards = React.memo(() => {
     });
     
     let filtered = [...allRestaurants];
+
+    // First, exclude restaurants user has already swiped in personal mode
+    filtered = filtered.filter(restaurant => !userPersonalSwipes.has(restaurant.id));
 
     // Convert UI price range (0-10) to database price range (1-4)
     const convertPriceRange = (uiRange: number[]): number[] => {
@@ -178,7 +204,7 @@ export const SwipeCards = React.memo(() => {
     console.log(`Final filtered results: ${filtered.length} restaurants`);
     setRestaurants(filtered);
     setCurrentIndex(0); // Reset to first card when filters change
-  }, [allRestaurants, filters, userLocation, calculateDistance]);
+  }, [allRestaurants, filters, userLocation, calculateDistance, userPersonalSwipes]);
 
   const fetchRestaurants = useCallback(async () => {
     try {
@@ -205,7 +231,10 @@ export const SwipeCards = React.memo(() => {
 
   const handleCardSwipe = useCallback((liked: boolean) => {
     if (currentRestaurant) {
+      // Don't pass groupId for personal swipes (will be null)
       handleSwipe(currentRestaurant, liked, handleNext);
+      // Update personal swipes set
+      setUserPersonalSwipes(prev => new Set([...prev, currentRestaurant.id]));
     }
   }, [currentRestaurant, handleSwipe, handleNext]);
 
@@ -217,19 +246,21 @@ export const SwipeCards = React.memo(() => {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [fetchRestaurants]);
+    fetchUserPersonalSwipes();
+  }, [fetchRestaurants, fetchUserPersonalSwipes]);
 
-  // Apply filters when filters, restaurants data, or location changes
+  // Apply filters when filters, restaurants data, location, or personal swipes change
   useEffect(() => {
     if (allRestaurants.length > 0) {
       console.log('Applying filters...', { 
         restaurantsCount: allRestaurants.length, 
         filters, 
-        hasLocation: !!userLocation 
+        hasLocation: !!userLocation,
+        personalSwipesCount: userPersonalSwipes.size
       });
       applyFilters();
     }
-  }, [allRestaurants, filters, userLocation, applyFilters]);
+  }, [allRestaurants, filters, userLocation, userPersonalSwipes, applyFilters]);
 
   // Get user location for distance filtering - only after restaurants are loaded
   useEffect(() => {
@@ -338,10 +369,10 @@ export const SwipeCards = React.memo(() => {
           dragOffset={dragOffset}
           onMouseDown={handleMouseDown}
           onMouseMove={(e) => handleMouseMove(e)}
-          onMouseUp={() => handleMouseUp(currentRestaurant, handleNext)}
-          onTouchStart={handleTouchStart}
-          onTouchMove={(e) => handleTouchMove(e)}
-          onTouchEnd={() => handleTouchEnd(currentRestaurant, handleNext)}
+            onMouseUp={() => handleMouseUp(currentRestaurant, handleNext)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={(e) => handleTouchMove(e)}
+            onTouchEnd={() => handleTouchEnd(currentRestaurant, handleNext)}
         />
         <div className="text-center text-sm text-muted-foreground mt-4">
           {currentIndex + 1} / {restaurants.length}
