@@ -331,17 +331,33 @@ export const SwipeCards = React.memo(() => {
             <div className="space-y-2">
               {allRestaurants.length === userPersonalSwipes.size && (
                 <Button 
-                  onClick={() => {
+                  onClick={async () => {
                     if (window.confirm('確定要重置所有個人滑卡記錄嗎？')) {
-                      supabase
-                        .from('user_swipes')
-                        .delete()
-                        .eq('user_id', user?.id)
-                        .is('group_id', null)
-                        .then(() => {
-                          setUserPersonalSwipes(new Set());
-                          fetchRestaurants();
+                      try {
+                        await supabase
+                          .from('user_swipes')
+                          .delete()
+                          .eq('user_id', user?.id)
+                          .is('group_id', null);
+                        
+                        // Reset state and reload
+                        setUserPersonalSwipes(new Set());
+                        setCurrentIndex(0);
+                        await fetchRestaurants();
+                        await fetchUserPersonalSwipes();
+                        
+                        toast({
+                          title: "重置成功",
+                          description: "個人滑卡記錄已清除",
                         });
+                      } catch (error) {
+                        console.error('Error resetting swipes:', error);
+                        toast({
+                          title: "重置失敗", 
+                          description: "無法清除滑卡記錄",
+                          variant: "destructive"
+                        });
+                      }
                     }
                   }}
                   variant="outline"
