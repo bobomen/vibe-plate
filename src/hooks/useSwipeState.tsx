@@ -216,49 +216,65 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
   const resetPersonalSwipes = useCallback(async () => {
     if (!user?.id || groupId) return false; // Only for personal swipes
 
+    setLoading(true);
+    
     try {
+      console.log('[resetPersonalSwipes] Starting reset for user:', user.id);
+      
       const operation = async () => {
         // INVARIANT: Only delete personal swipes (group_id IS NULL), not favorites
-        const { error } = await supabase
+        const { error, count } = await supabase
           .from('user_swipes')
-          .delete()
+          .delete({ count: 'exact' })
           .eq('user_id', user.id)
           .is('group_id', null);
         
         if (error) throw error;
+        console.log('[resetPersonalSwipes] Deleted', count, 'personal swipes');
+        return count;
       };
 
-      await withRetry(operation);
+      const deletedCount = await withRetry(operation);
       
-      // Reset state and reload
+      // Clear local state immediately
       setUserSwipes(new Set());
       setUserPreference({});
       setCurrentIndex(0);
       
-      // Reload data and reapply filters
-      await Promise.all([fetchRestaurants(), fetchUserSwipes()]);
+      console.log('[resetPersonalSwipes] Reloading data...');
       
-      // Force reapply filters after state update
-      setTimeout(() => {
-        applyFilters();
-      }, 100);
+      // Reload data sequentially to ensure proper state updates
+      await fetchRestaurants();
+      await fetchUserSwipes();
+      
+      // Apply filters after data is loaded - use a callback to ensure state is updated
+      await new Promise<void>((resolve) => {
+        // Force a rerender cycle before applying filters
+        setTimeout(() => {
+          console.log('[resetPersonalSwipes] Applying filters to', allRestaurants.length, 'restaurants');
+          applyFilters();
+          resolve();
+        }, 50);
+      });
       
       toast({
         title: "重置成功",
-        description: "個人滑卡記錄已清除，收藏記錄保持不變",
+        description: `已清除 ${deletedCount} 筆個人滑卡記錄，收藏記錄保持不變`,
       });
       
       return true;
     } catch (error) {
-      console.error('Error resetting swipes:', error);
+      console.error('[resetPersonalSwipes] Error:', error);
       toast({
         title: "重置失敗", 
-        description: "無法清除滑卡記錄",
+        description: `無法清除滑卡記錄：${error.message}`,
         variant: "destructive"
       });
       return false;
+    } finally {
+      setLoading(false);
     }
-  }, [user?.id, groupId, withRetry, fetchRestaurants, fetchUserSwipes, toast]);
+  }, [user?.id, groupId, withRetry, fetchRestaurants, fetchUserSwipes, applyFilters, allRestaurants.length, toast]);
 
   // Get current restaurant
   const currentRestaurant = useMemo(() => 

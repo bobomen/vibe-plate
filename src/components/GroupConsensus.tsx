@@ -98,6 +98,8 @@ export const GroupConsensus = React.memo(() => {
     if (!groupId || !groupInfo) return;
 
     try {
+      console.log('[GroupConsensus] Fetching consensus for group:', groupId);
+      
       // Get all group members
       const { data: members, error: membersError } = await supabase
         .from('group_members')
@@ -105,19 +107,28 @@ export const GroupConsensus = React.memo(() => {
         .eq('group_id', groupId);
 
       if (membersError) throw membersError;
-      if (!members || members.length === 0) return;
+      if (!members || members.length === 0) {
+        console.log('[GroupConsensus] No members found for group');
+        setConsensusResults([]);
+        return;
+      }
 
       const memberIds = members.map(m => m.user_id);
+      console.log('[GroupConsensus] Group members:', memberIds);
 
       // Get all group swipes from group members
       const { data: swipes, error: swipesError } = await supabase
         .from('user_swipes')
-        .select('user_id, restaurant_id, liked')
+        .select('user_id, restaurant_id, liked, created_at')
         .eq('group_id', groupId)
         .in('user_id', memberIds);
 
       if (swipesError) throw swipesError;
+      
+      console.log('[GroupConsensus] Found swipes:', swipes?.length || 0);
+      
       if (!swipes || swipes.length === 0) {
+        console.log('[GroupConsensus] No swipes found for group');
         setConsensusResults([]);
         return;
       }
