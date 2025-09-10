@@ -117,7 +117,10 @@ export const GroupConsensus = React.memo(() => {
         .in('user_id', memberIds);
 
       if (swipesError) throw swipesError;
-      if (!swipes || swipes.length === 0) return;
+      if (!swipes || swipes.length === 0) {
+        setConsensusResults([]);
+        return;
+      }
 
       // Group swipes by restaurant
       const restaurantSwipes: { [key: string]: { likes: number; dislikes: number; total: number } } = {};

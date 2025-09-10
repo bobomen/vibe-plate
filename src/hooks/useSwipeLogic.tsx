@@ -17,6 +17,8 @@ export const useSwipeLogic = () => {
   const startPosRef = useRef({ x: 0, y: 0 });
 
   const handleSwipe = useCallback(async (restaurant: Restaurant, liked: boolean, onNext: () => void, groupId?: string) => {
+    if (!user?.id) return;
+    
     setSwipeDirection(liked ? 'right' : 'left');
     
     try {
@@ -24,18 +26,18 @@ export const useSwipeLogic = () => {
       await supabase
         .from('user_swipes')
         .upsert({
-          user_id: user?.id,
+          user_id: user.id,
           restaurant_id: restaurant.id,
           liked,
           group_id: groupId || null
         });
 
-      // Add to favorites if liked
-      if (liked) {
+      // Add to favorites if liked (only for personal swipes)
+      if (liked && !groupId) {
         await supabase
           .from('favorites')
           .upsert({
-            user_id: user?.id,
+            user_id: user.id,
             restaurant_id: restaurant.id
           });
         
@@ -43,9 +45,20 @@ export const useSwipeLogic = () => {
           title: "已收藏！",
           description: `${restaurant.name} 已加入收藏清單`,
         });
+      } else if (liked && groupId) {
+        toast({
+          title: "已投票！",
+          description: `你對 ${restaurant.name} 投了讚成票`,
+        });
       }
     } catch (error) {
       console.error('Error recording swipe:', error);
+      toast({
+        title: "操作失敗",
+        description: "無法記錄您的選擇，請重試",
+        variant: "destructive"
+      });
+      return;
     }
 
     // Move to next card after animation
@@ -93,7 +106,7 @@ export const useSwipeLogic = () => {
               group_id: groupId || null
             });
 
-          if (liked) {
+          if (liked && !groupId) {
             await supabase
               .from('favorites')
               .upsert({
@@ -105,9 +118,19 @@ export const useSwipeLogic = () => {
               title: "已收藏！",
               description: `${restaurant.name} 已加入收藏清單`,
             });
+          } else if (liked && groupId) {
+            toast({
+              title: "已投票！",
+              description: `你對 ${restaurant.name} 投了讚成票`,
+            });
           }
         } catch (error) {
           console.error('Error recording swipe:', error);
+          toast({
+            title: "操作失敗",
+            description: "無法記錄您的選擇，請重試",
+            variant: "destructive"
+          });
         }
       })();
 
@@ -163,7 +186,7 @@ export const useSwipeLogic = () => {
               group_id: groupId || null
             });
 
-          if (liked) {
+          if (liked && !groupId) {
             await supabase
               .from('favorites')
               .upsert({
@@ -175,9 +198,19 @@ export const useSwipeLogic = () => {
               title: "已收藏！",
               description: `${restaurant.name} 已加入收藏清單`,
             });
+          } else if (liked && groupId) {
+            toast({
+              title: "已投票！",
+              description: `你對 ${restaurant.name} 投了讚成票`,
+            });
           }
         } catch (error) {
           console.error('Error recording swipe:', error);
+          toast({
+            title: "操作失敗",
+            description: "無法記錄您的選擇，請重試",
+            variant: "destructive"
+          });
         }
       })();
 

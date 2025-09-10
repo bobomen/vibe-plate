@@ -234,8 +234,14 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       setUserSwipes(new Set());
       setUserPreference({});
       setCurrentIndex(0);
-      await fetchRestaurants();
-      await fetchUserSwipes();
+      
+      // Reload data and reapply filters
+      await Promise.all([fetchRestaurants(), fetchUserSwipes()]);
+      
+      // Force reapply filters after state update
+      setTimeout(() => {
+        applyFilters();
+      }, 100);
       
       toast({
         title: "重置成功",
