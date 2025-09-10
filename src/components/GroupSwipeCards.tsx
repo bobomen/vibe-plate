@@ -382,9 +382,17 @@ export const GroupSwipeCards = React.memo(() => {
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-4">
           <div className="text-center space-y-4">
             <div className="text-6xl mb-4">🎉</div>
-            <h3 className="text-xl font-semibold text-foreground">已完成所有可用餐廳的投票</h3>
+            <h3 className="text-xl font-semibold text-foreground">
+              {allRestaurants.length === userGroupSwipes.size 
+                ? "您已經滑完了所有餐廳！" 
+                : "已完成所有可用餐廳的投票"
+              }
+            </h3>
             <p className="text-muted-foreground max-w-md">
-              您已經對所有符合條件的餐廳投過票了！
+              {allRestaurants.length === userGroupSwipes.size 
+                ? "等待其他成員完成滑卡，或重新載入查看更多餐廳。"
+                : "您已經對所有符合條件的餐廳投過票了！"
+              }
             </p>
             <div className="space-y-2">
               <Button 

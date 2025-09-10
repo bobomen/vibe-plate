@@ -316,13 +316,39 @@ export const SwipeCards = React.memo(() => {
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-4">
           <div className="text-center space-y-4">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-foreground">沒有找到符合條件的餐廳</h3>
+            <h3 className="text-xl font-semibold text-foreground">
+              {allRestaurants.length === userPersonalSwipes.size 
+                ? "您已經滑完了所有餐廳！" 
+                : "沒有找到符合條件的餐廳"
+              }
+            </h3>
             <p className="text-muted-foreground max-w-md">
-              請嘗試調整篩選條件，或者
-              {!userLocation && '開啟位置權限以使用距離篩選，或者'}
-              重新載入資料。
+              {allRestaurants.length === userPersonalSwipes.size 
+                ? "您可以重置個人滑卡記錄或等待更多餐廳加入。"
+                : `請嘗試調整篩選條件，或者${!userLocation ? '開啟位置權限以使用距離篩選，或者' : ''}重新載入資料。`
+              }
             </p>
             <div className="space-y-2">
+              {allRestaurants.length === userPersonalSwipes.size && (
+                <Button 
+                  onClick={() => {
+                    if (window.confirm('確定要重置所有個人滑卡記錄嗎？')) {
+                      supabase
+                        .from('user_swipes')
+                        .delete()
+                        .eq('user_id', user?.id)
+                        .is('group_id', null)
+                        .then(() => {
+                          setUserPersonalSwipes(new Set());
+                          fetchRestaurants();
+                        });
+                    }
+                  }}
+                  variant="outline"
+                >
+                  重置滑卡記錄
+                </Button>
+              )}
               <Button 
                 onClick={() => {
                   setFilters({
