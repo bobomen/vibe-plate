@@ -112,10 +112,11 @@ export const GroupConsensusSummary = React.memo(() => {
 
       const memberIds = members.map(m => m.user_id);
 
-      // Get all swipes from group members
+      // Get all group swipes from group members
       const { data: swipes, error: swipesError } = await supabase
         .from('user_swipes')
         .select('user_id, restaurant_id, liked')
+        .eq('group_id', groupId)
         .in('user_id', memberIds);
 
       if (swipesError) throw swipesError;
