@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Plus, Copy, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ interface Group {
 const Groups = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -391,9 +393,22 @@ const Groups = () => {
                       </div>
                     </div>
                     
-                    <Button variant="outline" className="w-full">
-                      查看共識結果
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => navigate(`/app/groups/${group.id}/swipe`)}
+                      >
+                        開始滑卡
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => navigate(`/app/groups/${group.id}/consensus`)}
+                      >
+                        查看共識
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

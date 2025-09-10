@@ -5,6 +5,9 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import PremiumModal from '@/components/PremiumModal';
 import { usePremium } from '@/hooks/usePremium';
 import { SwipeCards } from '@/components/SwipeCards';
+import { GroupSwipeCards } from '@/components/GroupSwipeCards';
+import { GroupConsensus } from '@/components/GroupConsensus';
+import { GroupConsensusSummary } from '@/components/GroupConsensusSummary';
 import Favorites from './Favorites';
 import Groups from './Groups';
 import Profile from './Profile';
@@ -35,6 +38,9 @@ const App = memo(() => {
           <Route path="/restaurant/:id" element={<RestaurantDetail />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/:groupId/swipe" element={<GroupSwipeCards />} />
+          <Route path="/groups/:groupId/consensus" element={<GroupConsensus />} />
+          <Route path="/groups/:groupId/consensus-summary" element={<GroupConsensusSummary />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
