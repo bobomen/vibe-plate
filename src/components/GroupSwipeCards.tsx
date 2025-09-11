@@ -221,7 +221,7 @@ export const GroupSwipeCards = React.memo(() => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate(`/app/groups/${groupId}/consensus/summary`)}
+            onClick={() => navigate(`/app/groups/${groupId}/consensus-summary`)}
             className="flex items-center gap-1"
           >
             <BarChart3 className="h-4 w-4" />
@@ -305,7 +305,7 @@ export const GroupSwipeCards = React.memo(() => {
                 查看群組共識結果
               </Button>
               <Button 
-                onClick={() => navigate(`/app/groups/${groupId}/consensus/summary`)}
+                onClick={() => navigate(`/app/groups/${groupId}/consensus-summary`)}
                 variant="outline"
                 className="w-full"
               >
