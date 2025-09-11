@@ -59,10 +59,16 @@ export const useSwipeLogic = () => {
         user_id: user.id,
         restaurant_id: restaurant.id,
         liked,
-        group_id: groupId || null
+        group_id: groupId ? groupId : null
       };
       
       console.log('[handleSwipe] Inserting swipe data:', swipeData);
+      console.log('[handleSwipe] GroupId details:', {
+        original: groupId,
+        type: typeof groupId,
+        processed: groupId ? groupId : null,
+        isGroupSwipe: !!groupId
+      });
       
       // Try insert first, if conflict then update
       const { data: insertData, error: insertError } = await supabase
@@ -79,7 +85,7 @@ export const useSwipeLogic = () => {
             .update({ liked })
             .eq('user_id', user.id)
             .eq('restaurant_id', restaurant.id)
-            .eq('group_id', groupId || null)
+            .eq('group_id', groupId ? groupId : null)
             .select();
             
           if (updateError) throw updateError;
