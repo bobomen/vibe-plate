@@ -80,13 +80,21 @@ export const useSwipeLogic = () => {
         // If it's a duplicate error, try update instead
         if (insertError.code === '23505') {
           console.log('[handleSwipe] Duplicate found, updating existing record');
-          const { data: updateData, error: updateError } = await supabase
+          
+          let updateQuery = supabase
             .from('user_swipes')
             .update({ liked })
             .eq('user_id', user.id)
-            .eq('restaurant_id', restaurant.id)
-            .eq('group_id', groupId ? groupId : null)
-            .select();
+            .eq('restaurant_id', restaurant.id);
+            
+          // Handle group_id condition properly for both null and non-null values
+          if (groupId) {
+            updateQuery = updateQuery.eq('group_id', groupId);
+          } else {
+            updateQuery = updateQuery.is('group_id', null);
+          }
+          
+          const { data: updateData, error: updateError } = await updateQuery.select();
             
           if (updateError) throw updateError;
           console.log('[handleSwipe] Swipe updated successfully:', updateData);
