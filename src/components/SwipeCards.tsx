@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
-import { useSwipeLogic } from '@/hooks/useSwipeLogic';
+import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 
 interface Restaurant {
@@ -51,7 +51,7 @@ export const SwipeCards = React.memo(() => {
     applyFilters,
   } = useSwipeState({ groupId: undefined }); // INVARIANT: Personal swipes have no groupId
 
-  // Swipe logic hook  
+  // Personal swipe logic hook  
   const {
     swipeDirection,
     isDragging,
@@ -63,7 +63,7 @@ export const SwipeCards = React.memo(() => {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd
-  } = useSwipeLogic();
+  } = usePersonalSwipeLogic();
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {

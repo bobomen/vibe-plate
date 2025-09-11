@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
-import { useSwipeLogic } from '@/hooks/useSwipeLogic';
+import { useGroupSwipeLogic } from '@/hooks/useGroupSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 
 interface Restaurant {
@@ -63,7 +63,7 @@ export const GroupSwipeCards = React.memo(() => {
     withRetry,
   } = useSwipeState({ groupId }); // INVARIANT: Group swipes have groupId
 
-  // Swipe logic hook
+  // Group swipe logic hook
   const {
     swipeDirection,
     isDragging,
@@ -75,7 +75,7 @@ export const GroupSwipeCards = React.memo(() => {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd
-  } = useSwipeLogic();
+  } = useGroupSwipeLogic(groupId || '');
 
   /**
    * INVARIANT: 任何 API 不得在未登入時回傳個資
@@ -125,16 +125,16 @@ export const GroupSwipeCards = React.memo(() => {
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
-    if (!currentRestaurant || !groupId) return;
+    if (!currentRestaurant) return;
     
     try {
       await handleSwipe(currentRestaurant, liked, () => {
         setCurrentIndex(prev => prev + 1);
-      }, groupId); // INVARIANT: Pass groupId for group swipes
+      });
     } catch (error) {
       console.error('Error handling group swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, groupId]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -144,18 +144,18 @@ export const GroupSwipeCards = React.memo(() => {
 
   // Event handlers with proper parameters  
   const handleMouseUpWithParams = useCallback(() => {
-    if (!currentRestaurant || !groupId) return;
+    if (!currentRestaurant) return;
     handleMouseUp(currentRestaurant, () => {
       setCurrentIndex(prev => prev + 1);
-    }, groupId);
-  }, [handleMouseUp, currentRestaurant, setCurrentIndex, groupId]);
+    });
+  }, [handleMouseUp, currentRestaurant, setCurrentIndex]);
 
   const handleTouchEndWithParams = useCallback(() => {
-    if (!currentRestaurant || !groupId) return;
+    if (!currentRestaurant) return;
     handleTouchEnd(currentRestaurant, () => {
       setCurrentIndex(prev => prev + 1);
-    }, groupId);
-  }, [handleTouchEnd, currentRestaurant, setCurrentIndex, groupId]);
+    });
+  }, [handleTouchEnd, currentRestaurant, setCurrentIndex]);
 
   // Load group info
   useEffect(() => {
