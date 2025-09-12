@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FilterOptions } from '@/components/SearchAndFilter';
+import { Restaurant } from '@/types/restaurant';
 
 /**
  * INVARIANTS - 關鍵不變式 (永遠要成立的事)：
@@ -11,22 +12,6 @@ import { FilterOptions } from '@/components/SearchAndFilter';
  * 3. 任何 API 不得在未登入時回傳個資
  * 4. 重置個人滑卡記錄時，收藏記錄必須完全保留
  */
-
-interface Restaurant {
-  id: string;
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-  google_rating: number;
-  google_reviews_count: number;
-  michelin_stars: number;
-  has_500_dishes: boolean;
-  photos: string[];
-  cuisine_type: string;
-  price_range: number;
-  bib_gourmand: boolean;
-}
 
 interface UseSwipeStateOptions {
   groupId?: string; // undefined for personal swipes, string for group swipes

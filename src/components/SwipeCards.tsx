@@ -8,28 +8,13 @@ import React, { useCallback } from 'react';
 import { Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RestaurantCardSkeleton } from '@/components/ui/RestaurantCardSkeleton';
+import { SwipeActionButtons } from '@/components/ui/SwipeActionButtons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
 import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
-
-interface Restaurant {
-  id: string;
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-  google_rating: number;
-  google_reviews_count: number;
-  michelin_stars: number;
-  has_500_dishes: boolean;
-  photos: string[];
-  cuisine_type: string;
-  price_range: number;
-  bib_gourmand: boolean;
-}
 
 export const SwipeCards = React.memo(() => {
   const { user } = useAuth();
@@ -145,26 +130,11 @@ export const SwipeCards = React.memo(() => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-center gap-4 mt-4">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => handleCardSwipe(false)}
-                className="rounded-full w-14 h-14 border-2 border-red-200 hover:border-red-300 hover:bg-red-50"
-                disabled={isDragging}
-              >
-                <span className="text-xl">👎</span>
-              </Button>
-              <Button
-                variant="outline" 
-                size="lg"
-                onClick={() => handleCardSwipe(true)}
-                className="rounded-full w-14 h-14 border-2 border-green-200 hover:border-green-300 hover:bg-green-50"
-                disabled={isDragging}
-              >
-                <span className="text-xl">👍</span>
-              </Button>
-            </div>
+            <SwipeActionButtons
+              onDislike={() => handleCardSwipe(false)}
+              onLike={() => handleCardSwipe(true)}
+              disabled={isDragging}
+            />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">

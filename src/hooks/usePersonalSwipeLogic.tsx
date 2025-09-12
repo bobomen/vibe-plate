@@ -2,11 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface Restaurant {
-  id: string;
-  name: string;
-}
+import { RestaurantBase } from '@/types/restaurant';
 
 export const usePersonalSwipeLogic = () => {
   const { user } = useAuth();
@@ -16,7 +12,7 @@ export const usePersonalSwipeLogic = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const startPosRef = useRef({ x: 0, y: 0 });
 
-  const handleSwipe = useCallback(async (restaurant: Restaurant, liked: boolean, onNext: () => void) => {
+  const handleSwipe = useCallback(async (restaurant: RestaurantBase, liked: boolean, onNext: () => void) => {
     if (!user?.id) {
       console.error('[PersonalSwipe] No user ID available');
       toast({
@@ -129,7 +125,7 @@ export const usePersonalSwipeLogic = () => {
     }
   }, []);
 
-  const handleMouseUp = useCallback((restaurant: Restaurant, onNext: () => void) => {
+  const handleMouseUp = useCallback((restaurant: RestaurantBase, onNext: () => void) => {
     const currentDragOffset = dragOffset;
     const currentIsDragging = isDragging;
     
@@ -163,7 +159,7 @@ export const usePersonalSwipeLogic = () => {
     }
   }, []);
 
-  const handleTouchEnd = useCallback((restaurant: Restaurant, onNext: () => void) => {
+  const handleTouchEnd = useCallback((restaurant: RestaurantBase, onNext: () => void) => {
     const currentDragOffset = dragOffset;
     const currentIsDragging = isDragging;
     
