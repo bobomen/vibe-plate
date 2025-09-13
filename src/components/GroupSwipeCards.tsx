@@ -5,8 +5,9 @@
  * - 任何 API 不得在未登入時回傳個資
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Eye, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Eye, BarChart3, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { RestaurantCardSkeleton } from '@/components/ui/RestaurantCardSkeleton';
 import { SwipeActionButtons } from '@/components/ui/SwipeActionButtons';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +47,7 @@ export const GroupSwipeCards = React.memo(() => {
     setFilters,
     applyFilters,
     withRetry,
+    resetGroupSwipes,
   } = useSwipeState({ groupId }); // INVARIANT: Group swipes have groupId
 
   // Group swipe logic hook
@@ -142,6 +144,15 @@ export const GroupSwipeCards = React.memo(() => {
     });
   }, [handleTouchEnd, currentRestaurant, setCurrentIndex]);
 
+  // Handle reset votes
+  const handleResetVotes = useCallback(async () => {
+    const success = await resetGroupSwipes();
+    if (success) {
+      // Optionally refresh data after reset
+      console.log('[GroupSwipeCards] Reset successful, data will refresh automatically');
+    }
+  }, [resetGroupSwipes]);
+
   // Load group info
   useEffect(() => {
     const loadGroupInfo = async () => {
@@ -194,6 +205,32 @@ export const GroupSwipeCards = React.memo(() => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 text-destructive hover:bg-destructive/10"
+              >
+                <RotateCcw className="h-4 w-4" />
+                重置投票
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>確認重置投票</AlertDialogTitle>
+                <AlertDialogDescription>
+                  這會清除您在此群組的所有投票記錄，讓您可以重新開始滑卡投票。此操作無法復原。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetVotes} className="bg-destructive hover:bg-destructive/90">
+                  確認重置
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button
             variant="outline"
             size="sm"
@@ -281,6 +318,31 @@ export const GroupSwipeCards = React.memo(() => {
               >
                 查看數據分析
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className="w-full text-destructive hover:bg-destructive/10"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    重新開始投票
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>確認重新開始投票</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      這會清除您在此群組的所有投票記錄，讓您可以重新開始滑卡投票。此操作無法復原。
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>取消</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetVotes} className="bg-destructive hover:bg-destructive/90">
+                      確認重置
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         )}

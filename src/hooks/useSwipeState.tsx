@@ -280,6 +280,61 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     }
   }, [user?.id, groupId, withRetry, allRestaurants, setUserSwipes, setUserPreference, setCurrentIndex, setRestaurants, toast]);
 
+  /**
+   * Reset group swipes for testing purposes
+   * INVARIANT: 只刪除當前用戶在指定群組的投票記錄
+   */
+  const resetGroupSwipes = useCallback(async () => {
+    if (!user?.id || !groupId) return false; // Only for group swipes
+
+    console.log('[resetGroupSwipes] Starting reset for user:', user.id, 'in group:', groupId);
+    
+    try {
+      const operation = async () => {
+        // INVARIANT: Only delete current user's swipes in this specific group
+        const { error, count } = await supabase
+          .from('user_swipes')
+          .delete({ count: 'exact' })
+          .eq('user_id', user.id)
+          .eq('group_id', groupId);
+        
+        if (error) throw error;
+        console.log('[resetGroupSwipes] Deleted', count, 'group swipes');
+        return count;
+      };
+
+      const deletedCount = await withRetry(operation);
+      
+      console.log('[resetGroupSwipes] Clearing local state...');
+      
+      // Clear local state and force rerender
+      setUserSwipes(new Set());
+      setUserPreference({});
+      setCurrentIndex(0);
+      
+      // Re-apply filters to show available restaurants again
+      setTimeout(() => {
+        console.log('[resetGroupSwipes] Re-applying filters with cleared state');
+        applyFilters();
+      }, 50);
+      
+      toast({
+        title: "重置成功",
+        description: `已清除 ${deletedCount} 筆群組投票記錄，現在可以重新開始投票`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('[resetGroupSwipes] Error:', error);
+      toast({
+        title: "重置失敗", 
+        description: `無法清除群組投票記錄：${error.message}`,
+        variant: "destructive"
+      });
+      return false;
+    }
+  }, [user?.id, groupId, withRetry, applyFilters, toast]);
+
   // Get current restaurant
   const currentRestaurant = useMemo(() => 
     restaurants[currentIndex], [restaurants, currentIndex]
@@ -348,6 +403,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     fetchUserSwipes,
     fetchRestaurants,
     resetPersonalSwipes,
+    resetGroupSwipes,
     applyFilters,
     
     // Helpers
