@@ -152,8 +152,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Sign in error:', error);
+        
+        // Enhanced error handling for email confirmation
+        if (error.message.includes('Email not confirmed')) {
+          return { 
+            error: { 
+              ...error, 
+              message: 'Email not confirmed',
+              details: '請先到您的信箱點擊驗證連結完成帳號驗證後再登入'
+            } 
+          };
+        }
       } else {
         console.log('Sign in successful for:', email);
+        
+        // Check if user email is confirmed
+        if (data.user && !data.user.email_confirmed_at) {
+          console.warn('User email not confirmed:', email);
+          // Don't block login here as this should be handled by Supabase settings
+        }
       }
       
       return { error };

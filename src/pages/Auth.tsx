@@ -150,8 +150,14 @@ const Auth = () => {
     } else {
       toast({
         title: "註冊成功！",
-        description: "請檢查您的郵箱並點擊驗證鏈接，驗證完成後即可登入",
-        duration: 8000, // 延長顯示時間
+        description: "📧 驗證郵件已發送到您的信箱，請點擊郵件中的驗證連結完成註冊。沒收到郵件？請檢查垃圾郵件資料夾",
+        duration: 12000, // 延長顯示時間給用戶充分閱讀
+      });
+      
+      // 顯示明確的下一步提示
+      setAuthMessage({ 
+        type: 'success', 
+        message: '📧 請檢查您的信箱並點擊驗證連結完成註冊，驗證後即可登入使用' 
       });
     }
     setIsLoading(false);
@@ -176,10 +182,12 @@ const Auth = () => {
         // 自動設定重設密碼的信箱
         const email = formData.get('email') as string;
         if (email) setResetEmail(email);
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = "請先到您的信箱點擊驗證連結完成帳號驗證，如仍無法登入請重設密碼";
+      } else if (error.message === 'Email not confirmed' || error.message.includes('Email not confirmed')) {
+        errorMessage = error.details || "⚠️ 帳號尚未驗證：請先到您的信箱點擊驗證連結完成帳號驗證後再登入。如果找不到驗證信，請檢查垃圾郵件資料夾或重新註冊";
       } else if (error.message.includes('Too many requests')) {
         errorMessage = "登入嘗試次數過多，請稍後再試或重設密碼";
+      } else if (error.message.includes('signup disabled')) {
+        errorMessage = "新用戶註冊暫時停用，請聯繫客服";
       }
       
       toast({
