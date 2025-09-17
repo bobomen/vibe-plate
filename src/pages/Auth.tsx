@@ -49,9 +49,20 @@ const Auth = () => {
       } else if (error === 'processing_failed') {
         message = '驗證處理失敗，請重新嘗試或聯繫客服';
       } else if (errorDescription) {
-        if (errorDescription.includes('expired') || errorDescription.includes('token')) {
-          message = '驗證連結已過期，請重新申請重設密碼或重新註冊';
-        } else if (errorDescription.includes('invalid') || errorDescription.includes('not found')) {
+        if (errorDescription.includes('expired') || errorDescription.includes('token') || errorDescription.includes('not found')) {
+          message = '重設連結已失效，請重新申請密碼重設';
+          // Auto-clear URL and switch to reset form
+          setTimeout(() => {
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('error');
+            newUrl.searchParams.delete('error_description');
+            newUrl.searchParams.delete('type');
+            window.history.replaceState({}, document.title, newUrl.toString());
+            setIsPasswordResetFlow(false);
+            setShowResetForm(true);
+            setAuthMessage(null);
+          }, 3000);
+        } else if (errorDescription.includes('invalid')) {
           message = '無效的驗證連結，請檢查郵件中的連結或重新申請';
         } else {
           message = errorDescription;
