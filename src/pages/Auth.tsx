@@ -11,12 +11,13 @@ import { Heart, UtensilsCrossed, KeyRound, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
-  const { user, signUp, signIn, resetPassword, loading, authLoading } = useAuth();
+  const { user, signUp, signIn, resetPassword, updatePassword, loading, authLoading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [authMessage, setAuthMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [isPasswordResetFlow, setIsPasswordResetFlow] = useState(false);
 
   useEffect(() => {
     // Check for auth callback parameters
@@ -24,6 +25,16 @@ const Auth = () => {
     const code = urlParams.get('code');
     const error = urlParams.get('error');
     const errorDescription = urlParams.get('error_description');
+    const type = urlParams.get('type');
+    
+    // Check if this is a password recovery flow
+    if (type === 'recovery') {
+      setIsPasswordResetFlow(true);
+      setAuthMessage({ 
+        type: 'success', 
+        message: '🔐 請設定您的新密碼，完成後將自動登入' 
+      });
+    }
     
     if (error) {
       let message = '驗證失敗';
@@ -243,6 +254,64 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const newPassword = formData.get('newPassword') as string;
+    const confirmPassword = formData.get('confirmPassword') as string;
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "密碼不符",
+        description: "請確認兩次輸入的密碼相同",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "密碼太短",
+        description: "密碼至少需要6個字元",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    const { error } = await updatePassword(newPassword);
+    
+    if (error) {
+      toast({
+        title: "密碼更新失敗",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "密碼更新成功！",
+        description: "您的密碼已更新，正在為您登入...",
+        duration: 5000,
+      });
+      
+      // Clear URL parameters and show success message
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('type');
+      newUrl.searchParams.delete('code');
+      window.history.replaceState({}, document.title, newUrl.toString());
+      
+      setIsPasswordResetFlow(false);
+      setAuthMessage({ 
+        type: 'success', 
+        message: '✅ 密碼更新成功！正在為您登入...' 
+      });
+    }
+    setIsLoading(false);
+  };
+
   const GoogleIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -317,7 +386,48 @@ const Auth = () => {
             </div>
           )}
           
-          <Tabs defaultValue="signin" className="w-full">
+          {isPasswordResetFlow ? (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold">設定新密碼</h3>
+                <p className="text-sm text-muted-foreground">
+                  請輸入您的新密碼，完成後將自動為您登入
+                </p>
+              </div>
+              
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">新密碼</Label>
+                  <Input
+                    id="new-password"
+                    name="newPassword"
+                    type="password"
+                    placeholder="請輸入新密碼（至少6位）"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-new-password">確認新密碼</Label>
+                  <Input
+                    id="confirm-new-password"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="請再次輸入新密碼"
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "更新中..." : "更新密碼"}
+                </Button>
+              </form>
+            </div>
+          ) : (
+            <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">登入</TabsTrigger>
               <TabsTrigger value="signup">註冊</TabsTrigger>
@@ -462,6 +572,7 @@ const Auth = () => {
               <SocialAuthButtons />
             </TabsContent>
           </Tabs>
+          )}
         </CardContent>
       </Card>
     </div>

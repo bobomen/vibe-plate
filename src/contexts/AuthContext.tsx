@@ -9,6 +9,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
   loading: boolean;
   authLoading: boolean;
 }
@@ -214,6 +215,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) {
+        console.error('Update password error:', error);
+      } else {
+        console.log('Password updated successfully');
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('Update password processing error:', error);
+      return { error };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -221,6 +241,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signOut,
     resetPassword,
+    updatePassword,
     loading,
     authLoading,
   };
