@@ -30,10 +30,13 @@ export const SwipeCards = React.memo(() => {
     filters,
     currentRestaurant,
     distance,
+    canGoBack,
     setCurrentIndex,
     setFilters,
     resetPersonalSwipes,
     applyFilters,
+    addToSwipeHistory,
+    goBackToPrevious,
   } = useSwipeState({ groupId: undefined }); // INVARIANT: Personal swipes have no groupId
 
   // Personal swipe logic hook  
@@ -55,13 +58,16 @@ export const SwipeCards = React.memo(() => {
     if (!currentRestaurant) return;
     
     try {
+      // Add to history before swiping
+      addToSwipeHistory(currentRestaurant, liked);
+      
       await handleSwipe(currentRestaurant, liked, () => {
         setCurrentIndex(prev => prev + 1);
       });
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -73,16 +79,20 @@ export const SwipeCards = React.memo(() => {
   const handleMouseUpWithParams = useCallback(() => {
     if (!currentRestaurant) return;
     handleMouseUp(currentRestaurant, () => {
+      // Add to history before moving to next
+      addToSwipeHistory(currentRestaurant, true); // Assuming right swipe is like
       setCurrentIndex(prev => prev + 1);
     });
-  }, [handleMouseUp, currentRestaurant, setCurrentIndex]);
+  }, [handleMouseUp, currentRestaurant, setCurrentIndex, addToSwipeHistory]);
 
   const handleTouchEndWithParams = useCallback(() => {
     if (!currentRestaurant) return;
     handleTouchEnd(currentRestaurant, () => {
+      // Add to history before moving to next
+      addToSwipeHistory(currentRestaurant, true); // Assuming right swipe is like
       setCurrentIndex(prev => prev + 1);
     });
-  }, [handleTouchEnd, currentRestaurant, setCurrentIndex]);
+  }, [handleTouchEnd, currentRestaurant, setCurrentIndex, addToSwipeHistory]);
 
   if (loading) {
     return <RestaurantCardSkeleton />;
@@ -133,6 +143,8 @@ export const SwipeCards = React.memo(() => {
             <SwipeActionButtons
               onDislike={() => handleCardSwipe(false)}
               onLike={() => handleCardSwipe(true)}
+              onGoBack={goBackToPrevious}
+              canGoBack={canGoBack}
               disabled={isDragging}
             />
           </div>

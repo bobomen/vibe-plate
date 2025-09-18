@@ -43,11 +43,14 @@ export const GroupSwipeCards = React.memo(() => {
     filters,
     currentRestaurant,
     distance,
+    canGoBack,
     setCurrentIndex,
     setFilters,
     applyFilters,
     withRetry,
     resetGroupSwipes,
+    addToSwipeHistory,
+    goBackToPrevious,
   } = useSwipeState({ groupId }); // INVARIANT: Group swipes have groupId
 
   // Group swipe logic hook
@@ -115,13 +118,16 @@ export const GroupSwipeCards = React.memo(() => {
     if (!currentRestaurant) return;
     
     try {
+      // Add to history before swiping
+      addToSwipeHistory(currentRestaurant, liked);
+      
       await handleSwipe(currentRestaurant, liked, () => {
         setCurrentIndex(prev => prev + 1);
       });
     } catch (error) {
       console.error('Error handling group swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -133,16 +139,20 @@ export const GroupSwipeCards = React.memo(() => {
   const handleMouseUpWithParams = useCallback(() => {
     if (!currentRestaurant) return;
     handleMouseUp(currentRestaurant, () => {
+      // Add to history before moving to next
+      addToSwipeHistory(currentRestaurant, true); // Assuming right swipe is like
       setCurrentIndex(prev => prev + 1);
     });
-  }, [handleMouseUp, currentRestaurant, setCurrentIndex]);
+  }, [handleMouseUp, currentRestaurant, setCurrentIndex, addToSwipeHistory]);
 
   const handleTouchEndWithParams = useCallback(() => {
     if (!currentRestaurant) return;
     handleTouchEnd(currentRestaurant, () => {
+      // Add to history before moving to next
+      addToSwipeHistory(currentRestaurant, true); // Assuming right swipe is like
       setCurrentIndex(prev => prev + 1);
     });
-  }, [handleTouchEnd, currentRestaurant, setCurrentIndex]);
+  }, [handleTouchEnd, currentRestaurant, setCurrentIndex, addToSwipeHistory]);
 
   // Handle reset votes
   const handleResetVotes = useCallback(async () => {
@@ -287,6 +297,8 @@ export const GroupSwipeCards = React.memo(() => {
             <SwipeActionButtons
               onDislike={() => handleCardSwipe(false)}
               onLike={() => handleCardSwipe(true)}
+              onGoBack={goBackToPrevious}
+              canGoBack={canGoBack}
               disabled={isDragging}
             />
 

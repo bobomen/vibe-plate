@@ -31,6 +31,13 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
   const [userPreference, setUserPreference] = useState<{ [key: string]: boolean }>({});
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   
+  // Premium feature: Swipe history for "go back" functionality
+  const [swipeHistory, setSwipeHistory] = useState<Array<{
+    restaurant: Restaurant;
+    liked: boolean;
+    timestamp: Date;
+  }>>([]);
+  
   // Filter state
   const [filters, setFilters] = useState<FilterOptions>({
     searchTerm: '',
@@ -244,6 +251,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       // Clear local state immediately and force rerender
       setUserSwipes(new Set());
       setUserPreference({});
+      setSwipeHistory([]); // Clear swipe history
       setCurrentIndex(0);
       
       // Force immediate re-application of filters with cleared state
@@ -310,6 +318,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       // Clear local state and force rerender
       setUserSwipes(new Set());
       setUserPreference({});
+      setSwipeHistory([]); // Clear swipe history
       setCurrentIndex(0);
       
       // Re-apply filters to show available restaurants again
@@ -347,6 +356,79 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       null, 
     [userLocation, currentRestaurant, calculateDistance]
   );
+
+  // Premium feature: Check if can go back
+  const canGoBack = useMemo(() => swipeHistory.length > 0, [swipeHistory]);
+
+  // Premium feature: Go back to previous restaurant
+  const goBackToPrevious = useCallback(async () => {
+    if (!user?.id || swipeHistory.length === 0) return false;
+
+    try {
+      const lastSwipe = swipeHistory[swipeHistory.length - 1];
+      
+      // Remove the swipe record from database
+      const operation = async () => {
+        let query = supabase
+          .from('user_swipes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('restaurant_id', lastSwipe.restaurant.id);
+
+        // Apply correct group filter
+        if (groupId) {
+          query = query.eq('group_id', groupId);
+        } else {
+          query = query.is('group_id', null);
+        }
+
+        const { error } = await query;
+        if (error) throw error;
+      };
+
+      await withRetry(operation);
+
+      // Remove from local state
+      const newSwipes = new Set(userSwipes);
+      newSwipes.delete(lastSwipe.restaurant.id);
+      setUserSwipes(newSwipes);
+
+      const newPreference = { ...userPreference };
+      delete newPreference[lastSwipe.restaurant.id];
+      setUserPreference(newPreference);
+
+      // Remove from history
+      setSwipeHistory(prev => prev.slice(0, -1));
+
+      // Add restaurant back to the beginning of the list
+      setRestaurants(prev => [lastSwipe.restaurant, ...prev]);
+      setCurrentIndex(0);
+
+      toast({
+        title: "已回到上一間餐廳",
+        description: `重新顯示 ${lastSwipe.restaurant.name}`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error going back:', error);
+      toast({
+        title: "回退失敗",
+        description: "無法回到上一間餐廳，請稍後再試",
+        variant: "destructive"
+      });
+      return false;
+    }
+  }, [user?.id, swipeHistory, groupId, withRetry, userSwipes, userPreference, toast]);
+
+  // Add restaurant to swipe history (called externally when swiping)
+  const addToSwipeHistory = useCallback((restaurant: Restaurant, liked: boolean) => {
+    setSwipeHistory(prev => [...prev, {
+      restaurant,
+      liked,
+      timestamp: new Date()
+    }]);
+  }, []);
 
   // Get user location
   useEffect(() => {
@@ -396,6 +478,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     filters,
     currentRestaurant,
     distance,
+    swipeHistory,
     
     // Actions
     setCurrentIndex,
@@ -405,6 +488,8 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     resetPersonalSwipes,
     resetGroupSwipes,
     applyFilters,
+    addToSwipeHistory,
+    goBackToPrevious,
     
     // Helpers
     calculateDistance,
@@ -413,5 +498,6 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     // Computed
     isPersonalMode: !groupId,
     isGroupMode: !!groupId,
+    canGoBack,
   };
 };
