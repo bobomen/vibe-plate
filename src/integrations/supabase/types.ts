@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorite_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      favorite_category_items: {
+        Row: {
+          category_id: string
+          created_at: string
+          favorite_id: string
+          id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          favorite_id: string
+          id?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          favorite_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_favorite_category_items_category_id"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "favorite_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_favorite_category_items_favorite_id"
+            columns: ["favorite_id"]
+            isOneToOne: false
+            referencedRelation: "favorites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -349,6 +418,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_default_categories: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       generate_group_code: {
         Args: Record<PropertyKey, never>
         Returns: string
