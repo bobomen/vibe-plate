@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Star, MapPin } from 'lucide-react';
+import { ArrowLeft, Plus, X, Star, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFavoriteCategories } from '@/hooks/useFavoriteCategories';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FavoriteRestaurant {
   id: string;
@@ -28,10 +32,23 @@ interface FavoriteRestaurant {
   };
 }
 
+interface Restaurant {
+  id: string;
+  name: string;
+  address?: string;
+  photos?: string[];
+  google_rating?: number;
+  michelin_stars?: number;
+  bib_gourmand?: boolean;
+  price_range?: number;
+  cuisine_type?: string;
+}
+
 const CategoryDetail = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { 
     categories, 
     getRestaurantsInCategory, 
@@ -42,9 +59,13 @@ const CategoryDetail = () => {
   
   const [categoryRestaurants, setCategoryRestaurants] = useState<FavoriteRestaurant[]>([]);
   const [uncategorizedRestaurants, setUncategorizedRestaurants] = useState<FavoriteRestaurant[]>([]);
+  const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
+  const [selectedNewRestaurants, setSelectedNewRestaurants] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const category = categories.find(cat => cat.id === categoryId);
 
@@ -64,6 +85,49 @@ const CategoryDetail = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const searchRestaurants = async (query: string) => {
+    if (!query.trim() || !user) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setSearchLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .ilike('name', `%${query}%`)
+        .limit(20);
+
+      if (error) throw error;
+      
+      // Filter out restaurants that are already in favorites
+      const { data: existingFavorites } = await supabase
+        .from('favorites')
+        .select('restaurant_id')
+        .eq('user_id', user.id);
+      
+      const favoriteRestaurantIds = new Set(
+        existingFavorites?.map(f => f.restaurant_id) || []
+      );
+      
+      const filteredResults = data?.filter(restaurant => 
+        !favoriteRestaurantIds.has(restaurant.id)
+      ) || [];
+      
+      setSearchResults(filteredResults);
+    } catch (error) {
+      console.error('Error searching restaurants:', error);
+      toast({
+        title: "搜尋失敗",
+        description: "無法搜尋餐廳",
+        variant: "destructive",
+      });
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -97,20 +161,46 @@ const CategoryDetail = () => {
   };
 
   const handleAddRestaurants = async () => {
-    if (!categoryId || selectedRestaurants.length === 0) return;
+    if (!categoryId || (!selectedRestaurants.length && !selectedNewRestaurants.length)) return;
     
     try {
+      let addedCount = 0;
+      
+      // Add existing favorites to category
       for (const favoriteId of selectedRestaurants) {
         await addToCategories(favoriteId, [categoryId]);
+        addedCount++;
+      }
+      
+      // Add new restaurants to favorites and then to category
+      for (const restaurantId of selectedNewRestaurants) {
+        // First add to favorites
+        const { data: newFavorite, error: favoriteError } = await supabase
+          .from('favorites')
+          .insert({
+            user_id: user!.id,
+            restaurant_id: restaurantId
+          })
+          .select()
+          .single();
+          
+        if (favoriteError) throw favoriteError;
+        
+        // Then add to category
+        await addToCategories(newFavorite.id, [categoryId]);
+        addedCount++;
       }
       
       setShowAddDialog(false);
       setSelectedRestaurants([]);
+      setSelectedNewRestaurants([]);
+      setSearchQuery('');
+      setSearchResults([]);
       await loadCategoryRestaurants();
       
       toast({
         title: "新增成功",
-        description: `已新增 ${selectedRestaurants.length} 間餐廳到分類`,
+        description: `已新增 ${addedCount} 間餐廳到分類`,
       });
     } catch (error) {
       console.error('Error adding restaurants:', error);
@@ -130,6 +220,26 @@ const CategoryDetail = () => {
     );
   };
 
+  const toggleNewRestaurantSelection = (restaurantId: string) => {
+    setSelectedNewRestaurants(prev => 
+      prev.includes(restaurantId) 
+        ? prev.filter(id => id !== restaurantId)
+        : [...prev, restaurantId]
+    );
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      searchRestaurants(query);
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  };
+
   useEffect(() => {
     if (categoryId) {
       loadCategoryRestaurants();
@@ -139,6 +249,10 @@ const CategoryDetail = () => {
   useEffect(() => {
     if (showAddDialog) {
       loadUncategorizedRestaurants();
+      setSelectedRestaurants([]);
+      setSelectedNewRestaurants([]);
+      setSearchQuery('');
+      setSearchResults([]);
     }
   }, [showAddDialog, categoryId]);
 
@@ -324,66 +438,162 @@ const CategoryDetail = () => {
             <DialogTitle>新增餐廳到「{category.name}」</DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto space-y-3">
-            {uncategorizedRestaurants.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  沒有可新增的餐廳
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  所有收藏的餐廳都已經在此分類中
-                </p>
+          <Tabs defaultValue="existing" className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="existing">現有收藏</TabsTrigger>
+              <TabsTrigger value="search">搜尋餐廳</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="existing" className="flex-1 overflow-y-auto space-y-3 mt-4">
+              {uncategorizedRestaurants.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    沒有可新增的餐廳
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    所有收藏的餐廳都已經在此分類中
+                  </p>
+                </div>
+              ) : (
+                uncategorizedRestaurants.map((favorite) => (
+                  <div
+                    key={favorite.id}
+                    className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
+                    onClick={() => toggleRestaurantSelection(favorite.id)}
+                  >
+                    <Checkbox
+                      checked={selectedRestaurants.includes(favorite.id)}
+                      onChange={() => toggleRestaurantSelection(favorite.id)}
+                    />
+                    
+                    <LazyImage
+                      src={favorite.restaurants.photos?.[0] || '/placeholder.svg'}
+                      alt={favorite.restaurants.name}
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm line-clamp-1">
+                        {favorite.restaurants.name}
+                      </h4>
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        {favorite.restaurants.address}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </TabsContent>
+            
+            <TabsContent value="search" className="flex-1 flex flex-col mt-4">
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜尋餐廳名稱..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="pl-10"
+                />
               </div>
-            ) : (
-              uncategorizedRestaurants.map((favorite) => (
-                <div
-                  key={favorite.id}
-                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
-                  onClick={() => toggleRestaurantSelection(favorite.id)}
-                >
-                  <Checkbox
-                    checked={selectedRestaurants.includes(favorite.id)}
-                    onChange={() => toggleRestaurantSelection(favorite.id)}
-                  />
-                  
-                  <LazyImage
-                    src={favorite.restaurants.photos?.[0] || '/placeholder.svg'}
-                    alt={favorite.restaurants.name}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-                  
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm line-clamp-1">
-                      {favorite.restaurants.name}
-                    </h4>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      {favorite.restaurants.address}
+              
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {searchLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-sm text-muted-foreground mt-2">搜尋中...</p>
+                  </div>
+                ) : searchQuery && searchResults.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      找不到相關餐廳
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      試試其他關鍵字
                     </p>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                ) : !searchQuery ? (
+                  <div className="text-center py-8">
+                    <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      輸入餐廳名稱開始搜尋
+                    </p>
+                  </div>
+                ) : (
+                  searchResults.map((restaurant) => (
+                    <div
+                      key={restaurant.id}
+                      className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
+                      onClick={() => toggleNewRestaurantSelection(restaurant.id)}
+                    >
+                      <Checkbox
+                        checked={selectedNewRestaurants.includes(restaurant.id)}
+                        onChange={() => toggleNewRestaurantSelection(restaurant.id)}
+                      />
+                      
+                      <LazyImage
+                        src={restaurant.photos?.[0] || '/placeholder.svg'}
+                        alt={restaurant.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                      
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm line-clamp-1">
+                          {restaurant.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {restaurant.address}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {restaurant.google_rating && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="text-xs text-muted-foreground">
+                                {restaurant.google_rating}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {restaurant.michelin_stars > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {'⭐'.repeat(restaurant.michelin_stars)}
+                            </Badge>
+                          )}
+                          
+                          {restaurant.bib_gourmand && (
+                            <Badge variant="secondary" className="text-xs">
+                              Bib Gourmand
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
           
-          {uncategorizedRestaurants.length > 0 && (
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  setSelectedRestaurants([]);
-                }}
-              >
-                取消
-              </Button>
-              <Button
-                onClick={handleAddRestaurants}
-                disabled={selectedRestaurants.length === 0}
-              >
-                新增 {selectedRestaurants.length > 0 && `(${selectedRestaurants.length})`}
-              </Button>
-            </div>
-          )}
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddDialog(false);
+                setSelectedRestaurants([]);
+                setSelectedNewRestaurants([]);
+                setSearchQuery('');
+                setSearchResults([]);
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleAddRestaurants}
+              disabled={selectedRestaurants.length === 0 && selectedNewRestaurants.length === 0}
+            >
+              新增 {(selectedRestaurants.length + selectedNewRestaurants.length) > 0 && 
+                `(${selectedRestaurants.length + selectedNewRestaurants.length})`}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
