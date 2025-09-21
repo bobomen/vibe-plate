@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Plus, Edit2, Trash2, Palette, Tag } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2, Palette, Tag, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -31,7 +32,9 @@ interface CategoryFormData {
 }
 
 export const CategoryManagement = () => {
-  const { categories, loading, createCategory, updateCategory, deleteCategory, createDefaultCategories } = useFavoriteCategories();
+  const navigate = useNavigate();
+  const { categories, loading, createCategory, updateCategory, deleteCategory, createDefaultCategories, getRestaurantsInCategory } = useFavoriteCategories();
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<FavoriteCategory | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({
@@ -77,7 +80,27 @@ export const CategoryManagement = () => {
 
   const handleDelete = async (category: FavoriteCategory) => {
     await deleteCategory(category.id, category.name);
+    loadCategoryCounts();
   };
+
+  const loadCategoryCounts = async () => {
+    const counts: Record<string, number> = {};
+    for (const category of categories) {
+      const restaurants = await getRestaurantsInCategory(category.id);
+      counts[category.id] = restaurants.length;
+    }
+    setCategoryCounts(counts);
+  };
+
+  const handleCategoryClick = (categoryId: string) => {
+    navigate(`/app/categories/${categoryId}`);
+  };
+
+  useEffect(() => {
+    if (categories.length > 0 && !loading) {
+      loadCategoryCounts();
+    }
+  }, [categories, loading]);
 
   if (loading) {
     return (
@@ -199,60 +222,75 @@ export const CategoryManagement = () => {
       ) : (
         <div className="grid gap-3">
           {categories.map((category) => (
-            <Card key={category.id} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: category.color }}
-                    />
-                    <div>
-                      <h3 className="font-medium">{category.name}</h3>
-                      {category.description && (
-                        <p className="text-sm text-muted-foreground">{category.description}</p>
-                      )}
+            <Card key={category.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <CardContent className="p-0">
+                <div 
+                  className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleCategoryClick(category.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{category.name}</h3>
+                          <Badge variant="secondary" className="text-xs">
+                            {categoryCounts[category.id] || 0}
+                          </Badge>
+                        </div>
+                        {category.description && (
+                          <p className="text-sm text-muted-foreground">{category.description}</p>
+                        )}
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </div>
+                </div>
+                
+                <div className="px-4 pb-4 flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(category);
+                    }}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
                   
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(category)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-600"
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>確定要刪除這個分類嗎？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          刪除「{category.name}」分類後，所有使用這個分類的餐廳將不再歸類於此。此操作無法復原。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(category)}
+                          className="bg-red-600 hover:bg-red-700"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>確定要刪除這個分類嗎？</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            刪除「{category.name}」分類後，所有使用這個分類的餐廳將不再歸類於此。此操作無法復原。
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>取消</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(category)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            刪除
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                          刪除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>

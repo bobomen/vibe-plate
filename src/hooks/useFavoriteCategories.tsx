@@ -243,6 +243,96 @@ export const useFavoriteCategories = () => {
     }
   }, [user]);
 
+  // Get restaurants in a specific category
+  const getRestaurantsInCategory = async (categoryId: string) => {
+    if (!user) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('favorite_category_items')
+        .select(`
+          favorite_id,
+          favorites!inner (
+            id,
+            restaurant_id,
+            user_id,
+            created_at,
+            restaurants (*)
+          )
+        `)
+        .eq('category_id', categoryId)
+        .eq('favorites.user_id', user.id);
+
+      if (error) throw error;
+      
+      return data?.map(item => item.favorites).filter(Boolean) || [];
+    } catch (error) {
+      console.error('Error fetching restaurants in category:', error);
+      return [];
+    }
+  };
+
+  // Get uncategorized restaurants that can be added to a category
+  const getUncategorizedRestaurants = async (excludeCategoryId?: string) => {
+    if (!user) return [];
+    
+    try {
+      // First get all favorites
+      const { data: allFavorites, error: favoritesError } = await supabase
+        .from('favorites')
+        .select(`
+          id,
+          restaurant_id,
+          user_id,
+          created_at,
+          restaurants (*)
+        `)
+        .eq('user_id', user.id);
+
+      if (favoritesError) throw favoritesError;
+
+      if (!excludeCategoryId) {
+        return allFavorites || [];
+      }
+
+      // Get favorites already in the specific category
+      const { data: categoryItems, error: categoryError } = await supabase
+        .from('favorite_category_items')
+        .select('favorite_id')
+        .eq('category_id', excludeCategoryId);
+
+      if (categoryError) throw categoryError;
+
+      const categorizedFavoriteIds = new Set(
+        categoryItems?.map(item => item.favorite_id) || []
+      );
+
+      // Filter out favorites that are already in this category
+      return allFavorites?.filter(favorite => 
+        !categorizedFavoriteIds.has(favorite.id)
+      ) || [];
+    } catch (error) {
+      console.error('Error fetching uncategorized restaurants:', error);
+      return [];
+    }
+  };
+
+  // Remove restaurant from a specific category
+  const removeRestaurantFromCategory = async (favoriteId: string, categoryId: string) => {
+    try {
+      const { error } = await supabase
+        .from('favorite_category_items')
+        .delete()
+        .eq('favorite_id', favoriteId)
+        .eq('category_id', categoryId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error removing restaurant from category:', error);
+      throw error;
+    }
+  };
+
   return {
     categories,
     loading,
@@ -253,5 +343,8 @@ export const useFavoriteCategories = () => {
     deleteCategory,
     addToCategories,
     getCategoriesForFavorite,
+    getRestaurantsInCategory,
+    getUncategorizedRestaurants,
+    removeRestaurantFromCategory,
   };
 };

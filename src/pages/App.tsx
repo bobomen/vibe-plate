@@ -12,6 +12,7 @@ import Favorites from './Favorites';
 import Groups from './Groups';
 import Profile from './Profile';
 import RestaurantDetail from './RestaurantDetail';
+import CategoryDetail from './CategoryDetail';
 
 const App = memo(() => {
   const { user, loading } = useAuth();
@@ -37,6 +38,7 @@ const App = memo(() => {
           <Route path="/" element={<SwipeCards />} />
           <Route path="/restaurant/:id" element={<RestaurantDetail />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/categories/:categoryId" element={<CategoryDetail />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/groups/:groupId/swipe" element={<GroupSwipeCards />} />
           <Route path="/groups/:groupId/consensus" element={<GroupConsensus />} />
