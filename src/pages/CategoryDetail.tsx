@@ -96,29 +96,32 @@ const CategoryDetail = () => {
     
     setSearchLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('restaurants')
-        .select('*')
-        .ilike('name', `%${query}%`)
-        .limit(20);
+      // Split query into keywords for better search
+      const keywords = query.trim().split(/\s+/);
+      let queryBuilder = supabase.from('restaurants').select('*');
+      
+      // Search in multiple fields: name, address, cuisine_type
+      if (keywords.length === 1) {
+        // Single keyword - search in all fields
+        const keyword = keywords[0];
+        queryBuilder = queryBuilder.or(
+          `name.ilike.%${keyword}%,address.ilike.%${keyword}%,cuisine_type.ilike.%${keyword}%`
+        );
+      } else {
+        // Multiple keywords - each keyword must appear in at least one field
+        const searchConditions = keywords.map(keyword => 
+          `name.ilike.%${keyword}%,address.ilike.%${keyword}%,cuisine_type.ilike.%${keyword}%`
+        ).join(',');
+        queryBuilder = queryBuilder.or(searchConditions);
+      }
+      
+      const { data, error } = await queryBuilder.limit(20);
 
       if (error) throw error;
       
-      // Filter out restaurants that are already in favorites
-      const { data: existingFavorites } = await supabase
-        .from('favorites')
-        .select('restaurant_id')
-        .eq('user_id', user.id);
-      
-      const favoriteRestaurantIds = new Set(
-        existingFavorites?.map(f => f.restaurant_id) || []
-      );
-      
-      const filteredResults = data?.filter(restaurant => 
-        !favoriteRestaurantIds.has(restaurant.id)
-      ) || [];
-      
-      setSearchResults(filteredResults);
+      // Show all search results - don't filter out favorites
+      // Users should be able to see if a restaurant is already in their favorites
+      setSearchResults(data || []);
     } catch (error) {
       console.error('Error searching restaurants:', error);
       toast({
@@ -172,22 +175,35 @@ const CategoryDetail = () => {
         addedCount++;
       }
       
-      // Add new restaurants to favorites and then to category
+      // Handle new restaurants - check if they're already favorites first
       for (const restaurantId of selectedNewRestaurants) {
-        // First add to favorites
-        const { data: newFavorite, error: favoriteError } = await supabase
+        // Check if this restaurant is already in user's favorites
+        const { data: existingFavorite } = await supabase
           .from('favorites')
-          .insert({
-            user_id: user!.id,
-            restaurant_id: restaurantId
-          })
-          .select()
-          .single();
+          .select('id')
+          .eq('user_id', user!.id)
+          .eq('restaurant_id', restaurantId)
+          .maybeSingle();
           
-        if (favoriteError) throw favoriteError;
-        
-        // Then add to category
-        await addToCategories(newFavorite.id, [categoryId]);
+        if (existingFavorite) {
+          // Already a favorite, just add to category
+          await addToCategories(existingFavorite.id, [categoryId]);
+        } else {
+          // Not a favorite yet, add to favorites first then to category
+          const { data: newFavorite, error: favoriteError } = await supabase
+            .from('favorites')
+            .insert({
+              user_id: user!.id,
+              restaurant_id: restaurantId
+            })
+            .select()
+            .single();
+            
+          if (favoriteError) throw favoriteError;
+          
+          // Then add to category
+          await addToCategories(newFavorite.id, [categoryId]);
+        }
         addedCount++;
       }
       
