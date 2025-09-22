@@ -231,13 +231,6 @@ const CategoryDetail = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    
-    // Debounce search
-    const timeoutId = setTimeout(() => {
-      searchRestaurants(query);
-    }, 300);
-    
-    return () => clearTimeout(timeoutId);
   };
 
   useEffect(() => {
@@ -255,6 +248,19 @@ const CategoryDetail = () => {
       setSearchResults([]);
     }
   }, [showAddDialog, categoryId]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchRestaurants(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   if (!category) {
     return (
