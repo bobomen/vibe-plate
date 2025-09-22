@@ -52,6 +52,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -147,6 +148,17 @@ const Profile = () => {
   };
 
   const requestLocation = async () => {
+    // Validate user exists
+    if (!user?.id) {
+      toast({
+        title: "用戶驗證失敗",
+        description: "請重新登入後再試",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if geolocation is supported
     if (!navigator.geolocation) {
       toast({
         title: "不支援定位",
@@ -156,50 +168,118 @@ const Profile = () => {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        try {
-          const { error } = await supabase
-            .from('profiles')
-            .upsert({
-              user_id: user?.id,
-              location_lat: latitude,
-              location_lng: longitude,
-              city: '台北市', // In real app, reverse geocode to get city
-            });
-
-          if (error) throw error;
-
-          setProfile(prev => ({
-            ...prev,
-            location_lat: latitude,
-            location_lng: longitude,
-            city: '台北市'
-          }));
-
-          toast({
-            title: "位置已更新",
-            description: "現在可以看到附近的餐廳推薦",
-          });
-        } catch (error) {
-          console.error('Error updating location:', error);
-          toast({
-            title: "位置更新失敗",
-            variant: "destructive",
-          });
-        }
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
+    // Check permissions first
+    try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' });
+      if (permission.state === 'denied') {
         toast({
-          title: "定位失敗",
-          description: "無法獲取您的位置，請檢查權限設定",
+          title: "位置權限被拒絕",
+          description: "請在瀏覽器設定中允許位置存取權限",
           variant: "destructive",
         });
+        return;
       }
+    } catch (error) {
+      // Some browsers don't support permissions API, continue anyway
+      console.log('Permissions API not supported, continuing...');
+    }
+
+    setLocationLoading(true);
+
+    // Create a promise that rejects after timeout
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('位置請求超時')), 10000)
     );
+
+    // Create a promise for geolocation
+    const locationPromise = new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        reject,
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    });
+
+    try {
+      // Race between location and timeout
+      const position = await Promise.race([locationPromise, timeoutPromise]) as GeolocationPosition;
+      const { latitude, longitude } = position.coords;
+      
+      // Validate coordinates
+      if (!latitude || !longitude || 
+          latitude < -90 || latitude > 90 || 
+          longitude < -180 || longitude > 180) {
+        throw new Error('獲取的位置數據無效');
+      }
+
+      // Update database using UPDATE instead of UPSERT
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          location_lat: latitude,
+          location_lng: longitude,
+          city: '台北市', // In real app, reverse geocode to get city
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Database update error:', error);
+        throw new Error(`資料庫更新失敗: ${error.message}`);
+      }
+
+      // Update local state
+      setProfile(prev => ({
+        ...prev,
+        location_lat: latitude,
+        location_lng: longitude,
+        city: '台北市'
+      }));
+
+      toast({
+        title: "位置已更新",
+        description: "現在可以看到附近的餐廳推薦",
+      });
+
+    } catch (error: any) {
+      console.error('Location update error:', error);
+      
+      // Provide specific error messages based on error type
+      let errorTitle = "位置更新失敗";
+      let errorDescription = "請重試或檢查權限設定";
+
+      if (error.code === 1) { // PERMISSION_DENIED
+        errorTitle = "位置權限被拒絕";
+        errorDescription = "請允許瀏覽器存取您的位置，然後重試";
+      } else if (error.code === 2) { // POSITION_UNAVAILABLE
+        errorTitle = "無法獲取位置";
+        errorDescription = "位置服務暫時不可用，請稍後再試";
+      } else if (error.code === 3 || error.message?.includes('超時')) { // TIMEOUT
+        errorTitle = "位置請求超時";
+        errorDescription = "獲取位置花費時間過長，請重試";
+      } else if (error.message?.includes('資料庫')) {
+        errorTitle = "儲存失敗";
+        errorDescription = "位置已獲取但儲存失敗，請重試";
+      } else if (error.message?.includes('無效')) {
+        errorTitle = "位置數據無效";
+        errorDescription = "獲取的位置數據有誤，請重試";
+      } else if (error.message?.includes('網路') || error.message?.includes('network')) {
+        errorTitle = "網路連接失敗";
+        errorDescription = "請檢查網路連接後重試";
+      }
+
+      toast({
+        title: errorTitle,
+        description: errorDescription,
+        variant: "destructive",
+      });
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -270,8 +350,12 @@ const Profile = () => {
                   <p className="text-sm text-muted-foreground mb-2">
                     當前位置：{profile.city || '未設定'}
                   </p>
-                  <Button variant="outline" onClick={requestLocation}>
-                    更新位置
+                  <Button 
+                    variant="outline" 
+                    onClick={requestLocation}
+                    disabled={locationLoading}
+                  >
+                    {locationLoading ? "更新中..." : "更新位置"}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
