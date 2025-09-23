@@ -289,6 +289,49 @@ export const GroupConsensusSummary = React.memo(() => {
 
         {consensusResults.length > 0 ? (
           <>
+            {/* Top Consensus Results - Rankings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>排行榜</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {consensusResults.slice(0, 3).map((result, index) => (
+                    <div key={result.restaurant.id} className="flex items-center gap-4 p-3 rounded-lg border">
+                      <div className="flex-shrink-0">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                          index === 0 ? 'bg-yellow-500' : 
+                          index === 1 ? 'bg-gray-400' : 'bg-yellow-600'
+                        }`}>
+                          {index + 1}
+                        </div>
+                      </div>
+                      
+                      {result.restaurant.photos && result.restaurant.photos.length > 0 && (
+                        <img
+                          src={result.restaurant.photos[0]}
+                          alt={result.restaurant.name}
+                          className="w-12 h-12 rounded-lg object-cover"
+                        />
+                      )}
+                      
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{result.restaurant.name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant={result.hasConsensus ? "default" : "secondary"}>
+                            {result.likePercentage.toFixed(0)}% 喜歡
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {result.likes}/{result.totalVotes} 票
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Pie Chart */}
             <Card>
               <CardHeader>
@@ -344,48 +387,6 @@ export const GroupConsensusSummary = React.memo(() => {
               </CardContent>
             </Card>
 
-            {/* Top Consensus Results */}
-            <Card>
-              <CardHeader>
-                <CardTitle>排行榜</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {consensusResults.slice(0, 3).map((result, index) => (
-                    <div key={result.restaurant.id} className="flex items-center gap-4 p-3 rounded-lg border">
-                      <div className="flex-shrink-0">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                          index === 0 ? 'bg-yellow-500' : 
-                          index === 1 ? 'bg-gray-400' : 'bg-yellow-600'
-                        }`}>
-                          {index + 1}
-                        </div>
-                      </div>
-                      
-                      {result.restaurant.photos && result.restaurant.photos.length > 0 && (
-                        <img
-                          src={result.restaurant.photos[0]}
-                          alt={result.restaurant.name}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                      )}
-                      
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{result.restaurant.name}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={result.hasConsensus ? "default" : "secondary"}>
-                            {result.likePercentage.toFixed(0)}% 喜歡
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {result.likes}/{result.totalVotes} 票
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </>
         ) : (
           <div className="text-center py-16">
