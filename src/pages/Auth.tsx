@@ -127,7 +127,8 @@ const Auth = () => {
     );
   }
 
-  if (user) {
+  // Only redirect if user is authenticated AND not in password reset flow
+  if (user && !isPasswordResetFlow) {
     return <Navigate to="/app/" replace />;
   }
 
@@ -304,11 +305,11 @@ const Auth = () => {
     } else {
       toast({
         title: "密碼更新成功！",
-        description: "您的密碼已更新，正在為您登入...",
+        description: "密碼已更新，請使用新密碼重新登入",
         duration: 5000,
       });
       
-      // Clear URL parameters and show success message
+      // Clear URL parameters and reset state
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('type');
       newUrl.searchParams.delete('code');
@@ -317,7 +318,7 @@ const Auth = () => {
       setIsPasswordResetFlow(false);
       setAuthMessage({ 
         type: 'success', 
-        message: '✅ 密碼更新成功！正在為您登入...' 
+        message: '✅ 密碼更新成功！請使用新密碼重新登入' 
       });
     }
     setIsLoading(false);

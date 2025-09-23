@@ -223,11 +223,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Update password error:', error);
+        return { error };
       } else {
         console.log('Password updated successfully');
+        
+        // After successful password update, sign out the user
+        // This ensures they must log in with the new password
+        setTimeout(async () => {
+          await signOut();
+        }, 100);
+        
+        return { error: null };
       }
-      
-      return { error };
     } catch (error) {
       console.error('Update password processing error:', error);
       return { error };
