@@ -5,16 +5,12 @@ import { usePremium } from '@/hooks/usePremium';
 import { useToast } from '@/hooks/use-toast';
 
 interface SwipeActionButtonsProps {
-  onDislike: () => void;
-  onLike: () => void;
   onGoBack?: () => void;
   canGoBack?: boolean;
   disabled?: boolean;
 }
 
 export const SwipeActionButtons = React.memo(({ 
-  onDislike, 
-  onLike, 
   onGoBack, 
   canGoBack = false, 
   disabled = false 
@@ -40,7 +36,7 @@ export const SwipeActionButtons = React.memo(({
     }
   };
   return (
-    <div className="flex justify-center gap-4 mt-4">
+    <div className="flex justify-center mt-4">
       {/* Go Back Button - Premium Feature */}
       {onGoBack && (
         <Button
@@ -64,27 +60,6 @@ export const SwipeActionButtons = React.memo(({
           )}
         </Button>
       )}
-      
-      <Button
-        variant="outline"
-        size="lg"
-        onClick={onDislike}
-        className="rounded-full w-14 h-14 border-2 border-destructive/20 hover:border-destructive/30 hover:bg-destructive/10 text-destructive"
-        disabled={disabled}
-        aria-label="不喜歡此餐廳"
-      >
-        <span className="text-xl">👎</span>
-      </Button>
-      <Button
-        variant="outline" 
-        size="lg"
-        onClick={onLike}
-        className="rounded-full w-14 h-14 border-2 border-primary/20 hover:border-primary/30 hover:bg-primary/10 text-primary"
-        disabled={disabled}
-        aria-label="喜歡此餐廳"
-      >
-        <span className="text-xl">👍</span>
-      </Button>
     </div>
   );
 });

@@ -141,8 +141,6 @@ export const SwipeCards = React.memo(() => {
 
             {/* Action Buttons */}
             <SwipeActionButtons
-              onDislike={() => handleCardSwipe(false)}
-              onLike={() => handleCardSwipe(true)}
               onGoBack={goBackToPrevious}
               canGoBack={canGoBack}
               disabled={isDragging}
