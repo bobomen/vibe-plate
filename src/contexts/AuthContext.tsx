@@ -65,8 +65,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             newUrl.searchParams.delete('code');
             window.history.replaceState({}, document.title, newUrl.toString());
           } else if (data.session) {
-            // Success - clear URL parameters
-            window.history.replaceState({}, document.title, window.location.pathname);
+            // Success - clear only code parameter, preserve type for password reset flow
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('code');
+            // Only preserve type parameter if it's 'recovery'
+            const type = newUrl.searchParams.get('type');
+            if (type !== 'recovery') {
+              newUrl.searchParams.delete('type');
+            }
+            window.history.replaceState({}, document.title, newUrl.toString());
           }
         } catch (error) {
           console.error('Code exchange processing error:', error);

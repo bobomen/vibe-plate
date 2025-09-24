@@ -32,7 +32,7 @@ const Auth = () => {
       setIsPasswordResetFlow(true);
       setAuthMessage({ 
         type: 'success', 
-        message: '🔐 請設定您的新密碼，完成後將自動登入' 
+        message: '🔐 請設定您的新密碼，完成後請重新登入' 
       });
     }
     
@@ -403,7 +403,7 @@ const Auth = () => {
               <div className="text-center mb-4">
                 <h3 className="text-lg font-semibold">設定新密碼</h3>
                 <p className="text-sm text-muted-foreground">
-                  請輸入您的新密碼，完成後將自動為您登入
+                  請輸入您的新密碼，完成後請使用新密碼重新登入
                 </p>
               </div>
               
