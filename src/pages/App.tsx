@@ -27,7 +27,8 @@ const App = memo(() => {
     );
   }
 
-  if (!user) {
+  // Don't redirect to auth if on reset password page
+  if (!user && location.pathname !== '/reset-password') {
     return <Navigate to="/auth" replace />;
   }
 

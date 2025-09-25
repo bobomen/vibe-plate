@@ -26,6 +26,20 @@ const Auth = () => {
     const error = urlParams.get('error');
     const errorDescription = urlParams.get('error_description');
     const type = urlParams.get('type');
+    const message = urlParams.get('message');
+    
+    // Check if returning from successful password update
+    if (message === 'password_updated') {
+      setAuthMessage({
+        type: 'success',
+        message: '✅ 密碼更新成功！請使用新密碼登入'
+      });
+      // Clear the message parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('message');
+      window.history.replaceState({}, document.title, newUrl.toString());
+      return; // Exit early to avoid other processing
+    }
     
     // Check if this is a password recovery flow
     if (type === 'recovery') {
