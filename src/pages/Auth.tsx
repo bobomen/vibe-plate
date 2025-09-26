@@ -41,13 +41,16 @@ const Auth = () => {
       return; // Exit early to avoid other processing
     }
     
-    // Check if this is a password recovery flow
-    if (type === 'recovery') {
-      setIsPasswordResetFlow(true);
-      setAuthMessage({ 
-        type: 'success', 
-        message: '🔐 請設定您的新密碼，完成後請重新登入' 
-      });
+    // Check if this is a password recovery flow - redirect to dedicated page
+    if (type === 'recovery' && code) {
+      console.log('Password recovery flow detected, waiting for AuthContext to handle redirect');
+      return; // Let AuthContext handle the redirect
+    } else if (type === 'recovery') {
+      // If type=recovery but no code, this might be an invalid state
+      console.log('Invalid recovery state detected, clearing parameters');
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('type');
+      window.history.replaceState({}, document.title, newUrl.toString());
     }
     
     if (error) {

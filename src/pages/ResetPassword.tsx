@@ -22,10 +22,14 @@ const ResetPassword = () => {
   useEffect(() => {
     // 檢查是否為有效的重置請求
     const type = searchParams.get('type');
+    console.log('ResetPassword page loaded, type:', type);
+    
     if (type === 'recovery') {
       setIsValidReset(true);
+      console.log('Valid password reset request detected');
     } else {
       // 無效的重置請求，跳轉到登入頁面
+      console.log('Invalid reset request, redirecting to auth');
       navigate('/auth', { replace: true });
     }
   }, [searchParams, navigate]);
@@ -70,6 +74,8 @@ const ResetPassword = () => {
           description: "密碼已更新，將為您跳轉到登入頁面",
           duration: 3000,
         });
+        
+        console.log('Password reset successful, redirecting to auth page');
         
         // 3秒後跳轉到登入頁面
         setTimeout(() => {
