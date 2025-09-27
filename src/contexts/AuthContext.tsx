@@ -70,15 +70,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const type = newUrl.searchParams.get('type');
             newUrl.searchParams.delete('code');
             
-            // If this is a password recovery, redirect to reset password page
-            if (type === 'recovery') {
-              console.log('Password recovery detected, redirecting to reset password page');
-              window.location.href = `/reset-password?type=recovery`;
-              return;
-            } else {
-              newUrl.searchParams.delete('type');
-              window.history.replaceState({}, document.title, newUrl.toString());
-            }
+            // Clear parameters for normal auth flow
+            newUrl.searchParams.delete('type');
+            window.history.replaceState({}, document.title, newUrl.toString());
           }
         } catch (error) {
           console.error('Code exchange processing error:', error);

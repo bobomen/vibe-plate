@@ -41,15 +41,13 @@ const Auth = () => {
       return; // Exit early to avoid other processing
     }
     
-    // Check if this is a password recovery flow - redirect to dedicated page
-    if (type === 'recovery' && code) {
-      console.log('Password recovery flow detected, waiting for AuthContext to handle redirect');
-      return; // Let AuthContext handle the redirect
-    } else if (type === 'recovery') {
-      // If type=recovery but no code, this might be an invalid state
-      console.log('Invalid recovery state detected, clearing parameters');
+    // Password recovery is now handled directly by /reset-password page
+    // Remove any stray recovery parameters from auth page
+    if (type === 'recovery') {
+      console.log('Recovery type detected on auth page, this should not happen');
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('type');
+      newUrl.searchParams.delete('code');
       window.history.replaceState({}, document.title, newUrl.toString());
     }
     

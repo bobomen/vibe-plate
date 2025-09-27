@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ArrowLeft } from 'lucide-react';
 
 const ResetPassword = () => {
@@ -20,19 +21,58 @@ const ResetPassword = () => {
   const [isValidReset, setIsValidReset] = useState(false);
 
   useEffect(() => {
-    // 檢查是否為有效的重置請求
-    const type = searchParams.get('type');
-    console.log('ResetPassword page loaded, type:', type);
+    // Handle direct access from Supabase reset email
+    const handleDirectReset = async () => {
+      console.log('ResetPassword page loaded, checking URL parameters');
+      
+      // Check if we have auth callback parameters
+      const code = searchParams.get('code');
+      const type = searchParams.get('type');
+      
+      if (code && type === 'recovery') {
+        console.log('Direct password reset callback detected');
+        try {
+          // Exchange the code for a session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('Session exchange error:', error);
+            toast({
+              title: "重置連結無效",
+              description: "請重新申請密碼重置",
+              variant: "destructive",
+            });
+            navigate('/auth', { replace: true });
+            return;
+          }
+          
+          if (data.session) {
+            console.log('Session established for password reset');
+            setIsValidReset(true);
+            
+            // Clean URL
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('code');
+            newUrl.searchParams.delete('type');
+            newUrl.searchParams.set('reset', 'true');
+            window.history.replaceState({}, document.title, newUrl.toString());
+          }
+        } catch (error) {
+          console.error('Reset session error:', error);
+          navigate('/auth', { replace: true });
+        }
+      } else if (searchParams.get('reset') === 'true') {
+        // Already processed, show the form
+        setIsValidReset(true);
+      } else {
+        // No valid reset parameters
+        console.log('No valid reset parameters, redirecting to auth');
+        navigate('/auth', { replace: true });
+      }
+    };
     
-    if (type === 'recovery') {
-      setIsValidReset(true);
-      console.log('Valid password reset request detected');
-    } else {
-      // 無效的重置請求，跳轉到登入頁面
-      console.log('Invalid reset request, redirecting to auth');
-      navigate('/auth', { replace: true });
-    }
-  }, [searchParams, navigate]);
+    handleDirectReset();
+  }, [searchParams, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
