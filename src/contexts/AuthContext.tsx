@@ -249,7 +249,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // This ensures they must log in with the new password
         setTimeout(async () => {
           await signOut();
-        }, 100);
+        }, 200);
         
         return { error: null };
       }

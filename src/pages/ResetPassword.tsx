@@ -119,29 +119,31 @@ const ResetPassword = () => {
       const { error } = await updatePassword(newPassword);
       
       if (error) {
+        console.error('Password update error:', error);
         toast({
           title: "密碼更新失敗",
-          description: error.message,
+          description: error.message || "請稍後再試",
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "密碼更新成功！",
-          description: "密碼已更新，將為您跳轉到登入頁面",
-          duration: 3000,
-        });
-        
         console.log('Password reset successful, redirecting to auth page');
         
-        // 3秒後跳轉到登入頁面
+        toast({
+          title: "密碼更新成功！",
+          description: "即將跳轉到登入頁面，請使用新密碼登入",
+          duration: 2000,
+        });
+        
+        // 立即跳轉到登入頁面，避免用戶等待
         setTimeout(() => {
           navigate('/auth?message=password_updated', { replace: true });
-        }, 3000);
+        }, 1500);
       }
     } catch (error) {
+      console.error('Password update processing error:', error);
       toast({
-        title: "發生錯誤",
-        description: "請稍後再試",
+        title: "密碼更新失敗",
+        description: "處理過程中發生錯誤，請稍後再試",
         variant: "destructive",
       });
     }
