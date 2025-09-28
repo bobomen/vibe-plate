@@ -38,10 +38,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (isHandlingCallback) return;
       isHandlingCallback = true;
       
+      console.log('AuthContext: Checking auth callback on path:', window.location.pathname);
+      
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
+      const type = urlParams.get('type');
       const error = urlParams.get('error');
       const errorDescription = urlParams.get('error_description');
+      
+      console.log('AuthContext: URL params -', { code: !!code, type, error });
+      
+      // Skip processing if we're on the reset password page with recovery parameters
+      // Let ResetPassword component handle it independently
+      if (window.location.pathname === '/reset-password' && code && type === 'recovery') {
+        console.log('AuthContext: Skipping recovery callback - letting ResetPassword handle it');
+        return;
+      }
       
       // Handle errors first
       if (error) {
@@ -50,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       
-      // Handle PKCE code exchange
+      // Handle PKCE code exchange for normal auth flows
       if (code) {
         setAuthLoading(true);
         try {

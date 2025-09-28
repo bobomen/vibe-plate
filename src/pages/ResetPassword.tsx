@@ -23,23 +23,29 @@ const ResetPassword = () => {
   useEffect(() => {
     // Handle direct access from Supabase reset email
     const handleDirectReset = async () => {
-      console.log('ResetPassword page loaded, checking URL parameters');
+      console.log('ResetPassword: Page loaded, URL:', window.location.href);
+      console.log('ResetPassword: Search params:', Object.fromEntries(searchParams.entries()));
       
       // Check if we have auth callback parameters
       const code = searchParams.get('code');
       const type = searchParams.get('type');
       
+      console.log('ResetPassword: Parameters -', { code: !!code, type });
+      
       if (code && type === 'recovery') {
-        console.log('Direct password reset callback detected');
+        console.log('ResetPassword: Processing recovery callback');
         try {
+          setIsLoading(true);
+          
           // Exchange the code for a session
+          console.log('ResetPassword: Exchanging code for session');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           
           if (error) {
-            console.error('Session exchange error:', error);
+            console.error('ResetPassword: Session exchange error:', error);
             toast({
               title: "重置連結無效",
-              description: "請重新申請密碼重置",
+              description: "請重新申請密碼重置或檢查連結是否已過期",
               variant: "destructive",
             });
             navigate('/auth', { replace: true });
@@ -47,7 +53,7 @@ const ResetPassword = () => {
           }
           
           if (data.session) {
-            console.log('Session established for password reset');
+            console.log('ResetPassword: Session established successfully');
             setIsValidReset(true);
             
             // Clean URL
@@ -56,17 +62,27 @@ const ResetPassword = () => {
             newUrl.searchParams.delete('type');
             newUrl.searchParams.set('reset', 'true');
             window.history.replaceState({}, document.title, newUrl.toString());
+            
+            console.log('ResetPassword: URL cleaned, ready for password update');
           }
         } catch (error) {
-          console.error('Reset session error:', error);
+          console.error('ResetPassword: Processing error:', error);
+          toast({
+            title: "處理錯誤",
+            description: "無法處理重置請求，請重新申請",
+            variant: "destructive",
+          });
           navigate('/auth', { replace: true });
+        } finally {
+          setIsLoading(false);
         }
       } else if (searchParams.get('reset') === 'true') {
         // Already processed, show the form
+        console.log('ResetPassword: Already processed, showing form');
         setIsValidReset(true);
       } else {
         // No valid reset parameters
-        console.log('No valid reset parameters, redirecting to auth');
+        console.log('ResetPassword: No valid parameters, redirecting to auth');
         navigate('/auth', { replace: true });
       }
     };
