@@ -48,6 +48,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log('AuthContext: URL params -', { code: !!code, type, error });
       
+      // CRITICAL: If we're on root path with password recovery params, redirect immediately
+      // This must happen BEFORE any code exchange to preserve the parameters
+      if (window.location.pathname === '/' && type === 'recovery' && code) {
+        console.log('AuthContext: Detected password recovery on root, redirecting to /reset-password');
+        window.location.href = `/reset-password${window.location.search}`;
+        return;
+      }
+      
       // Skip processing if we're on the reset password page with recovery parameters
       // Let ResetPassword component handle it independently
       if (window.location.pathname === '/reset-password' && code && type === 'recovery') {
