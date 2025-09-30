@@ -1,8 +1,21 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Heart, UtensilsCrossed, Users, Star } from 'lucide-react';
 
 const Index = () => {
+  // 檢測密碼重置參數並自動重定向
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    
+    // 如果檢測到密碼重置參數，自動重定向到重置頁面
+    if (type === 'recovery') {
+      console.log('Detected password recovery, redirecting to reset-password page');
+      window.location.href = `/reset-password${window.location.search}`;
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/20 via-background to-orange-500/20 p-4">
       <div className="text-center max-w-md">
