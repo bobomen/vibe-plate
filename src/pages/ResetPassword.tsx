@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,25 +19,44 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isValidReset, setIsValidReset] = useState(false);
+  
+  // 防止 React Strict Mode 雙重渲染導致重複處理
+  const hasProcessedRef = useRef(false);
+
 
   useEffect(() => {
-    // Handle direct access from Supabase reset email
+    // 防止重複處理（React Strict Mode 會導致雙重渲染）
+    if (hasProcessedRef.current) {
+      console.log('ResetPassword: Already processed, skipping');
+      return;
+    }
+
     const handleDirectReset = async () => {
       console.log('ResetPassword: Page loaded, URL:', window.location.href);
       console.log('ResetPassword: Search params:', Object.fromEntries(searchParams.entries()));
       
-      // Check if we have auth callback parameters
       const code = searchParams.get('code');
       const type = searchParams.get('type');
+      const resetParam = searchParams.get('reset');
       
-      console.log('ResetPassword: Parameters -', { code: !!code, type });
+      console.log('ResetPassword: Parameters -', { code: !!code, type, reset: resetParam });
       
+      // 如果已經處理過（URL 有 reset=true），直接顯示表單
+      if (resetParam === 'true') {
+        console.log('ResetPassword: Already processed, showing form');
+        setIsValidReset(true);
+        return;
+      }
+      
+      // 如果有 code 和 type=recovery，處理 token 交換
       if (code && type === 'recovery') {
+        // 標記為已處理
+        hasProcessedRef.current = true;
+        
         console.log('ResetPassword: Processing recovery callback');
+        setIsLoading(true);
+        
         try {
-          setIsLoading(true);
-          
-          // Exchange the code for a session
           console.log('ResetPassword: Exchanging code for session');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           
@@ -45,10 +64,12 @@ const ResetPassword = () => {
             console.error('ResetPassword: Session exchange error:', error);
             toast({
               title: "重置連結無效",
-              description: "請重新申請密碼重置或檢查連結是否已過期",
+              description: error.message.includes('expired') 
+                ? "連結已過期，請重新申請密碼重置" 
+                : "連結無效或已使用，請重新申請",
               variant: "destructive",
             });
-            navigate('/auth', { replace: true });
+            setTimeout(() => navigate('/auth', { replace: true }), 2000);
             return;
           }
           
@@ -56,14 +77,14 @@ const ResetPassword = () => {
             console.log('ResetPassword: Session established successfully');
             setIsValidReset(true);
             
-            // Clean URL
+            // 清理 URL 參數並標記為已處理
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('code');
             newUrl.searchParams.delete('type');
             newUrl.searchParams.set('reset', 'true');
             window.history.replaceState({}, document.title, newUrl.toString());
             
-            console.log('ResetPassword: URL cleaned, ready for password update');
+            console.log('ResetPassword: Ready for password update');
           }
         } catch (error) {
           console.error('ResetPassword: Processing error:', error);
@@ -72,16 +93,12 @@ const ResetPassword = () => {
             description: "無法處理重置請求，請重新申請",
             variant: "destructive",
           });
-          navigate('/auth', { replace: true });
+          setTimeout(() => navigate('/auth', { replace: true }), 2000);
         } finally {
           setIsLoading(false);
         }
-      } else if (searchParams.get('reset') === 'true') {
-        // Already processed, show the form
-        console.log('ResetPassword: Already processed, showing form');
-        setIsValidReset(true);
       } else {
-        // No valid reset parameters
+        // 沒有有效參數，重定向到登錄頁
         console.log('ResetPassword: No valid parameters, redirecting to auth');
         navigate('/auth', { replace: true });
       }
@@ -116,43 +133,51 @@ const ResetPassword = () => {
     }
 
     try {
+      console.log('ResetPassword: Updating password');
       const { error } = await updatePassword(newPassword);
       
       if (error) {
-        console.error('Password update error:', error);
+        console.error('ResetPassword: Password update error:', error);
         toast({
           title: "密碼更新失敗",
           description: error.message || "請稍後再試",
           variant: "destructive",
         });
+        setIsLoading(false);
       } else {
-        console.log('Password reset successful, redirecting to auth page');
+        console.log('ResetPassword: Password updated successfully');
         
         toast({
-          title: "密碼更新成功！",
-          description: "即將跳轉到登入頁面，請使用新密碼登入",
-          duration: 2000,
+          title: "✅ 密碼更新成功！",
+          description: "即將跳轉到登入頁面",
         });
         
-        // 立即跳轉到登入頁面，避免用戶等待
+        // 1秒後跳轉，給用戶時間看到成功訊息
         setTimeout(() => {
           navigate('/auth?message=password_updated', { replace: true });
-        }, 1500);
+        }, 1000);
       }
     } catch (error) {
-      console.error('Password update processing error:', error);
+      console.error('ResetPassword: Update processing error:', error);
       toast({
         title: "密碼更新失敗",
         description: "處理過程中發生錯誤，請稍後再試",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
+  // 顯示加載狀態或等待處理
   if (!isValidReset) {
-    return null; // 等待重導向
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">驗證重置連結...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
