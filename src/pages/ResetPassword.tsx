@@ -32,13 +32,22 @@ const ResetPassword = () => {
     }
 
     const processResetToken = async () => {
-      console.log('ResetPassword: Processing reset token');
-      console.log('ResetPassword: URL:', window.location.href);
+      console.log('=== ResetPassword: START ===');
+      console.log('ResetPassword: Full URL:', window.location.href);
+      console.log('ResetPassword: Pathname:', window.location.pathname);
+      console.log('ResetPassword: Search:', window.location.search);
       
       const code = searchParams.get('code');
       const type = searchParams.get('type');
+      const error = searchParams.get('error');
+      const errorDescription = searchParams.get('error_description');
       
-      console.log('ResetPassword: Parameters -', { code: !!code, type });
+      console.log('ResetPassword: All parameters:', {
+        code: code ? `${code.substring(0, 10)}...` : null,
+        type,
+        error,
+        errorDescription
+      });
       
       // 必須有 code 和 type=recovery
       if (!code || type !== 'recovery') {

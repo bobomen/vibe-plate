@@ -6,22 +6,45 @@ import { Heart, UtensilsCrossed, Users, Star } from 'lucide-react';
 const Index = () => {
   // 簡單的路由器 - 只檢測並重定向，不處理任何 token
   useEffect(() => {
+    console.log('=== Index: START ===');
+    console.log('Index: Full URL:', window.location.href);
+    console.log('Index: Search params:', window.location.search);
+    
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
     const code = urlParams.get('code');
+    const error = urlParams.get('error');
     
-    console.log('Index: Checking URL params', { type, hasCode: !!code });
+    console.log('Index: Parsed params:', { 
+      type, 
+      code: code ? `${code.substring(0, 10)}...` : null,
+      error,
+      allParams: Object.fromEntries(urlParams.entries())
+    });
     
     // 如果是密碼重置，立即重定向到專用頁面
     if (type === 'recovery' && code) {
-      console.log('Index: Redirecting to reset-password page');
+      console.log('Index: Redirecting to reset-password with full query string');
       window.location.href = `/reset-password${window.location.search}`;
+      return;
     }
+    
+    // 如果只有 type=recovery 但沒有 code，也重定向（可能是參數問題）
+    if (type === 'recovery') {
+      console.warn('Index: Found type=recovery but no code!');
+      console.log('Index: Still redirecting to reset-password page');
+      window.location.href = `/reset-password${window.location.search}`;
+      return;
+    }
+    
     // 如果是註冊確認，重定向到登錄頁
-    else if (type === 'signup' && code) {
+    if (type === 'signup' && code) {
       console.log('Index: Redirecting to auth page for signup confirmation');
       window.location.href = `/auth${window.location.search}`;
+      return;
     }
+    
+    console.log('Index: No special params, staying on landing page');
   }, []);
 
   return (
