@@ -11,7 +11,6 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
   loading: boolean;
-  authLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -28,111 +27,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
-    let isHandlingCallback = false;
-
-    // Handle PKCE auth callback with proper error handling
-    const handleAuthCallback = async () => {
-      if (isHandlingCallback) return;
-      isHandlingCallback = true;
-      
-      console.log('AuthContext: Checking auth callback on path:', window.location.pathname);
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      const type = urlParams.get('type');
-      const error = urlParams.get('error');
-      const errorDescription = urlParams.get('error_description');
-      
-      console.log('AuthContext: URL params -', { code: !!code, type, error });
-      
-      // CRITICAL: If we're on root path with password recovery params, redirect immediately
-      // This must happen BEFORE any code exchange to preserve the parameters
-      if (window.location.pathname === '/' && type === 'recovery' && code) {
-        console.log('AuthContext: Detected password recovery on root, redirecting to /reset-password');
-        window.location.href = `/reset-password${window.location.search}`;
-        return;
-      }
-      
-      // Skip processing if we're on the reset password page with recovery parameters
-      // Let ResetPassword component handle it independently
-      if (window.location.pathname === '/reset-password' && code && type === 'recovery') {
-        console.log('AuthContext: Skipping recovery callback - letting ResetPassword handle it');
-        return;
-      }
-      
-      // Handle errors first
-      if (error) {
-        console.error('Auth callback error:', error, errorDescription);
-        // Let the Auth component handle error display
-        return;
-      }
-      
-      // Handle PKCE code exchange for normal auth flows
-      if (code) {
-        setAuthLoading(true);
-        try {
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          
-          if (exchangeError) {
-            console.error('Code exchange error:', exchangeError);
-            // Add error to URL for Auth component to handle
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('error', 'exchange_failed');
-            newUrl.searchParams.set('error_description', exchangeError.message);
-            newUrl.searchParams.delete('code');
-            window.history.replaceState({}, document.title, newUrl.toString());
-          } else if (data.session) {
-            // Success - clear code parameter and handle redirect
-            const newUrl = new URL(window.location.href);
-            const type = newUrl.searchParams.get('type');
-            newUrl.searchParams.delete('code');
-            
-            // Clear parameters for normal auth flow
-            newUrl.searchParams.delete('type');
-            window.history.replaceState({}, document.title, newUrl.toString());
-          }
-        } catch (error) {
-          console.error('Code exchange processing error:', error);
-          // Add error to URL for Auth component to handle
-          const newUrl = new URL(window.location.href);
-          newUrl.searchParams.set('error', 'processing_failed');
-          newUrl.searchParams.set('error_description', 'Authentication processing failed');
-          newUrl.searchParams.delete('code');
-          window.history.replaceState({}, document.title, newUrl.toString());
-        } finally {
-          setAuthLoading(false);
-        }
-      }
-    };
-
-    // Handle auth callback before setting up listeners
-    handleAuthCallback();
-
-    // Set up auth state listener with proper error handling
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session?.user?.email);
-        
-        // Only synchronous state updates here to prevent deadlocks
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Handle different auth events
-        if (event === 'SIGNED_IN') {
-          console.log('User signed in successfully');
-        } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
-        } else if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed');
-        }
       }
     );
 
-    // Check for existing session
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -180,7 +87,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) {
         console.error('Sign in error:', error);
         
-        // Enhanced error handling for email confirmation
         if (error.message.includes('Email not confirmed')) {
           return { 
             error: { 
@@ -192,12 +98,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } else {
         console.log('Sign in successful for:', email);
-        
-        // Check if user email is confirmed
-        if (data.user && !data.user.email_confirmed_at) {
-          console.warn('User email not confirmed:', email);
-          // Don't block login here as this should be handled by Supabase settings
-        }
       }
       
       return { error };
@@ -254,7 +154,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Password updated successfully');
         
         // After successful password update, sign out the user
-        // This ensures they must log in with the new password
         setTimeout(async () => {
           await signOut();
         }, 200);
@@ -276,7 +175,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     resetPassword,
     updatePassword,
     loading,
-    authLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

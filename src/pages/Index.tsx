@@ -4,15 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Heart, UtensilsCrossed, Users, Star } from 'lucide-react';
 
 const Index = () => {
-  // 檢測密碼重置參數並自動重定向
+  // 簡單的路由器 - 只檢測並重定向，不處理任何 token
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
+    const code = urlParams.get('code');
     
-    // 如果檢測到密碼重置參數，自動重定向到重置頁面
-    if (type === 'recovery') {
-      console.log('Detected password recovery, redirecting to reset-password page');
+    console.log('Index: Checking URL params', { type, hasCode: !!code });
+    
+    // 如果是密碼重置，立即重定向到專用頁面
+    if (type === 'recovery' && code) {
+      console.log('Index: Redirecting to reset-password page');
       window.location.href = `/reset-password${window.location.search}`;
+    }
+    // 如果是註冊確認，重定向到登錄頁
+    else if (type === 'signup' && code) {
+      console.log('Index: Redirecting to auth page for signup confirmation');
+      window.location.href = `/auth${window.location.search}`;
     }
   }, []);
 

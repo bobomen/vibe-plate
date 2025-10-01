@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -17,12 +17,12 @@ const ResetPassword = () => {
   
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isValidReset, setIsValidReset] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // 防止 React Strict Mode 雙重渲染導致重複處理
   const hasProcessedRef = useRef(false);
-
 
   useEffect(() => {
     // 防止重複處理（React Strict Mode 會導致雙重渲染）
@@ -31,86 +31,80 @@ const ResetPassword = () => {
       return;
     }
 
-    const handleDirectReset = async () => {
-      console.log('ResetPassword: Page loaded, URL:', window.location.href);
-      console.log('ResetPassword: Search params:', Object.fromEntries(searchParams.entries()));
+    const processResetToken = async () => {
+      console.log('ResetPassword: Processing reset token');
+      console.log('ResetPassword: URL:', window.location.href);
       
       const code = searchParams.get('code');
       const type = searchParams.get('type');
-      const resetParam = searchParams.get('reset');
       
-      console.log('ResetPassword: Parameters -', { code: !!code, type, reset: resetParam });
+      console.log('ResetPassword: Parameters -', { code: !!code, type });
       
-      // 如果已經處理過（URL 有 reset=true），直接顯示表單
-      if (resetParam === 'true') {
-        console.log('ResetPassword: Already processed, showing form');
-        setIsValidReset(true);
+      // 必須有 code 和 type=recovery
+      if (!code || type !== 'recovery') {
+        console.log('ResetPassword: Missing required parameters, redirecting to auth');
+        setErrorMessage('缺少必要參數');
+        setTimeout(() => navigate('/auth', { replace: true }), 2000);
         return;
       }
       
-      // 如果有 code 和 type=recovery，處理 token 交換
-      if (code && type === 'recovery') {
-        // 標記為已處理
-        hasProcessedRef.current = true;
+      // 標記為已處理，防止重複
+      hasProcessedRef.current = true;
+      
+      try {
+        console.log('ResetPassword: Exchanging code for session');
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         
-        console.log('ResetPassword: Processing recovery callback');
-        setIsLoading(true);
-        
-        try {
-          console.log('ResetPassword: Exchanging code for session');
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.error('ResetPassword: Token exchange error:', error);
           
-          if (error) {
-            console.error('ResetPassword: Session exchange error:', error);
-            toast({
-              title: "重置連結無效",
-              description: error.message.includes('expired') 
-                ? "連結已過期，請重新申請密碼重置" 
-                : "連結無效或已使用，請重新申請",
-              variant: "destructive",
-            });
-            setTimeout(() => navigate('/auth', { replace: true }), 2000);
-            return;
+          let errorMsg = '重置連結無效';
+          if (error.message.includes('expired')) {
+            errorMsg = '連結已過期，請重新申請密碼重置';
+          } else if (error.message.includes('already been used')) {
+            errorMsg = '連結已使用過，請重新申請密碼重置';
           }
           
-          if (data.session) {
-            console.log('ResetPassword: Session established successfully');
-            setIsValidReset(true);
-            
-            // 清理 URL 參數並標記為已處理
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('code');
-            newUrl.searchParams.delete('type');
-            newUrl.searchParams.set('reset', 'true');
-            window.history.replaceState({}, document.title, newUrl.toString());
-            
-            console.log('ResetPassword: Ready for password update');
-          }
-        } catch (error) {
-          console.error('ResetPassword: Processing error:', error);
+          setErrorMessage(errorMsg);
           toast({
-            title: "處理錯誤",
-            description: "無法處理重置請求，請重新申請",
+            title: "重置連結無效",
+            description: errorMsg,
             variant: "destructive",
           });
-          setTimeout(() => navigate('/auth', { replace: true }), 2000);
-        } finally {
-          setIsLoading(false);
+          
+          setTimeout(() => navigate('/auth', { replace: true }), 3000);
+          return;
         }
-      } else {
-        // 沒有有效參數，重定向到登錄頁
-        console.log('ResetPassword: No valid parameters, redirecting to auth');
-        navigate('/auth', { replace: true });
+        
+        if (data.session) {
+          console.log('ResetPassword: Session established successfully');
+          setIsValidReset(true);
+          setIsLoading(false);
+          
+          toast({
+            title: "驗證成功",
+            description: "請設定您的新密碼",
+          });
+        }
+      } catch (error) {
+        console.error('ResetPassword: Processing error:', error);
+        setErrorMessage('處理重置請求時發生錯誤');
+        toast({
+          title: "處理錯誤",
+          description: "無法處理重置請求，請重新申請",
+          variant: "destructive",
+        });
+        
+        setTimeout(() => navigate('/auth', { replace: true }), 3000);
       }
     };
     
-    handleDirectReset();
+    processResetToken();
   }, [searchParams, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     // 驗證密碼
     if (newPassword !== confirmPassword) {
       toast({
@@ -118,7 +112,6 @@ const ResetPassword = () => {
         description: "請確認兩次輸入的密碼相同",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
 
@@ -128,9 +121,10 @@ const ResetPassword = () => {
         description: "密碼至少需要6個字元",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
 
     try {
       console.log('ResetPassword: Updating password');
@@ -148,14 +142,14 @@ const ResetPassword = () => {
         console.log('ResetPassword: Password updated successfully');
         
         toast({
-          title: "✅ 密碼更新成功！",
-          description: "即將跳轉到登入頁面",
+          title: "密碼更新成功！",
+          description: "即將跳轉到登入頁面，請使用新密碼登入",
         });
         
-        // 1秒後跳轉，給用戶時間看到成功訊息
+        // 1.5秒後跳轉
         setTimeout(() => {
           navigate('/auth?message=password_updated', { replace: true });
-        }, 1000);
+        }, 1500);
       }
     } catch (error) {
       console.error('ResetPassword: Update processing error:', error);
@@ -168,8 +162,31 @@ const ResetPassword = () => {
     }
   };
 
-  // 顯示加載狀態或等待處理
-  if (!isValidReset) {
+  // 錯誤狀態
+  if (errorMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle className="text-2xl">重置失敗</CardTitle>
+            <CardDescription>{errorMessage}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => navigate('/auth')}
+              className="w-full"
+            >
+              返回登入頁面
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // 載入中狀態
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20">
         <div className="text-center space-y-4">
@@ -180,10 +197,12 @@ const ResetPassword = () => {
     );
   }
 
+  // 顯示密碼重置表單
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
           <CardTitle className="text-2xl">設定新密碼</CardTitle>
           <CardDescription>
             請輸入您的新密碼來完成重置
@@ -197,7 +216,7 @@ const ResetPassword = () => {
               <Input
                 id="newPassword"
                 type="password"
-                placeholder="請輸入新密碼"
+                placeholder="請輸入新密碼（至少6個字元）"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required

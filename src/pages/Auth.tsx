@@ -11,139 +11,49 @@ import { Heart, UtensilsCrossed, KeyRound, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
-  const { user, signUp, signIn, resetPassword, updatePassword, loading, authLoading } = useAuth();
+  const { user, signUp, signIn, resetPassword, loading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [authMessage, setAuthMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [isPasswordResetFlow, setIsPasswordResetFlow] = useState(false);
 
   useEffect(() => {
-    // Check for auth callback parameters
+    // 只處理密碼更新成功的訊息
     const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const error = urlParams.get('error');
-    const errorDescription = urlParams.get('error_description');
-    const type = urlParams.get('type');
     const message = urlParams.get('message');
     
-    // Check if returning from successful password update
     if (message === 'password_updated') {
       setAuthMessage({
         type: 'success',
         message: '✅ 密碼更新成功！請使用新密碼登入'
       });
-      // Clear the message parameter
+      
+      // 清除 URL 參數
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('message');
       window.history.replaceState({}, document.title, newUrl.toString());
-      return; // Exit early to avoid other processing
-    }
-    
-    // Password recovery is now handled directly by /reset-password page
-    // Remove any stray recovery parameters from auth page
-    if (type === 'recovery') {
-      console.log('Recovery type detected on auth page, this should not happen');
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('type');
-      newUrl.searchParams.delete('code');
-      window.history.replaceState({}, document.title, newUrl.toString());
-    }
-    
-    if (error) {
-      let message = '驗證失敗';
       
-      // Provide more specific error messages
-      if (error === 'access_denied') {
-        message = '訪問被拒絕，請重新嘗試驗證';
-      } else if (error === 'server_error') {
-        message = '服務器錯誤，請稍後重試';
-      } else if (error === 'exchange_failed') {
-        message = '驗證失敗，請重新點擊郵件中的驗證連結';
-      } else if (error === 'processing_failed') {
-        message = '驗證處理失敗，請重新嘗試或聯繫客服';
-      } else if (errorDescription) {
-        if (errorDescription.includes('expired') || errorDescription.includes('token') || errorDescription.includes('not found')) {
-          message = '重設連結已失效，請重新申請密碼重設';
-          // Auto-clear URL and switch to reset form
-          setTimeout(() => {
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('error');
-            newUrl.searchParams.delete('error_description');
-            newUrl.searchParams.delete('type');
-            window.history.replaceState({}, document.title, newUrl.toString());
-            setIsPasswordResetFlow(false);
-            setShowResetForm(true);
-            setAuthMessage(null);
-          }, 3000);
-        } else if (errorDescription.includes('invalid')) {
-          message = '無效的驗證連結，請檢查郵件中的連結或重新申請';
-        } else {
-          message = errorDescription;
-        }
-      }
-      
-      setAuthMessage({ type: 'error', message });
-      
-      toast({
-        title: "驗證失敗",
-        description: message,
-        variant: "destructive",
-        duration: 10000,
-      });
-      
-      // Clear error parameters after a delay
-      setTimeout(() => {
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('error');
-        newUrl.searchParams.delete('error_description');
-        window.history.replaceState({}, document.title, newUrl.toString());
-        setAuthMessage(null);
-      }, 12000);
-      
-    } else if (code && !authLoading) {
-      // Code is being processed, show loading message
-      setAuthMessage({ 
-        type: 'success', 
-        message: '正在處理驗證，請稍候...' 
-      });
-      
-    } else if (!code && !error && user) {
-      // Successfully authenticated
-      setAuthMessage({ 
-        type: 'success', 
-        message: '驗證成功！歡迎使用美食滑卡' 
-      });
-      
-      toast({
-        title: "驗證成功！",
-        description: "歡迎使用美食滑卡，立即開始探索美食",
-        duration: 5000,
-      });
-      
-      // Clear success message after redirect
+      // 3秒後清除訊息
       setTimeout(() => {
         setAuthMessage(null);
       }, 3000);
     }
-  }, [toast, authLoading, user]);
+  }, []);
 
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">
-            {authLoading ? '正在驗證您的帳號...' : '載入中...'}
-          </p>
+          <p className="text-muted-foreground">載入中...</p>
         </div>
       </div>
     );
   }
 
-  // Only redirect if user is authenticated AND not in password reset flow
-  if (user && !isPasswordResetFlow) {
+  // 已登入用戶自動跳轉到應用
+  if (user) {
     return <Navigate to="/app/" replace />;
   }
 
@@ -281,63 +191,6 @@ const Auth = () => {
     setIsLoading(false);
   };
 
-  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    const formData = new FormData(e.currentTarget);
-    const newPassword = formData.get('newPassword') as string;
-    const confirmPassword = formData.get('confirmPassword') as string;
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "密碼不符",
-        description: "請確認兩次輸入的密碼相同",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      toast({
-        title: "密碼太短",
-        description: "密碼至少需要6個字元",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    const { error } = await updatePassword(newPassword);
-    
-    if (error) {
-      toast({
-        title: "密碼更新失敗",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "密碼更新成功！",
-        description: "密碼已更新，請使用新密碼重新登入",
-        duration: 5000,
-      });
-      
-      // Clear URL parameters and reset state
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('type');
-      newUrl.searchParams.delete('code');
-      window.history.replaceState({}, document.title, newUrl.toString());
-      
-      setIsPasswordResetFlow(false);
-      setAuthMessage({ 
-        type: 'success', 
-        message: '✅ 密碼更新成功！請使用新密碼重新登入' 
-      });
-    }
-    setIsLoading(false);
-  };
 
   const GoogleIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -413,48 +266,7 @@ const Auth = () => {
             </div>
           )}
           
-          {isPasswordResetFlow ? (
-            <div className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold">設定新密碼</h3>
-                <p className="text-sm text-muted-foreground">
-                  請輸入您的新密碼，完成後請使用新密碼重新登入
-                </p>
-              </div>
-              
-              <form onSubmit={handleUpdatePassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">新密碼</Label>
-                  <Input
-                    id="new-password"
-                    name="newPassword"
-                    type="password"
-                    placeholder="請輸入新密碼（至少6位）"
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-new-password">確認新密碼</Label>
-                  <Input
-                    id="confirm-new-password"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="請再次輸入新密碼"
-                    required
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? "更新中..." : "更新密碼"}
-                </Button>
-              </form>
-            </div>
-          ) : (
-            <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">登入</TabsTrigger>
               <TabsTrigger value="signup">註冊</TabsTrigger>
@@ -599,7 +411,6 @@ const Auth = () => {
               <SocialAuthButtons />
             </TabsContent>
           </Tabs>
-          )}
         </CardContent>
       </Card>
     </div>
