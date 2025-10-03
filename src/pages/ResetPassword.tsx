@@ -37,23 +37,22 @@ const ResetPassword = () => {
       console.log('ResetPassword: Pathname:', window.location.pathname);
       console.log('ResetPassword: Search:', window.location.search);
       
-      const code = searchParams.get('code');
       const type = searchParams.get('type');
       const error = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
       
       console.log('ResetPassword: All parameters:', {
-        code: code ? `${code.substring(0, 10)}...` : null,
         type,
         error,
-        errorDescription
+        errorDescription,
+        allParams: Object.fromEntries(searchParams.entries())
       });
       
-      // 必須有 code 和 type=recovery
-      if (!code || type !== 'recovery') {
-        console.log('ResetPassword: Missing required parameters, redirecting to auth');
-        setErrorMessage('缺少必要參數');
-        setTimeout(() => navigate('/auth', { replace: true }), 2000);
+      // 檢查是否有錯誤
+      if (error) {
+        console.error('ResetPassword: Error in URL:', error, errorDescription);
+        setErrorMessage(errorDescription || '重置連結無效');
+        setTimeout(() => navigate('/auth', { replace: true }), 3000);
         return;
       }
       
@@ -61,32 +60,20 @@ const ResetPassword = () => {
       hasProcessedRef.current = true;
       
       try {
-        console.log('ResetPassword: Exchanging code for session');
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        // Supabase 在驗證 token 後會自動創建會話
+        // 我們只需要檢查會話是否存在
+        console.log('ResetPassword: Checking for existing session');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('ResetPassword: Token exchange error:', error);
-          
-          let errorMsg = '重置連結無效';
-          if (error.message.includes('expired')) {
-            errorMsg = '連結已過期，請重新申請密碼重置';
-          } else if (error.message.includes('already been used')) {
-            errorMsg = '連結已使用過，請重新申請密碼重置';
-          }
-          
-          setErrorMessage(errorMsg);
-          toast({
-            title: "重置連結無效",
-            description: errorMsg,
-            variant: "destructive",
-          });
-          
+        if (sessionError) {
+          console.error('ResetPassword: Session check error:', sessionError);
+          setErrorMessage('無法驗證會話');
           setTimeout(() => navigate('/auth', { replace: true }), 3000);
           return;
         }
         
-        if (data.session) {
-          console.log('ResetPassword: Session established successfully');
+        if (session) {
+          console.log('ResetPassword: Valid session found, user can reset password');
           setIsValidReset(true);
           setIsLoading(false);
           
@@ -94,6 +81,10 @@ const ResetPassword = () => {
             title: "驗證成功",
             description: "請設定您的新密碼",
           });
+        } else {
+          console.log('ResetPassword: No valid session found');
+          setErrorMessage('未找到有效的會話，請重新申請密碼重置');
+          setTimeout(() => navigate('/auth', { replace: true }), 3000);
         }
       } catch (error) {
         console.error('ResetPassword: Processing error:', error);
