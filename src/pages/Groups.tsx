@@ -48,17 +48,13 @@ const Groups = () => {
     try {
       setLoading(true);
       
-      // First, get all groups where the user is a member
+      // Optimized query: Get groups with members and profiles in one go
       const { data: memberData, error: memberError } = await supabase
         .from('group_members')
         .select('group_id')
         .eq('user_id', user.id);
 
-      if (memberError) {
-        console.error('Error fetching user groups:', memberError);
-        throw memberError;
-      }
-
+      if (memberError) throw memberError;
       if (!memberData || memberData.length === 0) {
         setGroups([]);
         return;
@@ -66,70 +62,44 @@ const Groups = () => {
 
       const groupIds = memberData.map(m => m.group_id);
 
-      // Then get the group details
+      // Get groups with their details
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
-        .select(`
-          id,
-          code,
-          name,
-          created_by,
-          created_at
-        `)
+        .select('id, code, name, created_by, created_at')
         .in('id', groupIds)
         .order('created_at', { ascending: false });
 
-      if (groupsError) {
-        console.error('Error fetching groups:', groupsError);
-        throw groupsError;
-      }
+      if (groupsError) throw groupsError;
 
-      // Finally, get all members for these groups with their profile data
-      const groupsWithMembers = await Promise.all(
-        (groupsData || []).map(async (group) => {
-          // Get all members for this group
-          const { data: membersData, error: membersError } = await supabase
-            .from('group_members')
-            .select('user_id')
-            .eq('group_id', group.id);
+      // Batch fetch all members and profiles
+      const { data: allMembersData } = await supabase
+        .from('group_members')
+        .select('group_id, user_id')
+        .in('group_id', groupIds);
 
-          if (membersError) {
-            console.warn('Error fetching group members:', membersError);
-            return {
-              ...group,
-              group_members: []
-            };
-          }
+      const allUserIds = [...new Set(allMembersData?.map(m => m.user_id) || [])];
+      const { data: allProfilesData } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', allUserIds);
 
-          if (!membersData || membersData.length === 0) {
-            return {
-              ...group,
-              group_members: []
-            };
-          }
-
-          // Get profiles for all member user_ids
-          const userIds = membersData.map(m => m.user_id);
-          const { data: profilesData } = await supabase
-            .from('profiles')
-            .select('user_id, display_name')
-            .in('user_id', userIds);
-
-          // Combine member data with profile data
-          const membersWithProfiles = membersData.map(member => {
-            const profile = profilesData?.find(p => p.user_id === member.user_id);
+      // Build groups with members efficiently
+      const groupsWithMembers = (groupsData || []).map(group => {
+        const groupMembers = (allMembersData || [])
+          .filter(m => m.group_id === group.id)
+          .map(member => {
+            const profile = allProfilesData?.find(p => p.user_id === member.user_id);
             return {
               user_id: member.user_id,
               profiles: profile ? { display_name: profile.display_name || '未知用戶' } : null
             };
           });
 
-          return {
-            ...group,
-            group_members: membersWithProfiles
-          };
-        })
-      );
+        return {
+          ...group,
+          group_members: groupMembers
+        };
+      });
 
       setGroups(groupsWithMembers);
     } catch (error) {

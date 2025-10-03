@@ -74,27 +74,38 @@ const Favorites = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        setFavorites([]);
+        setLoading(false);
+        return;
+      }
       
-      // Fetch categories for each favorite
-      const favoritesWithCategories = await Promise.all(
-        (data || []).map(async (favorite) => {
-          const { data: categoryItems } = await supabase
-            .from('favorite_category_items')
-            .select(`
-              favorite_categories (
-                id,
-                name,
-                color
-              )
-            `)
-            .eq('favorite_id', favorite.id);
-          
-          return {
-            ...favorite,
-            categories: categoryItems?.map(item => item.favorite_categories).filter(Boolean) || []
-          };
-        })
-      );
+      // Optimized: Batch fetch all category items at once
+      const favoriteIds = data.map(f => f.id);
+      const { data: allCategoryItems } = await supabase
+        .from('favorite_category_items')
+        .select(`
+          favorite_id,
+          favorite_categories (
+            id,
+            name,
+            color
+          )
+        `)
+        .in('favorite_id', favoriteIds);
+      
+      // Build favorites with categories efficiently
+      const favoritesWithCategories = data.map(favorite => {
+        const categoryItems = (allCategoryItems || [])
+          .filter(item => item.favorite_id === favorite.id)
+          .map(item => item.favorite_categories)
+          .filter(Boolean);
+        
+        return {
+          ...favorite,
+          categories: categoryItems
+        };
+      });
       
       setFavorites(favoritesWithCategories);
     } catch (error) {
