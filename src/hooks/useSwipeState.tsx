@@ -210,9 +210,24 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       return;
     }
 
+    // Helper function to check if user has any active preferences
+    const hasAnyActivePreference = (): boolean => {
+      if (!profilePreferences) return false;
+      
+      return !!(
+        (profilePreferences.min_rating && profilePreferences.min_rating > 0) ||
+        profilePreferences.michelin_stars ||
+        profilePreferences.bib_gourmand ||
+        profilePreferences.has_500_dishes ||
+        (profilePreferences.favorite_cuisines && profilePreferences.favorite_cuisines.length > 0) ||
+        (profilePreferences.dietary_preferences && profilePreferences.dietary_preferences.length > 0)
+      );
+    };
+
     // Helper function to check if restaurant matches profile preferences
     const matchesProfilePreferences = (restaurant: Restaurant): boolean => {
-      if (!profilePreferences) return false;
+      // If no profile preferences or no active preferences, return true (show all restaurants)
+      if (!profilePreferences || !hasAnyActivePreference()) return true;
       
       let matches = false;
       
@@ -335,9 +350,15 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
         filters.cuisineTypes.length > 0 ||
         filters.dietaryOptions.length > 0;
 
-      // If no immediate filters are active, use profile preferences only
+      // If no immediate filters are active, check profile preferences
       if (!hasImmediateFilters) {
-        return !profilePreferences || matchesProfilePreferences(restaurant);
+        // If no active preferences, show all restaurants (return true)
+        if (!hasAnyActivePreference()) {
+          console.log('[applyFilters] No immediate filters and no active preferences, showing restaurant:', restaurant.name);
+          return true;
+        }
+        // If has active preferences, match against them
+        return matchesProfilePreferences(restaurant);
       }
 
       // UNION: Match profile preferences OR immediate filters
