@@ -14,6 +14,7 @@ interface PreferenceSettingsProps {
     preferred_price_min: number;
     preferred_price_max: number;
     favorite_cuisines: string[];
+    min_rating?: number;
     preferences: {
       michelin_stars: boolean;
       bib_gourmand: boolean;
@@ -101,6 +102,14 @@ export const PreferenceSettings = ({ preferences, onUpdate, isPremium = false, o
       preferred_price_min: values[0],
       preferred_price_max: values[1]
     });
+  };
+
+  const updateMinRating = (enabled: boolean) => {
+    if (!isPremium) {
+      onUpgrade?.();
+      return;
+    }
+    handleUpdate({ min_rating: enabled ? 4 : 0 });
   };
 
   const handleUpdate = async (updates: any) => {
@@ -210,6 +219,17 @@ export const PreferenceSettings = ({ preferences, onUpdate, isPremium = false, o
           <Label className="text-base font-medium">特殊偏好</Label>
           <p className="text-sm text-muted-foreground mb-3">選擇您感興趣的餐廳特色</p>
           <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-yellow-500" />
+                <span>Google 4顆星以上</span>
+              </div>
+              <Switch
+                checked={(preferences.min_rating || 0) >= 4}
+                onCheckedChange={updateMinRating}
+              />
+            </div>
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-yellow-500" />

@@ -18,6 +18,8 @@ export interface FilterOptions {
   hasMichelinStars: boolean;
   has500Dishes: boolean;
   hasBibGourmand: boolean;
+  cuisineTypes: string[];
+  dietaryOptions: string[];
 }
 
 interface SearchAndFilterProps {
@@ -36,6 +38,26 @@ const DISTANCE_OPTIONS = [
 ];
 
 const PRICE_LABELS = ['$0', '$100', '$200', '$300', '$400', '$500', '$600', '$700', '$800', '$900', '$1000+'];
+
+const CUISINE_OPTIONS = [
+  { id: 'chinese', label: '中式', icon: '🥢' },
+  { id: 'taiwanese', label: '台式', icon: '🍜' },
+  { id: 'japanese', label: '日式', icon: '🍣' },
+  { id: 'korean', label: '韓式', icon: '🍲' },
+  { id: 'thai', label: '泰式', icon: '🍛' },
+  { id: 'american', label: '美式', icon: '🍔' },
+  { id: 'italian', label: '義式', icon: '🍝' },
+  { id: 'french', label: '法式', icon: '🥐' },
+  { id: 'mediterranean', label: '地中海', icon: '🫒' },
+  { id: 'other', label: '其他', icon: '🍴' },
+];
+
+const DIETARY_OPTIONS = [
+  { id: 'vegetarian', label: '素食', icon: '🥬' },
+  { id: 'vegan', label: '純素', icon: '🌱' },
+  { id: 'halal', label: '清真', icon: '☪️' },
+  { id: 'gluten_free', label: '無麩質', icon: '🌾' },
+];
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   filters,
@@ -69,6 +91,28 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     });
   };
 
+  const toggleCuisineFilter = (cuisineId: string) => {
+    if (!isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    const updated = filters.cuisineTypes.includes(cuisineId)
+      ? filters.cuisineTypes.filter(c => c !== cuisineId)
+      : [...filters.cuisineTypes, cuisineId];
+    handleFilterChange('cuisineTypes', updated);
+  };
+
+  const toggleDietaryFilter = (dietaryId: string) => {
+    if (!isPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    const updated = filters.dietaryOptions.includes(dietaryId)
+      ? filters.dietaryOptions.filter(d => d !== dietaryId)
+      : [...filters.dietaryOptions, dietaryId];
+    handleFilterChange('dietaryOptions', updated);
+  };
+
   const handleFilterSheetOpen = (open: boolean) => {
     setIsFilterOpen(open);
   };
@@ -82,6 +126,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       hasMichelinStars: false,
       has500Dishes: false,
       hasBibGourmand: false,
+      cuisineTypes: [],
+      dietaryOptions: [],
     });
   };
 
@@ -94,6 +140,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     if (filters.hasMichelinStars) count++;
     if (filters.has500Dishes) count++;
     if (filters.hasBibGourmand) count++;
+    if (filters.cuisineTypes.length > 0) count++;
+    if (filters.dietaryOptions.length > 0) count++;
     return count;
   };
 
@@ -190,6 +238,46 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                       >
                         {filters.minRating >= 4.0 ? '✓ 四顆星以上' : '四顆星以上'}
                       </Button>
+                    </div>
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  {/* Cuisine Types */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-foreground">🍽️ 菜系類型</label>
+                    <div className="flex flex-wrap gap-2">
+                      {CUISINE_OPTIONS.map((cuisine) => (
+                        <Badge
+                          key={cuisine.id}
+                          variant={filters.cuisineTypes.includes(cuisine.id) ? "default" : "outline"}
+                          className="cursor-pointer hover:bg-primary/10 transition-colors"
+                          onClick={() => toggleCuisineFilter(cuisine.id)}
+                        >
+                          <span className="mr-1">{cuisine.icon}</span>
+                          {cuisine.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  {/* Dietary Options */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-foreground">🥗 飲食限制</label>
+                    <div className="flex flex-wrap gap-2">
+                      {DIETARY_OPTIONS.map((dietary) => (
+                        <Badge
+                          key={dietary.id}
+                          variant={filters.dietaryOptions.includes(dietary.id) ? "default" : "outline"}
+                          className="cursor-pointer hover:bg-primary/10 transition-colors"
+                          onClick={() => toggleDietaryFilter(dietary.id)}
+                        >
+                          <span className="mr-1">{dietary.icon}</span>
+                          {dietary.label}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
 
@@ -378,6 +466,30 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 />
               </Badge>
             )}
+            {filters.cuisineTypes.map((cuisineId) => {
+              const cuisine = CUISINE_OPTIONS.find(c => c.id === cuisineId);
+              return cuisine ? (
+                <Badge key={cuisineId} variant="secondary" className="text-xs">
+                  {cuisine.icon} {cuisine.label}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => toggleCuisineFilter(cuisineId)}
+                  />
+                </Badge>
+              ) : null;
+            })}
+            {filters.dietaryOptions.map((dietaryId) => {
+              const dietary = DIETARY_OPTIONS.find(d => d.id === dietaryId);
+              return dietary ? (
+                <Badge key={dietaryId} variant="secondary" className="text-xs">
+                  {dietary.icon} {dietary.label}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => toggleDietaryFilter(dietaryId)}
+                  />
+                </Badge>
+              ) : null;
+            })}
           </div>
         )}
       </div>

@@ -225,6 +225,7 @@ export type Database = {
           last_nag_at: string | null
           location_lat: number | null
           location_lng: number | null
+          min_rating: number | null
           nag_variant: string | null
           preferences: Json | null
           preferred_price_max: number | null
@@ -245,6 +246,7 @@ export type Database = {
           last_nag_at?: string | null
           location_lat?: number | null
           location_lng?: number | null
+          min_rating?: number | null
           nag_variant?: string | null
           preferences?: Json | null
           preferred_price_max?: number | null
@@ -265,6 +267,7 @@ export type Database = {
           last_nag_at?: string | null
           location_lat?: number | null
           location_lng?: number | null
+          min_rating?: number | null
           nag_variant?: string | null
           preferences?: Json | null
           preferred_price_max?: number | null
@@ -278,10 +281,13 @@ export type Database = {
       restaurants: {
         Row: {
           address: string | null
+          ai_classified_at: string | null
+          ai_confidence: number | null
           bib_gourmand: boolean | null
           business_hours: Json | null
           created_at: string
           cuisine_type: string | null
+          dietary_options: Json | null
           google_rating: number | null
           google_reviews_count: number | null
           has_500_dishes: boolean | null
@@ -296,10 +302,13 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_classified_at?: string | null
+          ai_confidence?: number | null
           bib_gourmand?: boolean | null
           business_hours?: Json | null
           created_at?: string
           cuisine_type?: string | null
+          dietary_options?: Json | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
@@ -314,10 +323,13 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_classified_at?: string | null
+          ai_confidence?: number | null
           bib_gourmand?: boolean | null
           business_hours?: Json | null
           created_at?: string
           cuisine_type?: string | null
+          dietary_options?: Json | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
@@ -367,6 +379,27 @@ export type Database = {
           status?: string
           subscription_type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -426,6 +459,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       update_nag_seen: {
         Args: { user_uuid: string }
         Returns: undefined
@@ -436,7 +476,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -563,6 +603,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

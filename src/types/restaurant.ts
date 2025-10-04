@@ -16,6 +16,14 @@ export interface Restaurant {
   cuisine_type: string;
   price_range: number;
   bib_gourmand: boolean;
+  dietary_options?: {
+    vegetarian?: boolean;
+    vegan?: boolean;
+    halal?: boolean;
+    gluten_free?: boolean;
+  };
+  ai_classified_at?: string;
+  ai_confidence?: number;
 }
 
 /**

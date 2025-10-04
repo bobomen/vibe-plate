@@ -1,0 +1,151 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { restaurants } = await req.json();
+    console.log('[import-restaurants] Importing', restaurants?.length || 0, 'restaurants');
+
+    if (!Array.isArray(restaurants) || restaurants.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid restaurants data: must be a non-empty array'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Missing required environment variables');
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const results = [];
+    let successCount = 0;
+    let failCount = 0;
+
+    // Process each restaurant
+    for (const restaurant of restaurants) {
+      try {
+        console.log('[import-restaurants] Processing:', restaurant.name);
+
+        // Validate required fields
+        if (!restaurant.name || !restaurant.lat || !restaurant.lng) {
+          throw new Error('Missing required fields: name, lat, lng');
+        }
+
+        // Insert restaurant
+        const { data: insertData, error: insertError } = await supabase
+          .from('restaurants')
+          .insert({
+            name: restaurant.name,
+            address: restaurant.address || '',
+            lat: restaurant.lat,
+            lng: restaurant.lng,
+            google_rating: restaurant.google_rating || 0,
+            google_reviews_count: restaurant.google_reviews_count || 0,
+            michelin_stars: restaurant.michelin_stars || 0,
+            has_500_dishes: restaurant.has_500_dishes || false,
+            bib_gourmand: restaurant.bib_gourmand || false,
+            photos: restaurant.photos || [],
+            cuisine_type: '其他', // Default, will be classified by AI
+            price_range: restaurant.price_range || 2,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        console.log('[import-restaurants] Inserted:', insertData.id);
+
+        // Trigger AI classification
+        const classifyResponse = await fetch(`${SUPABASE_URL}/functions/v1/classify-restaurant-cuisine`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            restaurantId: insertData.id,
+            name: restaurant.name,
+            address: restaurant.address,
+            googleTypes: restaurant.google_types || null
+          }),
+        });
+
+        if (!classifyResponse.ok) {
+          console.warn('[import-restaurants] Classification failed for:', restaurant.name);
+        } else {
+          const classifyData = await classifyResponse.json();
+          console.log('[import-restaurants] Classified:', restaurant.name, '→', classifyData.classification?.cuisine_type);
+        }
+
+        successCount++;
+        results.push({
+          name: restaurant.name,
+          success: true,
+          id: insertData.id
+        });
+
+        // Add delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+      } catch (error) {
+        failCount++;
+        results.push({
+          name: restaurant.name,
+          success: false,
+          error: error.message
+        });
+        console.error('[import-restaurants] Failed:', restaurant.name, error);
+      }
+    }
+
+    console.log('[import-restaurants] Import complete:', { successCount, failCount });
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        imported: restaurants.length,
+        successCount,
+        failCount,
+        results
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch (error) {
+    console.error('[import-restaurants] Error:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});

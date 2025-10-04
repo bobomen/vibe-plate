@@ -1,1 +1,10 @@
 project_id = "ivmuypzlemoxdctkwhqw"
+
+[functions.classify-restaurant-cuisine]
+verify_jwt = false
+
+[functions.batch-classify-restaurants]
+verify_jwt = false
+
+[functions.import-restaurants]
+verify_jwt = false

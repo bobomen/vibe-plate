@@ -47,7 +47,19 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     hasMichelinStars: false,
     has500Dishes: false,
     hasBibGourmand: false,
+    cuisineTypes: [],
+    dietaryOptions: [],
   });
+
+  // User profile preferences (fetched from database)
+  const [profilePreferences, setProfilePreferences] = useState<{
+    min_rating?: number;
+    michelin_stars?: boolean;
+    bib_gourmand?: boolean;
+    has_500_dishes?: boolean;
+    favorite_cuisines?: string[];
+    dietary_preferences?: string[];
+  } | null>(null);
 
   // Helper: Distance calculation
   const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -128,6 +140,35 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     }
   }, [user?.id, groupId, withRetry, toast]);
 
+  // Fetch user profile preferences
+  const fetchProfilePreferences = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('min_rating, preferences, favorite_cuisines, dietary_preferences')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      if (data) {
+        const preferences = data.preferences as any;
+        setProfilePreferences({
+          min_rating: data.min_rating,
+          michelin_stars: preferences?.michelin_stars || false,
+          bib_gourmand: preferences?.bib_gourmand || false,
+          has_500_dishes: preferences?.has_500_dishes || false,
+          favorite_cuisines: (data.favorite_cuisines as string[]) || [],
+          dietary_preferences: (data.dietary_preferences as string[]) || [],
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile preferences:', error);
+    }
+  }, [user?.id]);
+
   // Fetch all restaurants
   const fetchRestaurants = useCallback(async () => {
     try {
@@ -153,12 +194,13 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     }
   }, [withRetry, toast]);
 
-  // Apply filters to restaurants
+  // Apply filters to restaurants with UNION logic (個人偏好 ∪ 即時篩選)
   const applyFilters = useCallback(() => {
     console.log('[applyFilters] Starting with:', {
       allRestaurants: allRestaurants.length,
       userSwipes: userSwipes.size,
-      filters
+      filters,
+      profilePreferences
     });
     
     if (!allRestaurants.length) {
@@ -168,13 +210,55 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       return;
     }
 
-    let filtered = allRestaurants.filter(restaurant => {
-      // Exclude swiped restaurants
-      if (userSwipes.has(restaurant.id)) {
-        console.log('[applyFilters] Excluding swiped restaurant:', restaurant.name);
-        return false;
+    // Helper function to check if restaurant matches profile preferences
+    const matchesProfilePreferences = (restaurant: Restaurant): boolean => {
+      if (!profilePreferences) return false;
+      
+      let matches = false;
+      
+      // Rating preference
+      if (profilePreferences.min_rating && restaurant.google_rating >= profilePreferences.min_rating) {
+        matches = true;
       }
+      
+      // Michelin stars preference
+      if (profilePreferences.michelin_stars && restaurant.michelin_stars > 0) {
+        matches = true;
+      }
+      
+      // Bib Gourmand preference
+      if (profilePreferences.bib_gourmand && restaurant.bib_gourmand) {
+        matches = true;
+      }
+      
+      // 500 Dishes preference
+      if (profilePreferences.has_500_dishes && restaurant.has_500_dishes) {
+        matches = true;
+      }
+      
+      // Cuisine preferences
+      if (profilePreferences.favorite_cuisines && profilePreferences.favorite_cuisines.length > 0) {
+        if (profilePreferences.favorite_cuisines.includes(restaurant.cuisine_type)) {
+          matches = true;
+        }
+      }
+      
+      // Dietary preferences (check dietary_options jsonb field)
+      if (profilePreferences.dietary_preferences && profilePreferences.dietary_preferences.length > 0 && restaurant.dietary_options) {
+        const dietaryOptions = restaurant.dietary_options as any;
+        for (const pref of profilePreferences.dietary_preferences) {
+          if (dietaryOptions[pref] === true) {
+            matches = true;
+            break;
+          }
+        }
+      }
+      
+      return matches;
+    };
 
+    // Helper function to check if restaurant matches immediate filters
+    const matchesImmediateFilters = (restaurant: Restaurant): boolean => {
       // Search filter
       if (filters.searchTerm) {
         const searchTerm = filters.searchTerm.toLowerCase();
@@ -199,28 +283,78 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
         if (distance > filters.distanceRange) return false;
       }
 
-      // Rating filter
+      // Rating filter (immediate)
       if (filters.minRating > 0 && restaurant.google_rating < filters.minRating) {
         return false;
       }
 
-      // Special recognition filters
+      // Special recognition filters (immediate)
       if (filters.hasMichelinStars && restaurant.michelin_stars === 0) return false;
       if (filters.has500Dishes && !restaurant.has_500_dishes) return false;
       if (filters.hasBibGourmand && !restaurant.bib_gourmand) return false;
 
+      // Cuisine filters (immediate)
+      if (filters.cuisineTypes.length > 0) {
+        if (!filters.cuisineTypes.includes(restaurant.cuisine_type)) {
+          return false;
+        }
+      }
+
+      // Dietary filters (immediate)
+      if (filters.dietaryOptions.length > 0 && restaurant.dietary_options) {
+        const dietaryOptions = restaurant.dietary_options as any;
+        let hasDietaryMatch = false;
+        for (const option of filters.dietaryOptions) {
+          if (dietaryOptions[option] === true) {
+            hasDietaryMatch = true;
+            break;
+          }
+        }
+        if (!hasDietaryMatch) return false;
+      }
+
       return true;
+    };
+
+    // UNION logic: Include restaurant if it matches profile preferences OR immediate filters
+    const filtered = allRestaurants.filter(restaurant => {
+      // Always exclude swiped restaurants
+      if (userSwipes.has(restaurant.id)) {
+        return false;
+      }
+
+      // Check if any immediate filter is active
+      const hasImmediateFilters = 
+        filters.searchTerm !== '' ||
+        filters.priceRange[0] > 0 || filters.priceRange[1] < 10 ||
+        filters.distanceRange < 999 ||
+        filters.minRating > 0 ||
+        filters.hasMichelinStars ||
+        filters.has500Dishes ||
+        filters.hasBibGourmand ||
+        filters.cuisineTypes.length > 0 ||
+        filters.dietaryOptions.length > 0;
+
+      // If no immediate filters are active, use profile preferences only
+      if (!hasImmediateFilters) {
+        return !profilePreferences || matchesProfilePreferences(restaurant);
+      }
+
+      // UNION: Match profile preferences OR immediate filters
+      return matchesProfilePreferences(restaurant) || matchesImmediateFilters(restaurant);
     });
 
     console.log('[applyFilters] Filtered results:', {
       originalCount: allRestaurants.length,
       filteredCount: filtered.length,
-      swipedCount: userSwipes.size
+      swipedCount: userSwipes.size,
+      hasProfilePreferences: !!profilePreferences,
+      hasImmediateFilters: filters.searchTerm !== '' || filters.minRating > 0
     });
 
     setRestaurants(filtered);
     setCurrentIndex(0);
-  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance]);
+  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences]);
 
   /**
    * INVARIANT: 重置個人滑卡記錄時，收藏記錄必須完全保留
@@ -452,14 +586,18 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     const loadData = async () => {
       setLoading(true);
       try {
-        await Promise.all([fetchRestaurants(), fetchUserSwipes()]);
+        await Promise.all([
+          fetchRestaurants(), 
+          fetchUserSwipes(), 
+          fetchProfilePreferences()
+        ]);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [fetchRestaurants, fetchUserSwipes]);
+  }, [fetchRestaurants, fetchUserSwipes, fetchProfilePreferences]);
 
   // Apply filters when dependencies change
   useEffect(() => {
@@ -485,6 +623,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     setFilters,
     fetchUserSwipes,
     fetchRestaurants,
+    fetchProfilePreferences,
     resetPersonalSwipes,
     resetGroupSwipes,
     applyFilters,

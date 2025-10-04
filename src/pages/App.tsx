@@ -13,6 +13,7 @@ import Groups from './Groups';
 import Profile from './Profile';
 import RestaurantDetail from './RestaurantDetail';
 import CategoryDetail from './CategoryDetail';
+import Admin from './Admin';
 
 const App = memo(() => {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ const App = memo(() => {
           <Route path="/groups/:groupId/consensus" element={<GroupConsensus />} />
           <Route path="/groups/:groupId/consensus-summary" element={<GroupConsensusSummary />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </main>
       {!location.pathname.includes('/restaurant/') && <BottomNavigation />}
