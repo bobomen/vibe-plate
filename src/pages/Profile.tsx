@@ -222,7 +222,6 @@ const Profile = () => {
         .update({
           location_lat: latitude,
           location_lng: longitude,
-          city: '台北市', // In real app, reverse geocode to get city
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
@@ -236,8 +235,7 @@ const Profile = () => {
       setProfile(prev => ({
         ...prev,
         location_lat: latitude,
-        location_lng: longitude,
-        city: '台北市'
+        location_lng: longitude
       }));
 
       toast({
@@ -348,7 +346,7 @@ const Profile = () => {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    當前位置：{profile.city || '未設定'}
+                    當前位置：{profile.location_lat ? '✓ 位置已更新' : '未設定'}
                   </p>
                   <Button 
                     variant="outline" 
