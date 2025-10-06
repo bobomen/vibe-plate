@@ -173,12 +173,6 @@ export const SwipeCards = React.memo(() => {
           </div>
         )}
 
-        {/* Progress Indicator */}
-        {restaurants.length > 0 && (
-          <div className="text-center text-sm text-muted-foreground">
-            {currentIndex + 1} / {restaurants.length + currentIndex} 張餐廳卡片
-          </div>
-        )}
       </div>
     </div>
   );
