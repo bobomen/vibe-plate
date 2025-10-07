@@ -146,22 +146,28 @@ export type Database = {
           code: string
           created_at: string
           created_by: string
+          current_region: string | null
           id: string
           name: string | null
+          target_regions: Json | null
         }
         Insert: {
           code: string
           created_at?: string
           created_by: string
+          current_region?: string | null
           id?: string
           name?: string | null
+          target_regions?: Json | null
         }
         Update: {
           code?: string
           created_at?: string
           created_by?: string
+          current_region?: string | null
           id?: string
           name?: string | null
+          target_regions?: Json | null
         }
         Relationships: []
       }
@@ -285,9 +291,11 @@ export type Database = {
           ai_confidence: number | null
           bib_gourmand: boolean | null
           business_hours: Json | null
+          city: string | null
           created_at: string
           cuisine_type: string | null
           dietary_options: Json | null
+          district: string | null
           google_rating: number | null
           google_reviews_count: number | null
           has_500_dishes: boolean | null
@@ -306,9 +314,11 @@ export type Database = {
           ai_confidence?: number | null
           bib_gourmand?: boolean | null
           business_hours?: Json | null
+          city?: string | null
           created_at?: string
           cuisine_type?: string | null
           dietary_options?: Json | null
+          district?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
@@ -327,9 +337,11 @@ export type Database = {
           ai_confidence?: number | null
           bib_gourmand?: boolean | null
           business_hours?: Json | null
+          city?: string | null
           created_at?: string
           cuisine_type?: string | null
           dietary_options?: Json | null
+          district?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
