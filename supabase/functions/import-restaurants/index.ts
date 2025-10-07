@@ -57,6 +57,8 @@ serve(async (req) => {
           .insert({
             name: restaurant.name,
             address: restaurant.address || '',
+            city: restaurant.city || null,
+            district: restaurant.district || null,
             lat: restaurant.lat,
             lng: restaurant.lng,
             google_rating: restaurant.google_rating || 0,
