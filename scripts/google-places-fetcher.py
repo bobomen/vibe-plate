@@ -29,7 +29,8 @@ import requests
 import json
 import time
 import os
-from typing import List, Dict
+import re
+from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 
 class GooglePlacesFetcher:
@@ -45,6 +46,59 @@ class GooglePlacesFetcher:
         
         # 載入進度
         self.progress = self.load_progress()
+    
+    def parse_taiwan_address(self, address: str) -> Tuple[Optional[str], Optional[str]]:
+        """
+        從台灣地址中提取縣市和區域
+        
+        Args:
+            address: 完整地址字串，例如 "台北市大安區復興南路一段123號"
+        
+        Returns:
+            (city, district): 縣市和區域的 tuple，如果無法解析則返回 (None, None)
+        
+        範例:
+            "台北市大安區復興南路一段123號" -> ("台北市", "大安區")
+            "新北市板橋區中山路一段100號" -> ("新北市", "板橋區")
+            "台中市西屯區台灣大道三段99號" -> ("台中市", "西屯區")
+        """
+        if not address:
+            return None, None
+        
+        # 台灣縣市列表（包含各種可能的寫法）
+        cities = [
+            '台北市', '新北市', '桃園市', '台中市', '台南市', '高雄市',
+            '基隆市', '新竹市', '嘉義市',
+            '新竹縣', '苗栗縣', '彰化縣', '南投縣', '雲林縣', '嘉義縣',
+            '屏東縣', '宜蘭縣', '花蓮縣', '台東縣', '澎湖縣', '金門縣', '連江縣',
+            # 繁簡體變體
+            '臺北市', '臺中市', '臺南市', '臺東縣'
+        ]
+        
+        city = None
+        district = None
+        
+        # 1. 嘗試匹配縣市
+        for city_name in cities:
+            if city_name in address:
+                city = city_name
+                # 統一繁體字
+                city = city.replace('臺', '台')
+                break
+        
+        if not city:
+            return None, None
+        
+        # 2. 提取區域（在縣市之後，路/街/巷之前的部分）
+        # 使用正則表達式匹配 "縣市名" 後面接著的 "XX區/鄉/鎮/市"
+        city_escaped = re.escape(city)
+        pattern = rf'{city_escaped}([\u4e00-\u9fff]+?[區鄉鎮市])'
+        match = re.search(pattern, address)
+        
+        if match:
+            district = match.group(1)
+        
+        return city, district
         
     def load_api_keys(self, filename: str) -> List[str]:
         """載入 API keys"""
@@ -138,10 +192,16 @@ class GooglePlacesFetcher:
         if data.get('status') == 'OK':
             result = data['result']
             
+            # 解析地址以提取縣市和區域
+            address = result.get('formatted_address', '')
+            city, district = self.parse_taiwan_address(address)
+            
             # 轉換為我們的資料格式
             restaurant = {
                 'name': result.get('name', ''),
-                'address': result.get('formatted_address', ''),
+                'address': address,
+                'city': city,
+                'district': district,
                 'lat': result['geometry']['location']['lat'],
                 'lng': result['geometry']['location']['lng'],
                 'google_rating': result.get('rating', 0),
