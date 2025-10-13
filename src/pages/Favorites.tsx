@@ -16,6 +16,32 @@ import { CategoryManagement } from '@/components/CategoryManagement';
 import { CategorySelector } from '@/components/CategorySelector';
 import { useFavoriteCategories } from '@/hooks/useFavoriteCategories';
 
+const CITY_OPTIONS = [
+  { id: 'all', label: '所有地區', icon: '🌏' },
+  { id: '台北市', label: '台北市', icon: '🏙️' },
+  { id: '新北市', label: '新北市', icon: '🌆' },
+  { id: '基隆市', label: '基隆市', icon: '⚓' },
+  { id: '桃園市', label: '桃園市', icon: '✈️' },
+  { id: '新竹市', label: '新竹市', icon: '🎋' },
+  { id: '新竹縣', label: '新竹縣', icon: '🏔️' },
+  { id: '苗栗縣', label: '苗栗縣', icon: '🌾' },
+  { id: '台中市', label: '台中市', icon: '🏛️' },
+  { id: '彰化縣', label: '彰化縣', icon: '🌸' },
+  { id: '南投縣', label: '南投縣', icon: '⛰️' },
+  { id: '雲林縣', label: '雲林縣', icon: '🌾' },
+  { id: '嘉義市', label: '嘉義市', icon: '🌳' },
+  { id: '嘉義縣', label: '嘉義縣', icon: '🏞️' },
+  { id: '台南市', label: '台南市', icon: '🏯' },
+  { id: '高雄市', label: '高雄市', icon: '🚢' },
+  { id: '屏東縣', label: '屏東縣', icon: '🌴' },
+  { id: '宜蘭縣', label: '宜蘭縣', icon: '🏖️' },
+  { id: '花蓮縣', label: '花蓮縣', icon: '🏔️' },
+  { id: '台東縣', label: '台東縣', icon: '🌊' },
+  { id: '澎湖縣', label: '澎湖縣', icon: '🏝️' },
+  { id: '金門縣', label: '金門縣', icon: '🦁' },
+  { id: '連江縣', label: '連江縣', icon: '🚤' },
+];
+
 interface FavoriteRestaurant {
   id: string;
   restaurant_id: string;
@@ -24,6 +50,8 @@ interface FavoriteRestaurant {
     id: string;
     name: string;
     address: string;
+    city: string | null;
+    district: string | null;
     google_rating: number;
     google_reviews_count: number;
     michelin_stars: number;
@@ -45,6 +73,7 @@ const Favorites = () => {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'newest' | 'rating' | 'distance'>('newest');
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
+  const [selectedCity, setSelectedCity] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('list');
 
   useEffect(() => {
@@ -63,6 +92,8 @@ const Favorites = () => {
             id,
             name,
             address,
+            city,
+            district,
             google_rating,
             google_reviews_count,
             michelin_stars,
@@ -144,13 +175,23 @@ const Favorites = () => {
     }
   };
 
-  // Filter by category
+  // Filter by category and city
   const filteredFavorites = favorites.filter(favorite => {
-    if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'uncategorized') {
-      return !favorite.categories || favorite.categories.length === 0;
+    // Category filter
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'uncategorized') {
+        if (favorite.categories && favorite.categories.length > 0) return false;
+      } else {
+        if (!favorite.categories?.some(cat => cat.id === selectedCategory)) return false;
+      }
     }
-    return favorite.categories?.some(cat => cat.id === selectedCategory);
+    
+    // City filter
+    if (selectedCity !== 'all') {
+      if (favorite.restaurants.city !== selectedCity) return false;
+    }
+    
+    return true;
   });
 
   const sortedFavorites = [...filteredFavorites].sort((a, b) => {
@@ -191,37 +232,54 @@ const Favorites = () => {
           </TabsList>
           
           <TabsContent value="list" className="space-y-4">
-            <div className="flex gap-2 mb-4">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="選擇分類" />
+            <div className="flex flex-col gap-2 mb-4">
+              <div className="flex gap-2">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="flex-1">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="選擇分類" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部分類</SelectItem>
+                    <SelectItem value="uncategorized">未分類</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">最新</SelectItem>
+                    <SelectItem value="rating">評分高</SelectItem>
+                    <SelectItem value="distance">距離近</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-full">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="選擇地區" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部分類</SelectItem>
-                  <SelectItem value="uncategorized">未分類</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        {category.name}
-                      </div>
+                  {CITY_OPTIONS.map((city) => (
+                    <SelectItem key={city.id} value={city.id}>
+                      <span className="mr-2">{city.icon}</span>
+                      {city.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">最新</SelectItem>
-                  <SelectItem value="rating">評分高</SelectItem>
-                  <SelectItem value="distance">距離近</SelectItem>
                 </SelectContent>
               </Select>
             </div>
