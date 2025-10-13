@@ -20,6 +20,8 @@ export interface FilterOptions {
   hasBibGourmand: boolean;
   cuisineTypes: string[];
   dietaryOptions: string[];
+  cities: string[];
+  districts: string[];
 }
 
 interface SearchAndFilterProps {
@@ -58,6 +60,50 @@ const DIETARY_OPTIONS = [
   { id: 'halal', label: '清真', icon: '☪️' },
   { id: 'gluten_free', label: '無麩質', icon: '🌾' },
 ];
+
+const CITY_OPTIONS = [
+  { id: '台北市', label: '台北市', icon: '🏙️' },
+  { id: '新北市', label: '新北市', icon: '🌆' },
+  { id: '基隆市', label: '基隆市', icon: '⚓' },
+  { id: '桃園市', label: '桃園市', icon: '✈️' },
+  { id: '新竹市', label: '新竹市', icon: '🎋' },
+  { id: '新竹縣', label: '新竹縣', icon: '🏔️' },
+  { id: '苗栗縣', label: '苗栗縣', icon: '🌾' },
+  { id: '台中市', label: '台中市', icon: '🏛️' },
+  { id: '彰化縣', label: '彰化縣', icon: '🌸' },
+  { id: '南投縣', label: '南投縣', icon: '⛰️' },
+  { id: '雲林縣', label: '雲林縣', icon: '🌾' },
+  { id: '嘉義市', label: '嘉義市', icon: '🌳' },
+  { id: '嘉義縣', label: '嘉義縣', icon: '🏞️' },
+  { id: '台南市', label: '台南市', icon: '🏯' },
+  { id: '高雄市', label: '高雄市', icon: '🚢' },
+  { id: '屏東縣', label: '屏東縣', icon: '🌴' },
+  { id: '宜蘭縣', label: '宜蘭縣', icon: '🏖️' },
+  { id: '花蓮縣', label: '花蓮縣', icon: '🏔️' },
+  { id: '台東縣', label: '台東縣', icon: '🌊' },
+  { id: '澎湖縣', label: '澎湖縣', icon: '🏝️' },
+  { id: '金門縣', label: '金門縣', icon: '🦁' },
+  { id: '連江縣', label: '連江縣', icon: '🚤' },
+];
+
+// Mapping from city to districts
+const DISTRICT_OPTIONS: { [city: string]: Array<{ id: string; label: string }> } = {
+  '台北市': [
+    { id: '中正區', label: '中正區' },
+    { id: '大同區', label: '大同區' },
+    { id: '中山區', label: '中山區' },
+    { id: '松山區', label: '松山區' },
+    { id: '大安區', label: '大安區' },
+    { id: '萬華區', label: '萬華區' },
+    { id: '信義區', label: '信義區' },
+    { id: '士林區', label: '士林區' },
+    { id: '北投區', label: '北投區' },
+    { id: '內湖區', label: '內湖區' },
+    { id: '南港區', label: '南港區' },
+    { id: '文山區', label: '文山區' },
+  ],
+  // Add more districts for other cities as needed
+};
 
 const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   filters,
@@ -113,6 +159,32 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     handleFilterChange('dietaryOptions', updated);
   };
 
+  const toggleCityFilter = (cityId: string) => {
+    const updated = filters.cities.includes(cityId)
+      ? filters.cities.filter(c => c !== cityId)
+      : [...filters.cities, cityId];
+    
+    // Clear districts if the city is removed
+    let updatedDistricts = filters.districts;
+    if (!updated.includes(cityId)) {
+      const cityDistricts = DISTRICT_OPTIONS[cityId]?.map(d => d.id) || [];
+      updatedDistricts = filters.districts.filter(d => !cityDistricts.includes(d));
+    }
+    
+    onFiltersChange({
+      ...filters,
+      cities: updated,
+      districts: updatedDistricts,
+    });
+  };
+
+  const toggleDistrictFilter = (districtId: string) => {
+    const updated = filters.districts.includes(districtId)
+      ? filters.districts.filter(d => d !== districtId)
+      : [...filters.districts, districtId];
+    handleFilterChange('districts', updated);
+  };
+
   const handleFilterSheetOpen = (open: boolean) => {
     setIsFilterOpen(open);
   };
@@ -128,6 +200,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       hasBibGourmand: false,
       cuisineTypes: [],
       dietaryOptions: [],
+      cities: [],
+      districts: [],
     });
   };
 
@@ -142,6 +216,8 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     if (filters.hasBibGourmand) count++;
     if (filters.cuisineTypes.length > 0) count++;
     if (filters.dietaryOptions.length > 0) count++;
+    if (filters.cities.length > 0) count++;
+    if (filters.districts.length > 0) count++;
     return count;
   };
 
@@ -198,6 +274,47 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
+
+                <Separator className="my-4" />
+
+                {/* City Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">🏙️ 城市篩選</label>
+                  <div className="flex flex-wrap gap-2">
+                    {CITY_OPTIONS.map((city) => (
+                      <Badge
+                        key={city.id}
+                        variant={filters.cities.includes(city.id) ? "default" : "outline"}
+                        className="cursor-pointer hover:bg-primary/10 transition-colors"
+                        onClick={() => toggleCityFilter(city.id)}
+                      >
+                        <span className="mr-1">{city.icon}</span>
+                        {city.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* District Filter (only show if cities are selected) */}
+                {filters.cities.length > 0 && (
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-foreground">📍 區域篩選</label>
+                    <div className="flex flex-wrap gap-2">
+                      {filters.cities.flatMap(city => 
+                        (DISTRICT_OPTIONS[city] || []).map((district) => (
+                          <Badge
+                            key={`${city}-${district.id}`}
+                            variant={filters.districts.includes(district.id) ? "default" : "outline"}
+                            className="cursor-pointer hover:bg-primary/10 transition-colors"
+                            onClick={() => toggleDistrictFilter(district.id)}
+                          >
+                            {district.label}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Price Range */}
                 <div className="space-y-3">
@@ -490,6 +607,27 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 </Badge>
               ) : null;
             })}
+            {filters.cities.map((cityId) => {
+              const city = CITY_OPTIONS.find(c => c.id === cityId);
+              return city ? (
+                <Badge key={cityId} variant="secondary" className="text-xs">
+                  {city.icon} {city.label}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => toggleCityFilter(cityId)}
+                  />
+                </Badge>
+              ) : null;
+            })}
+            {filters.districts.map((districtId) => (
+              <Badge key={districtId} variant="secondary" className="text-xs">
+                📍 {districtId}
+                <X 
+                  className="h-3 w-3 ml-1 cursor-pointer" 
+                  onClick={() => toggleDistrictFilter(districtId)}
+                />
+              </Badge>
+            ))}
           </div>
         )}
       </div>

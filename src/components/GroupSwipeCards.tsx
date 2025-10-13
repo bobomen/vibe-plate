@@ -23,6 +23,8 @@ interface GroupInfo {
   id: string;
   name: string;
   code: string;
+  target_regions?: Array<{city: string; district: string}> | null;
+  current_region?: {city: string; district: string} | null;
 }
 
 export const GroupSwipeCards = React.memo(() => {
@@ -34,6 +36,7 @@ export const GroupSwipeCards = React.memo(() => {
   const [groupLoading, setGroupLoading] = useState(true);
 
   // Use unified swipe state (group mode - with groupId)
+  // Apply group region filter if available
   const {
     restaurants,
     currentIndex,
@@ -51,7 +54,9 @@ export const GroupSwipeCards = React.memo(() => {
     resetGroupSwipes,
     addToSwipeHistory,
     goBackToPrevious,
-  } = useSwipeState({ groupId }); // INVARIANT: Group swipes have groupId
+  } = useSwipeState({ 
+    groupId,
+  }); // INVARIANT: Group swipes have groupId
 
   // Group swipe logic hook
   const {
@@ -76,10 +81,10 @@ export const GroupSwipeCards = React.memo(() => {
 
     try {
       const operation = async () => {
-        // Fetch group details
+        // Fetch group details including target_regions
         const { data: groupData, error: groupError } = await supabase
           .from('groups')
-          .select('id, name, code')
+          .select('id, name, code, target_regions, current_region')
           .eq('id', groupId)
           .single();
 
@@ -97,11 +102,30 @@ export const GroupSwipeCards = React.memo(() => {
           throw new Error('你不是此群組的成員');
         }
 
-        return groupData;
+        return groupData as unknown as GroupInfo;
       };
 
       const data = await withRetry(operation);
-      setGroupInfo(data);
+      
+      // Cast target_regions and current_region to proper types
+      const groupInfoData: GroupInfo = {
+        ...data,
+        target_regions: data.target_regions ? (data.target_regions as any) : null,
+        current_region: data.current_region ? (data.current_region as any) : null,
+      };
+      
+      setGroupInfo(groupInfoData);
+      
+      // Apply group region filter if available
+      if (groupInfoData.target_regions && groupInfoData.target_regions.length > 0) {
+        const cities = Array.from(new Set(groupInfoData.target_regions.map(r => r.city)));
+        const districts = groupInfoData.target_regions.map(r => r.district);
+        setFilters(prev => ({
+          ...prev,
+          cities,
+          districts
+        }));
+      }
     } catch (error) {
       console.error('Error fetching group info:', error);
       toast({
@@ -111,7 +135,7 @@ export const GroupSwipeCards = React.memo(() => {
       });
       navigate('/app/groups');
     }
-  }, [groupId, user?.id, withRetry, toast, navigate]);
+  }, [groupId, user?.id, withRetry, toast, navigate, setFilters]);
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
@@ -211,7 +235,15 @@ export const GroupSwipeCards = React.memo(() => {
           </Button>
           <div>
             <h1 className="font-semibold">{groupInfo.name}</h1>
-            <p className="text-xs text-muted-foreground">群組代碼: {groupInfo.code}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>群組代碼: {groupInfo.code}</span>
+              {groupInfo.target_regions && groupInfo.target_regions.length > 0 && (
+                <>
+                  <span>•</span>
+                  <span>區域: {groupInfo.target_regions.map(r => `${r.city}${r.district}`).join(', ')}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">

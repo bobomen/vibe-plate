@@ -49,6 +49,8 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     hasBibGourmand: false,
     cuisineTypes: [],
     dietaryOptions: [],
+    cities: [],
+    districts: [],
   });
 
   // User profile preferences (fetched from database)
@@ -283,6 +285,20 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
         }
       }
 
+      // City filter
+      if (filters.cities.length > 0) {
+        if (!restaurant.city || !filters.cities.includes(restaurant.city)) {
+          return false;
+        }
+      }
+
+      // District filter
+      if (filters.districts.length > 0) {
+        if (!restaurant.district || !filters.districts.includes(restaurant.district)) {
+          return false;
+        }
+      }
+
       // Price filter  
       if (restaurant.price_range < filters.priceRange[0] || 
           restaurant.price_range > filters.priceRange[1]) {
@@ -348,7 +364,9 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
         filters.has500Dishes ||
         filters.hasBibGourmand ||
         filters.cuisineTypes.length > 0 ||
-        filters.dietaryOptions.length > 0;
+        filters.dietaryOptions.length > 0 ||
+        filters.cities.length > 0 ||
+        filters.districts.length > 0;
 
       // If no immediate filters are active, check profile preferences
       if (!hasImmediateFilters) {

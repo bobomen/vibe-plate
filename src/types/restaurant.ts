@@ -6,6 +6,8 @@ export interface Restaurant {
   id: string;
   name: string;
   address: string;
+  city?: string | null;
+  district?: string | null;
   lat: number;
   lng: number;
   google_rating: number;

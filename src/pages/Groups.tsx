@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Copy, UserPlus } from 'lucide-react';
+import { Users, Plus, Copy, UserPlus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,8 @@ interface Group {
   name: string;
   created_by: string;
   created_at: string;
+  target_regions?: Array<{city: string; district: string}> | null;
+  current_region?: {city: string; district: string} | null;
   group_members: {
     user_id: string;
     profiles: {
@@ -34,6 +37,7 @@ const Groups = () => {
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [joinCode, setJoinCode] = useState('');
+  const [selectedRegions, setSelectedRegions] = useState<Array<{city: string, district: string}>>([]);
 
   useEffect(() => {
     fetchGroups();
@@ -65,7 +69,7 @@ const Groups = () => {
       // Get groups with their details
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
-        .select('id, code, name, created_by, created_at')
+        .select('id, code, name, created_by, created_at, target_regions, current_region')
         .in('id', groupIds)
         .order('created_at', { ascending: false });
 
@@ -97,6 +101,8 @@ const Groups = () => {
 
         return {
           ...group,
+          target_regions: group.target_regions ? (group.target_regions as any) : null,
+          current_region: group.current_region ? (group.current_region as any) : null,
           group_members: groupMembers
         };
       });
@@ -124,6 +130,14 @@ const Groups = () => {
       return;
     }
 
+    if (selectedRegions.length === 0) {
+      toast({
+        title: "請至少選擇一個目標區域",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Generate a unique 6-digit code
       const { data: codeData } = await supabase
@@ -131,14 +145,16 @@ const Groups = () => {
       
       const code = codeData as string;
 
-      // Create the group
+      // Create the group with target regions
       const { data: groupData, error: groupError } = await supabase
         .from('groups')
         .insert({
           name: groupName,
           code: code,
-          created_by: user?.id
-        })
+          created_by: user?.id,
+          target_regions: selectedRegions as any,
+          current_region: selectedRegions.length > 0 ? (selectedRegions[0] as any) : null
+        } as any)
         .select()
         .single();
 
@@ -160,6 +176,7 @@ const Groups = () => {
       });
 
       setGroupName('');
+      setSelectedRegions([]);
       setCreateDialogOpen(false);
       fetchGroups();
     } catch (error) {
@@ -307,7 +324,7 @@ const Groups = () => {
                   建立
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>建立群組</DialogTitle>
                 </DialogHeader>
@@ -321,6 +338,75 @@ const Groups = () => {
                       onChange={(e) => setGroupName(e.target.value)}
                     />
                   </div>
+                  
+                  <div>
+                    <Label>目標區域 (可多選)</Label>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {['台北市', '新北市', '基隆市', '桃園市', '新竹市', '台中市', '台南市', '高雄市'].map((city) => (
+                          <div key={city} className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">{city}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {city === '台北市' && ['中正區', '大同區', '中山區', '松山區', '大安區', '萬華區', '信義區', '士林區', '北投區', '內湖區', '南港區', '文山區'].map((district) => {
+                                const isSelected = selectedRegions.some(r => r.city === city && r.district === district);
+                                return (
+                                  <Button
+                                    key={`${city}-${district}`}
+                                    variant={isSelected ? "default" : "outline"}
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        setSelectedRegions(prev => prev.filter(r => !(r.city === city && r.district === district)));
+                                      } else {
+                                        setSelectedRegions(prev => [...prev, { city, district }]);
+                                      }
+                                    }}
+                                  >
+                                    {district}
+                                  </Button>
+                                );
+                              })}
+                              {city !== '台北市' && (
+                                <Button
+                                  variant={selectedRegions.some(r => r.city === city) ? "default" : "outline"}
+                                  size="sm"
+                                  className="h-8 text-xs"
+                                  onClick={() => {
+                                    if (selectedRegions.some(r => r.city === city)) {
+                                      setSelectedRegions(prev => prev.filter(r => r.city !== city));
+                                    } else {
+                                      setSelectedRegions(prev => [...prev, { city, district: '全區' }]);
+                                    }
+                                  }}
+                                >
+                                  全區
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {selectedRegions.length > 0 && (
+                        <div className="mt-3 p-2 bg-muted rounded-md">
+                          <p className="text-sm font-medium mb-2">已選擇 {selectedRegions.length} 個區域：</p>
+                          <div className="flex flex-wrap gap-1">
+                            {selectedRegions.map((region, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {region.city} {region.district}
+                                <X 
+                                  className="h-3 w-3 ml-1 cursor-pointer"
+                                  onClick={() => setSelectedRegions(prev => prev.filter((_, i) => i !== idx))}
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
                   <Button onClick={createGroup} className="w-full">
                     建立群組
                   </Button>
@@ -357,6 +443,19 @@ const Groups = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
+                    {group.target_regions && group.target_regions.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">目標區域</p>
+                        <div className="flex flex-wrap gap-1">
+                          {group.target_regions.map((region, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {region.city} {region.district}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div>
                       <p className="text-sm text-muted-foreground mb-2">
                         成員 ({group.group_members.length})
