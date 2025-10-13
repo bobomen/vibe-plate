@@ -347,7 +347,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       return true;
     };
 
-    // UNION logic: Include restaurant if it matches profile preferences OR immediate filters
+    // Priority logic: Immediate filters are HARD requirements, profile preferences are soft preferences
     const filtered = allRestaurants.filter(restaurant => {
       // Always exclude swiped restaurants
       if (userSwipes.has(restaurant.id)) {
@@ -368,7 +368,29 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
         filters.cities.length > 0 ||
         filters.districts.length > 0;
 
-      // If no immediate filters are active, check profile preferences
+      // Step 1: Immediate filters are MANDATORY (hard requirement)
+      if (hasImmediateFilters) {
+        const passesImmediateFilters = matchesImmediateFilters(restaurant);
+        
+        // Debug logging for city/district filters
+        if (filters.cities.length > 0 || filters.districts.length > 0) {
+          console.log('[Filter Debug]', {
+            restaurant: restaurant.name,
+            city: restaurant.city,
+            district: restaurant.district,
+            filterCities: filters.cities,
+            filterDistricts: filters.districts,
+            passesImmediateFilters
+          });
+        }
+        
+        // If doesn't pass immediate filters, exclude immediately
+        if (!passesImmediateFilters) {
+          return false;
+        }
+      }
+
+      // Step 2: If no immediate filters, apply profile preferences
       if (!hasImmediateFilters) {
         // If no active preferences, show all restaurants (return true)
         if (!hasAnyActivePreference()) {
@@ -379,8 +401,8 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
         return matchesProfilePreferences(restaurant);
       }
 
-      // UNION: Match profile preferences OR immediate filters
-      return matchesProfilePreferences(restaurant) || matchesImmediateFilters(restaurant);
+      // If passed immediate filters, show restaurant (profile preferences not used as filter, only for future ranking)
+      return true;
     });
 
     console.log('[applyFilters] Filtered results:', {
