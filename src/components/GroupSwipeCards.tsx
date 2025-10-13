@@ -34,6 +34,7 @@ export const GroupSwipeCards = React.memo(() => {
   const { groupId } = useParams<{ groupId: string }>();
   const [groupInfo, setGroupInfo] = useState<GroupInfo | null>(null);
   const [groupLoading, setGroupLoading] = useState(true);
+  const [currentRegion, setCurrentRegion] = useState<{city: string; district: string} | null>(null);
 
   // Use unified swipe state (group mode - with groupId)
   // Apply group region filter if available
@@ -116,6 +117,13 @@ export const GroupSwipeCards = React.memo(() => {
       
       setGroupInfo(groupInfoData);
       
+      // Set initial current region: current_region || first target_region || null
+      const initialRegion = groupInfoData.current_region || 
+                           (groupInfoData.target_regions && groupInfoData.target_regions.length > 0 
+                             ? groupInfoData.target_regions[0] 
+                             : null);
+      setCurrentRegion(initialRegion);
+      
       // Apply group region filter if available
       if (groupInfoData.target_regions && groupInfoData.target_regions.length > 0) {
         const cities = Array.from(new Set(groupInfoData.target_regions.map(r => r.city)));
@@ -186,6 +194,43 @@ export const GroupSwipeCards = React.memo(() => {
       console.log('[GroupSwipeCards] Reset successful, data will refresh automatically');
     }
   }, [resetGroupSwipes]);
+
+  // Handle region change
+  const handleRegionChange = useCallback(async (region: {city: string; district: string}) => {
+    if (!groupId) return;
+    
+    try {
+      // Update local state immediately
+      setCurrentRegion(region);
+      
+      // Update database
+      const { error } = await supabase
+        .from('groups')
+        .update({ current_region: region })
+        .eq('id', groupId);
+      
+      if (error) throw error;
+      
+      // Apply filters for this region
+      setFilters(prev => ({
+        ...prev,
+        cities: [region.city],
+        districts: [region.district]
+      }));
+      
+      toast({
+        title: "切換成功",
+        description: `已切換至 ${region.city}${region.district}`
+      });
+    } catch (error) {
+      console.error('Error updating region:', error);
+      toast({
+        title: "切換失敗",
+        description: "無法更新地區設定",
+        variant: "destructive"
+      });
+    }
+  }, [groupId, setFilters, toast]);
 
   // Load group info
   useEffect(() => {
@@ -293,6 +338,28 @@ export const GroupSwipeCards = React.memo(() => {
           </Button>
         </div>
       </div>
+
+      {/* Region Switcher - Only show if multiple target regions */}
+      {groupInfo.target_regions && groupInfo.target_regions.length > 1 && (
+        <div className="px-4">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+            <span className="text-sm font-medium">選擇地區:</span>
+            <div className="flex gap-2 flex-wrap">
+              {groupInfo.target_regions.map((region, index) => (
+                <Button
+                  key={index}
+                  variant={currentRegion?.city === region.city && currentRegion?.district === region.district ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleRegionChange(region)}
+                  className="text-xs"
+                >
+                  {region.city}{region.district}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {/* Filter */}
