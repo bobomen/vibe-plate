@@ -206,7 +206,7 @@ export const GroupSwipeCards = React.memo(() => {
       // Update database
       const { error } = await supabase
         .from('groups')
-        .update({ current_region: region })
+        .update({ current_region: region as any })
         .eq('id', groupId);
       
       if (error) throw error;

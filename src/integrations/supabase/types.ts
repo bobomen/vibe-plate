@@ -146,7 +146,7 @@ export type Database = {
           code: string
           created_at: string
           created_by: string
-          current_region: string | null
+          current_region: Json | null
           id: string
           name: string | null
           target_regions: Json | null
@@ -155,7 +155,7 @@ export type Database = {
           code: string
           created_at?: string
           created_by: string
-          current_region?: string | null
+          current_region?: Json | null
           id?: string
           name?: string | null
           target_regions?: Json | null
@@ -164,7 +164,7 @@ export type Database = {
           code?: string
           created_at?: string
           created_by?: string
-          current_region?: string | null
+          current_region?: Json | null
           id?: string
           name?: string | null
           target_regions?: Json | null
