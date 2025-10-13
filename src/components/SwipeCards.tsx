@@ -11,6 +11,7 @@ import { RestaurantCardSkeleton } from '@/components/ui/RestaurantCardSkeleton';
 import { SwipeActionButtons } from '@/components/ui/SwipeActionButtons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
@@ -46,6 +47,7 @@ const CITY_OPTIONS = [
 export const SwipeCards = React.memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedCity, setSelectedCity] = useState<string>('all');
   
   // Use unified swipe state (personal mode - no groupId)
@@ -84,12 +86,24 @@ export const SwipeCards = React.memo(() => {
   // Handle city selection
   const handleCityChange = useCallback((city: string) => {
     setSelectedCity(city);
+    
+    // Show loading toast while filtering
+    const loadingToast = toast({
+      title: "篩選中...",
+      description: city === 'all' ? '載入所有地區餐廳' : `載入${CITY_OPTIONS.find(c => c.id === city)?.label}餐廳`,
+    });
+    
     if (city === 'all') {
       setFilters({ ...filters, cities: [], districts: [] });
     } else {
       setFilters({ ...filters, cities: [city], districts: [] });
     }
-  }, [filters, setFilters]);
+    
+    // Dismiss loading toast after a short delay
+    setTimeout(() => {
+      loadingToast.dismiss?.();
+    }, 500);
+  }, [filters, setFilters, toast]);
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {

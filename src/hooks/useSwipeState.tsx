@@ -198,15 +198,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
 
   // Apply filters to restaurants with UNION logic (個人偏好 ∪ 即時篩選)
   const applyFilters = useCallback(() => {
-    console.log('[applyFilters] Starting with:', {
-      allRestaurants: allRestaurants.length,
-      userSwipes: userSwipes.size,
-      filters,
-      profilePreferences
-    });
-    
     if (!allRestaurants.length) {
-      console.log('[applyFilters] No restaurants available');
       setRestaurants([]);
       setCurrentIndex(0);
       return;
@@ -372,18 +364,6 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       if (hasImmediateFilters) {
         const passesImmediateFilters = matchesImmediateFilters(restaurant);
         
-        // Debug logging for city/district filters
-        if (filters.cities.length > 0 || filters.districts.length > 0) {
-          console.log('[Filter Debug]', {
-            restaurant: restaurant.name,
-            city: restaurant.city,
-            district: restaurant.district,
-            filterCities: filters.cities,
-            filterDistricts: filters.districts,
-            passesImmediateFilters
-          });
-        }
-        
         // If doesn't pass immediate filters, exclude immediately
         if (!passesImmediateFilters) {
           return false;
@@ -394,7 +374,6 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       if (!hasImmediateFilters) {
         // If no active preferences, show all restaurants (return true)
         if (!hasAnyActivePreference()) {
-          console.log('[applyFilters] No immediate filters and no active preferences, showing restaurant:', restaurant.name);
           return true;
         }
         // If has active preferences, match against them
@@ -403,14 +382,6 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
 
       // If passed immediate filters, show restaurant (profile preferences not used as filter, only for future ranking)
       return true;
-    });
-
-    console.log('[applyFilters] Filtered results:', {
-      originalCount: allRestaurants.length,
-      filteredCount: filtered.length,
-      swipedCount: userSwipes.size,
-      hasProfilePreferences: !!profilePreferences,
-      hasImmediateFilters: filters.searchTerm !== '' || filters.minRating > 0
     });
 
     setRestaurants(filtered);
@@ -422,8 +393,6 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
    */
   const resetPersonalSwipes = useCallback(async () => {
     if (!user?.id || groupId) return false; // Only for personal swipes
-
-    console.log('[resetPersonalSwipes] Starting reset for user:', user.id);
     
     try {
       const operation = async () => {
@@ -435,13 +404,10 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
           .is('group_id', null);
         
         if (error) throw error;
-        console.log('[resetPersonalSwipes] Deleted', count, 'personal swipes');
         return count;
       };
 
       const deletedCount = await withRetry(operation);
-      
-      console.log('[resetPersonalSwipes] Clearing local state...');
       
       // Clear local state immediately and force rerender
       setUserSwipes(new Set());
@@ -451,16 +417,11 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       
       // Force immediate re-application of filters with cleared state
       setTimeout(() => {
-        console.log('[resetPersonalSwipes] Re-applying filters with cleared state');
-        console.log('[resetPersonalSwipes] Available restaurants:', allRestaurants.length);
-        
         // Manually apply filter logic to check what should be available
         const availableRestaurants = allRestaurants.filter(restaurant => {
           // Since we just cleared userSwipes, all restaurants should be available
           return true;
         });
-        
-        console.log('[resetPersonalSwipes] Should have restaurants:', availableRestaurants.length);
         
         setRestaurants(availableRestaurants);
         setCurrentIndex(0);
@@ -489,8 +450,6 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
    */
   const resetGroupSwipes = useCallback(async () => {
     if (!user?.id || !groupId) return false; // Only for group swipes
-
-    console.log('[resetGroupSwipes] Starting reset for user:', user.id, 'in group:', groupId);
     
     try {
       const operation = async () => {
@@ -502,13 +461,10 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
           .eq('group_id', groupId);
         
         if (error) throw error;
-        console.log('[resetGroupSwipes] Deleted', count, 'group swipes');
         return count;
       };
 
       const deletedCount = await withRetry(operation);
-      
-      console.log('[resetGroupSwipes] Clearing local state...');
       
       // Clear local state and force rerender
       setUserSwipes(new Set());
@@ -518,7 +474,6 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       
       // Re-apply filters to show available restaurants again
       setTimeout(() => {
-        console.log('[resetGroupSwipes] Re-applying filters with cleared state');
         applyFilters();
       }, 50);
       

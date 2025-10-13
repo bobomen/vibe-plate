@@ -188,11 +188,7 @@ export const GroupSwipeCards = React.memo(() => {
 
   // Handle reset votes
   const handleResetVotes = useCallback(async () => {
-    const success = await resetGroupSwipes();
-    if (success) {
-      // Optionally refresh data after reset
-      console.log('[GroupSwipeCards] Reset successful, data will refresh automatically');
-    }
+    await resetGroupSwipes();
   }, [resetGroupSwipes]);
 
   // Handle region change
@@ -211,12 +207,15 @@ export const GroupSwipeCards = React.memo(() => {
       
       if (error) throw error;
       
-      // Apply filters for this region
+      // Apply filters for this region and reset to first card
       setFilters(prev => ({
         ...prev,
         cities: [region.city],
         districts: [region.district]
       }));
+      
+      // Reset to first card when changing region
+      setCurrentIndex(0);
       
       toast({
         title: "切換成功",
@@ -230,7 +229,7 @@ export const GroupSwipeCards = React.memo(() => {
         variant: "destructive"
       });
     }
-  }, [groupId, setFilters, toast]);
+  }, [groupId, setFilters, setCurrentIndex, toast]);
 
   // Load group info
   useEffect(() => {
