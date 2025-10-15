@@ -62,28 +62,28 @@ const DIETARY_OPTIONS = [
 ];
 
 const CITY_OPTIONS = [
-  { id: '台北市', label: '台北市', icon: '🏙️' },
-  { id: '新北市', label: '新北市', icon: '🌆' },
-  { id: '基隆市', label: '基隆市', icon: '⚓' },
-  { id: '桃園市', label: '桃園市', icon: '✈️' },
-  { id: '新竹市', label: '新竹市', icon: '🎋' },
-  { id: '新竹縣', label: '新竹縣', icon: '🏔️' },
-  { id: '苗栗縣', label: '苗栗縣', icon: '🌾' },
-  { id: '台中市', label: '台中市', icon: '🏛️' },
-  { id: '彰化縣', label: '彰化縣', icon: '🌸' },
-  { id: '南投縣', label: '南投縣', icon: '⛰️' },
-  { id: '雲林縣', label: '雲林縣', icon: '🌾' },
-  { id: '嘉義市', label: '嘉義市', icon: '🌳' },
-  { id: '嘉義縣', label: '嘉義縣', icon: '🏞️' },
-  { id: '台南市', label: '台南市', icon: '🏯' },
-  { id: '高雄市', label: '高雄市', icon: '🚢' },
-  { id: '屏東縣', label: '屏東縣', icon: '🌴' },
-  { id: '宜蘭縣', label: '宜蘭縣', icon: '🏖️' },
-  { id: '花蓮縣', label: '花蓮縣', icon: '🏔️' },
-  { id: '台東縣', label: '台東縣', icon: '🌊' },
-  { id: '澎湖縣', label: '澎湖縣', icon: '🏝️' },
-  { id: '金門縣', label: '金門縣', icon: '🦁' },
-  { id: '連江縣', label: '連江縣', icon: '🚤' },
+  { id: '台北市', label: '台北市' },
+  { id: '新北市', label: '新北市' },
+  { id: '基隆市', label: '基隆市' },
+  { id: '桃園市', label: '桃園市' },
+  { id: '新竹市', label: '新竹市' },
+  { id: '新竹縣', label: '新竹縣' },
+  { id: '苗栗縣', label: '苗栗縣' },
+  { id: '台中市', label: '台中市' },
+  { id: '彰化縣', label: '彰化縣' },
+  { id: '南投縣', label: '南投縣' },
+  { id: '雲林縣', label: '雲林縣' },
+  { id: '嘉義市', label: '嘉義市' },
+  { id: '嘉義縣', label: '嘉義縣' },
+  { id: '台南市', label: '台南市' },
+  { id: '高雄市', label: '高雄市' },
+  { id: '屏東縣', label: '屏東縣' },
+  { id: '宜蘭縣', label: '宜蘭縣' },
+  { id: '花蓮縣', label: '花蓮縣' },
+  { id: '台東縣', label: '台東縣' },
+  { id: '澎湖縣', label: '澎湖縣' },
+  { id: '金門縣', label: '金門縣' },
+  { id: '連江縣', label: '連江縣' },
 ];
 
 // Mapping from city to districts
@@ -288,7 +288,6 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                         className="cursor-pointer hover:bg-primary/10 transition-colors"
                         onClick={() => toggleCityFilter(city.id)}
                       >
-                        <span className="mr-1">{city.icon}</span>
                         {city.label}
                       </Badge>
                     ))}
@@ -611,7 +610,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
               const city = CITY_OPTIONS.find(c => c.id === cityId);
               return city ? (
                 <Badge key={cityId} variant="secondary" className="text-xs">
-                  {city.icon} {city.label}
+                  {city.label}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
                     onClick={() => toggleCityFilter(cityId)}
