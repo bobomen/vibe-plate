@@ -12,9 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    const { batchSize = 10, offset = 0 } = await req.json();
-    console.log('[batch-classify] Starting batch classification:', { batchSize, offset });
-
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -24,6 +21,49 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // ✅ Authentication & Authorization Check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: '需要身份驗證' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: '身份驗證失敗' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: hasAdminRole, error: roleError } = await supabase
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+
+    if (roleError || !hasAdminRole) {
+      return new Response(
+        JSON.stringify({ error: '需要管理員權限' }), 
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Parse request body
+    const { batchSize = 10, offset = 0 } = await req.json();
+    console.log('[batch-classify] Processing batch');
+
     // Fetch unclassified or "其他" restaurants
     const { data: restaurants, error: fetchError } = await supabase
       .from('restaurants')
@@ -32,7 +72,7 @@ serve(async (req) => {
       .range(offset, offset + batchSize - 1);
 
     if (fetchError) {
-      console.error('[batch-classify] Fetch error:', fetchError);
+      console.error('[batch-classify] Fetch error');
       throw fetchError;
     }
 
@@ -50,7 +90,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[batch-classify] Processing', restaurants.length, 'restaurants');
+    console.log('[batch-classify] Processing restaurants:', restaurants.length);
 
     const results = [];
     let successCount = 0;
@@ -59,7 +99,7 @@ serve(async (req) => {
     // Process restaurants sequentially to avoid rate limits
     for (const restaurant of restaurants) {
       try {
-        console.log('[batch-classify] Classifying:', restaurant.name);
+        console.log('[batch-classify] Classifying restaurant');
 
         // Call classify-restaurant-cuisine function
         const classifyResponse = await fetch(`${SUPABASE_URL}/functions/v1/classify-restaurant-cuisine`, {
@@ -90,7 +130,7 @@ serve(async (req) => {
             success: true,
             classification: classifyData.classification
           });
-          console.log('[batch-classify] Success:', restaurant.name, '→', classifyData.classification.cuisine_type);
+          console.log('[batch-classify] Classification successful');
         } else {
           throw new Error(classifyData.error || 'Unknown error');
         }
@@ -104,13 +144,13 @@ serve(async (req) => {
           id: restaurant.id,
           name: restaurant.name,
           success: false,
-          error: error.message
+          error: '分類失敗'
         });
-        console.error('[batch-classify] Failed:', restaurant.name, error);
+        console.error('[batch-classify] Classification failed');
       }
     }
 
-    console.log('[batch-classify] Batch complete:', { successCount, failCount });
+    console.log('[batch-classify] Batch complete');
 
     return new Response(
       JSON.stringify({
@@ -126,11 +166,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[batch-classify] Error:', error);
+    console.error('[batch-classify] Error');
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: '操作失敗，請稍後重試'
       }),
       {
         status: 500,

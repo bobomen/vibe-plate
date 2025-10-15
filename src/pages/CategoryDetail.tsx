@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useFavoriteCategories } from '@/hooks/useFavoriteCategories';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { useToast } from '@/hooks/use-toast';
@@ -359,10 +360,10 @@ const CategoryDetail = () => {
               </Card>
             ))
           ) : categoryRestaurants.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-8">
+            <EmptyState
+              icon={
                 <div
-                  className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
                   style={{ backgroundColor: `${category.color}20` }}
                 >
                   <div
@@ -370,10 +371,10 @@ const CategoryDetail = () => {
                     style={{ backgroundColor: category.color }}
                   />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">還沒有餐廳</h3>
-                <p className="text-muted-foreground mb-4">
-                  開始新增餐廳到「{category.name}」分類
-                </p>
+              }
+              title="還沒有餐廳"
+              description={`開始新增餐廳到「${category.name}」分類`}
+              action={
                 <Button 
                   onClick={() => setShowAddDialog(true)}
                   variant="outline"
@@ -381,8 +382,9 @@ const CategoryDetail = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   新增餐廳
                 </Button>
-              </CardContent>
-            </Card>
+              }
+              variant="compact"
+            />
           ) : (
             categoryRestaurants.map((favorite) => (
               <Card key={favorite.id} className="overflow-hidden">

@@ -5,10 +5,11 @@
  * - 重置個人滑卡記錄時，收藏記錄必須完全保留
  */
 import React, { useCallback, useState } from 'react';
-import { Utensils, MapPin } from 'lucide-react';
+import { Utensils, MapPin, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RestaurantCardSkeleton } from '@/components/ui/RestaurantCardSkeleton';
 import { SwipeActionButtons } from '@/components/ui/SwipeActionButtons';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -152,30 +153,30 @@ export const SwipeCards = React.memo(() => {
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Utensils className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">沒有更多餐廳了！</h2>
-            <p className="text-muted-foreground mb-4">
-              {allRestaurants.length === userPersonalSwipes.size ? 
-                "您已經看過所有餐廳了" : 
-                "目前沒有符合篩選條件的餐廳"}
-            </p>
-            <div className="space-y-2">
-              {allRestaurants.length === userPersonalSwipes.size && (
-                <Button 
+          <EmptyState
+            icon={<Utensils className="h-16 w-16" />}
+            title="沒有更多餐廳了"
+            description={
+              allRestaurants.length === userPersonalSwipes.size
+                ? "您已經看過所有餐廳了。重置滑卡記錄來重新探索，收藏記錄將保持不變。"
+                : "目前沒有符合篩選條件的餐廳。試試調整篩選條件或重置滑卡記錄。"
+            }
+            action={
+              allRestaurants.length === userPersonalSwipes.size ? (
+                <Button
                   onClick={async () => {
                     if (window.confirm('確定要重置所有個人滑卡記錄嗎？收藏記錄將保持不變。')) {
                       await resetPersonalSwipes();
                     }
                   }}
-                  variant="outline"
-                  className="w-full"
+                  variant="default"
                 >
-                  重置所有滑卡記錄
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  重置滑卡記錄
                 </Button>
-              )}
-            </div>
-          </div>
+              ) : undefined
+            }
+          />
         )}
 
       </div>

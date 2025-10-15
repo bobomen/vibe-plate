@@ -12,8 +12,57 @@ serve(async (req) => {
   }
 
   try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Missing required environment variables');
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ✅ Authentication & Authorization Check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: '需要身份驗證' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: '身份驗證失敗' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: hasAdminRole, error: roleError } = await supabase
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+
+    if (roleError || !hasAdminRole) {
+      return new Response(
+        JSON.stringify({ error: '需要管理員權限' }), 
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Parse request body
     const { restaurants } = await req.json();
-    console.log('[import-restaurants] Importing', restaurants?.length || 0, 'restaurants');
+    console.log('[import-restaurants] Processing import');
 
     if (!Array.isArray(restaurants) || restaurants.length === 0) {
       return new Response(
@@ -28,15 +77,6 @@ serve(async (req) => {
       );
     }
 
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Missing required environment variables');
-    }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     const results = [];
     let successCount = 0;
     let failCount = 0;
@@ -44,7 +84,7 @@ serve(async (req) => {
     // Process each restaurant
     for (const restaurant of restaurants) {
       try {
-        console.log('[import-restaurants] Processing:', restaurant.name);
+        console.log('[import-restaurants] Processing restaurant');
 
         // Validate required fields
         if (!restaurant.name || !restaurant.lat || !restaurant.lng) {
@@ -77,7 +117,7 @@ serve(async (req) => {
           throw insertError;
         }
 
-        console.log('[import-restaurants] Inserted:', insertData.id);
+        console.log('[import-restaurants] Restaurant inserted');
 
         // Trigger AI classification
         const classifyResponse = await fetch(`${SUPABASE_URL}/functions/v1/classify-restaurant-cuisine`, {
@@ -95,10 +135,9 @@ serve(async (req) => {
         });
 
         if (!classifyResponse.ok) {
-          console.warn('[import-restaurants] Classification failed for:', restaurant.name);
+          console.warn('[import-restaurants] Classification failed');
         } else {
-          const classifyData = await classifyResponse.json();
-          console.log('[import-restaurants] Classified:', restaurant.name, '→', classifyData.classification?.cuisine_type);
+          console.log('[import-restaurants] Classification complete');
         }
 
         successCount++;
@@ -116,13 +155,13 @@ serve(async (req) => {
         results.push({
           name: restaurant.name,
           success: false,
-          error: error.message
+          error: '匯入失敗'
         });
-        console.error('[import-restaurants] Failed:', restaurant.name, error);
+        console.error('[import-restaurants] Import failed');
       }
     }
 
-    console.log('[import-restaurants] Import complete:', { successCount, failCount });
+    console.log('[import-restaurants] Import complete');
 
     return new Response(
       JSON.stringify({
@@ -138,11 +177,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[import-restaurants] Error:', error);
+    console.error('[import-restaurants] Error');
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: '操作失敗，請稍後重試'
       }),
       {
         status: 500,

@@ -47,9 +47,9 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Error updating nag seen:", error);
+    console.error("Error updating nag seen");
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "操作失敗，請稍後重試" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

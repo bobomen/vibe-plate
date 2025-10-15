@@ -12,9 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    const { restaurantId, name, address, googleTypes } = await req.json();
-    console.log('[classify-restaurant-cuisine] Processing:', { restaurantId, name, address });
-
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -24,6 +21,49 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ✅ Authentication & Authorization Check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: '需要身份驗證' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: '身份驗證失敗' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: hasAdminRole, error: roleError } = await supabase
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+
+    if (roleError || !hasAdminRole) {
+      return new Response(
+        JSON.stringify({ error: '需要管理員權限' }), 
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Parse request body
+    const { restaurantId, name, address, googleTypes } = await req.json();
+    console.log('[classify-restaurant-cuisine] Processing classification');
 
     // Construct classification prompt
     const prompt = `
@@ -80,7 +120,7 @@ Google Places 類型：${googleTypes || '無'}
 如果無法從地址中提取 city 或 district，請設為 null。
 `.trim();
 
-    console.log('[classify-restaurant-cuisine] Calling Lovable AI...');
+    console.log('[classify-restaurant-cuisine] Calling AI service');
 
     // Call Lovable AI
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -106,9 +146,8 @@ Google Places 類型：${googleTypes || '無'}
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('[classify-restaurant-cuisine] AI API error:', aiResponse.status, errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      console.error('[classify-restaurant-cuisine] AI service error');
+      throw new Error('AI service error');
     }
 
     const aiData = await aiResponse.json();
@@ -118,7 +157,7 @@ Google Places 類型：${googleTypes || '無'}
       throw new Error('No content in AI response');
     }
 
-    console.log('[classify-restaurant-cuisine] AI response:', content);
+    console.log('[classify-restaurant-cuisine] Classification received');
 
     const classification = JSON.parse(content);
 
@@ -137,11 +176,11 @@ Google Places 類型：${googleTypes || '無'}
         .eq('id', restaurantId);
 
       if (updateError) {
-        console.error('[classify-restaurant-cuisine] Database update error:', updateError);
+        console.error('[classify-restaurant-cuisine] Database update error');
         throw updateError;
       }
 
-      console.log('[classify-restaurant-cuisine] Successfully updated restaurant:', restaurantId);
+      console.log('[classify-restaurant-cuisine] Restaurant updated successfully');
     }
 
     return new Response(
@@ -162,11 +201,11 @@ Google Places 類型：${googleTypes || '無'}
     );
 
   } catch (error) {
-    console.error('[classify-restaurant-cuisine] Error:', error);
+    console.error('[classify-restaurant-cuisine] Error');
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: '操作失敗，請稍後重試'
       }),
       {
         status: 500,

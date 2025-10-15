@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -417,11 +418,11 @@ const Groups = () => {
         </div>
 
         {groups.length === 0 ? (
-          <div className="text-center py-16">
-            <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">還沒有加入任何群組</h2>
-            <p className="text-muted-foreground">建立或加入群組來與朋友一起選擇餐廳</p>
-          </div>
+          <EmptyState
+            icon={<Users className="h-16 w-16" />}
+            title="還沒有加入任何群組"
+            description="建立或加入群組來與朋友一起選擇餐廳"
+          />
         ) : (
           <div className="space-y-4">
             {groups.map((group) => (

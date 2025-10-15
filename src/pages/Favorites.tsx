@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { FavoriteListSkeleton } from '@/components/ui/FavoriteListSkeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -285,18 +286,15 @@ const Favorites = () => {
             </div>
 
             {sortedFavorites.length === 0 ? (
-              <div className="text-center py-16">
-                <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">
-                  {selectedCategory === 'all' ? '還沒有收藏的餐廳' : '此分類沒有餐廳'}
-                </h2>
-                <p className="text-muted-foreground">
-                  {selectedCategory === 'all' 
+              <EmptyState
+                icon={<Heart className="h-16 w-16" />}
+                title={selectedCategory === 'all' ? '還沒有收藏的餐廳' : '此分類沒有餐廳'}
+                description={
+                  selectedCategory === 'all' 
                     ? '開始滑卡來發現喜愛的餐廳吧！' 
                     : '試試其他分類或新增餐廳到這個分類'
-                  }
-                </p>
-              </div>
+                }
+              />
             ) : (
               <div className="space-y-4">
                 {sortedFavorites.map((favorite) => (
