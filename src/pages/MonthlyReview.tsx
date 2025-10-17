@@ -1,11 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronLeft, Sparkles, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { TopRestaurantSelector } from '@/components/TopRestaurantSelector';
+import type { TopRestaurantSelection } from '@/types/monthlyReview';
 
 const MonthlyReview = () => {
   const { user } = useAuth();
@@ -17,11 +20,66 @@ const MonthlyReview = () => {
   const currentMonth = new Date();
   const monthName = `${currentMonth.getFullYear()}年${currentMonth.getMonth() + 1}月`;
 
+  // Top 3 restaurants state
+  const [topRestaurants, setTopRestaurants] = useState<{
+    top1: TopRestaurantSelection | null;
+    top2: TopRestaurantSelection | null;
+    top3: TopRestaurantSelection | null;
+  }>({
+    top1: null,
+    top2: null,
+    top3: null,
+  });
+
+  // Favorite restaurants for autocomplete
+  const [favoriteRestaurants, setFavoriteRestaurants] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+
   // Constants
   const MAX_PHOTOS = 10;
   const MIN_PHOTOS = 3;
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+  // Fetch favorite restaurants for autocomplete
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('favorites')
+        .select(
+          `
+          id,
+          restaurant_id,
+          restaurants (
+            id,
+            name
+          )
+        `
+        )
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Failed to fetch favorites:', error);
+        return;
+      }
+
+      if (data) {
+        const restaurants = data
+          .map((fav: any) => ({
+            id: fav.restaurants.id,
+            name: fav.restaurants.name,
+          }))
+          .filter((r) => r.name); // Filter out any null names
+
+        setFavoriteRestaurants(restaurants);
+      }
+    };
+
+    fetchFavorites();
+  }, [user]);
 
   // File validation
   const validateFile = (file: File): string | null => {
@@ -101,7 +159,7 @@ const MonthlyReview = () => {
     toast.success('照片已刪除');
   };
 
-  // Handle next step
+  // Handle next step from photo upload
   const handleNextStep = () => {
     if (uploadedPhotos.length < MIN_PHOTOS) {
       toast.error(`至少需要上傳 ${MIN_PHOTOS} 張照片`, {
@@ -110,6 +168,28 @@ const MonthlyReview = () => {
       return;
     }
     setCurrentStep(3);
+  };
+
+  // Handle proceed to generation
+  const handleProceedToGeneration = () => {
+    if (!topRestaurants.top1 || !topRestaurants.top2 || !topRestaurants.top3) {
+      toast.error('請完成 Top 3 餐廳選擇', {
+        description: '請為每個排名選擇餐廳和代表照片。',
+      });
+      return;
+    }
+    setCurrentStep(4);
+  };
+
+  // Handle top restaurant change
+  const handleTopRestaurantChange = (
+    rank: 1 | 2 | 3,
+    data: TopRestaurantSelection | null
+  ) => {
+    setTopRestaurants((prev) => ({
+      ...prev,
+      [`top${rank}`]: data,
+    }));
   };
 
   // If user is not authenticated
@@ -300,28 +380,78 @@ const MonthlyReview = () => {
     </Card>
   );
 
-  // Step 3: Top 3 Selection (Placeholder)
-  const renderTop3SelectionStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>步驟 3：選擇 Top 3 餐廳</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-muted rounded-lg p-8 text-center">
-          <p className="text-muted-foreground">🏆 Top 3 選擇功能</p>
-          <p className="text-sm text-muted-foreground mt-2">即將在 Phase 2.3 推出</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1">
+  // Step 3: Top 3 Selection
+  const renderTop3SelectionStep = () => {
+    const allSelected =
+      topRestaurants.top1 && topRestaurants.top2 && topRestaurants.top3;
+
+    return (
+      <div className="space-y-4">
+        {/* Instructions Card */}
+        <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">
+              🏆 選擇你本月最愛的 Top 3 餐廳，並為每個餐廳挑選一張最具代表性的照片。這將成為你的美食回顧主角！
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Top 1 Selector */}
+        <TopRestaurantSelector
+          rank={1}
+          uploadedPhotos={uploadedPhotos}
+          restaurants={favoriteRestaurants}
+          value={topRestaurants.top1}
+          onChange={(data) => handleTopRestaurantChange(1, data)}
+        />
+
+        {/* Top 2 Selector */}
+        <TopRestaurantSelector
+          rank={2}
+          uploadedPhotos={uploadedPhotos}
+          restaurants={favoriteRestaurants}
+          value={topRestaurants.top2}
+          onChange={(data) => handleTopRestaurantChange(2, data)}
+        />
+
+        {/* Top 3 Selector */}
+        <TopRestaurantSelector
+          rank={3}
+          uploadedPhotos={uploadedPhotos}
+          restaurants={favoriteRestaurants}
+          value={topRestaurants.top3}
+          onChange={(data) => handleTopRestaurantChange(3, data)}
+        />
+
+        {/* Validation Alert */}
+        {!allSelected && (
+          <Alert>
+            <AlertDescription>
+              請完成所有 Top 3 餐廳的選擇（餐廳名稱 + 代表照片）才能繼續下一步
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-4">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentStep(2)}
+            className="flex-1"
+          >
             ← 返回
           </Button>
-          <Button onClick={() => setCurrentStep(4)} className="flex-1">
+          <Button
+            onClick={handleProceedToGeneration}
+            className="flex-1"
+            disabled={!allSelected}
+          >
             生成美術圖 →
           </Button>
         </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+    );
+  };
 
   // Step 4: Generating (Placeholder)
   const renderGeneratingStep = () => (
