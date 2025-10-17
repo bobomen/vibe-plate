@@ -412,20 +412,6 @@ const MonthlyReview = () => {
         </CardContent>
       </Card>
 
-      {/* Info Card */}
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="text-lg">📊 Phase 2.1 測試版本</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>✅ 5 步驟 UI 框架建立完成</p>
-          <p>✅ 文案更新為「創作」導向</p>
-          <p>✅ 統計數據已移至後台</p>
-          <p className="text-xs pt-2 border-t">
-            下個階段將加入照片上傳功能
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 
@@ -473,7 +459,7 @@ const MonthlyReview = () => {
             支援 JPG、PNG、WEBP 格式，單張照片最大 5MB
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            最多 {MAX_PHOTOS} 張，至少需要 {MIN_PHOTOS} 張照片
+            上傳 {MIN_PHOTOS}-{MAX_PHOTOS} 張美食照片，開始你的創作之旅
           </p>
         </div>
 
@@ -507,9 +493,10 @@ const MonthlyReview = () => {
 
         {/* Info Alert */}
         {uploadedPhotos.length > 0 && uploadedPhotos.length < MIN_PHOTOS && (
-          <Alert>
+          <Alert className="bg-primary/5 border-primary/20">
+            <Sparkles className="h-4 w-4 text-primary" />
             <AlertDescription>
-              還需要上傳 {MIN_PHOTOS - uploadedPhotos.length} 張照片才能繼續下一步
+              太棒了！再上傳 {MIN_PHOTOS - uploadedPhotos.length} 張照片就能繼續下一步囉 ✨
             </AlertDescription>
           </Alert>
         )}
@@ -539,6 +526,13 @@ const MonthlyReview = () => {
   const renderTop3SelectionStep = () => {
     const allSelected =
       topRestaurants.top1 && topRestaurants.top2 && topRestaurants.top3;
+    
+    // Get used photo indexes to prevent duplicate selection
+    const usedPhotoIndexes = [
+      topRestaurants.top1?.photoIndex,
+      topRestaurants.top2?.photoIndex,
+      topRestaurants.top3?.photoIndex,
+    ].filter((index): index is number => index !== undefined && index >= 0);
 
     return (
       <div className="space-y-4">
@@ -546,7 +540,7 @@ const MonthlyReview = () => {
         <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">
-              🏆 選擇你本月最愛的 Top 3 餐廳，並為每個餐廳挑選一張最具代表性的照片。這將成為你的美食回顧主角！
+              🏆 選擇你本月最愛的 Top 3 餐廳，為每個餐廳挑選一張最具代表性的照片，打造專屬於你的美食回顧！
             </p>
           </CardContent>
         </Card>
@@ -558,6 +552,9 @@ const MonthlyReview = () => {
           restaurants={favoriteRestaurants}
           value={topRestaurants.top1}
           onChange={(data) => handleTopRestaurantChange(1, data)}
+          usedPhotoIndexes={usedPhotoIndexes.filter(
+            (idx) => idx !== topRestaurants.top1?.photoIndex
+          )}
         />
 
         {/* Top 2 Selector */}
@@ -567,6 +564,9 @@ const MonthlyReview = () => {
           restaurants={favoriteRestaurants}
           value={topRestaurants.top2}
           onChange={(data) => handleTopRestaurantChange(2, data)}
+          usedPhotoIndexes={usedPhotoIndexes.filter(
+            (idx) => idx !== topRestaurants.top2?.photoIndex
+          )}
         />
 
         {/* Top 3 Selector */}
@@ -576,13 +576,17 @@ const MonthlyReview = () => {
           restaurants={favoriteRestaurants}
           value={topRestaurants.top3}
           onChange={(data) => handleTopRestaurantChange(3, data)}
+          usedPhotoIndexes={usedPhotoIndexes.filter(
+            (idx) => idx !== topRestaurants.top3?.photoIndex
+          )}
         />
 
         {/* Validation Alert */}
         {!allSelected && (
-          <Alert>
+          <Alert className="bg-primary/5 border-primary/20">
+            <Sparkles className="h-4 w-4 text-primary" />
             <AlertDescription>
-              請完成所有 Top 3 餐廳的選擇（餐廳名稱 + 代表照片）才能繼續下一步
+              完成 Top 3 的選擇（餐廳名稱 + 代表照片），就能生成你的美食回顧美術圖囉 🎨
             </AlertDescription>
           </Alert>
         )}

@@ -38,6 +38,7 @@ interface TopRestaurantSelectorProps {
   value: TopRestaurantData | null;
   onChange: (data: TopRestaurantData | null) => void;
   disabled?: boolean;
+  usedPhotoIndexes?: number[]; // Photos already selected by other ranks
 }
 
 const rankLabels = {
@@ -53,6 +54,7 @@ export const TopRestaurantSelector = ({
   value,
   onChange,
   disabled = false,
+  usedPhotoIndexes = [],
 }: TopRestaurantSelectorProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -169,34 +171,47 @@ export const TopRestaurantSelector = ({
               className="grid grid-cols-3 gap-2"
               disabled={disabled}
             >
-              {uploadedPhotos.map((file, index) => (
-                <div key={index} className="relative">
-                  <RadioGroupItem
-                    value={index.toString()}
-                    id={`photo-${rank}-${index}`}
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor={`photo-${rank}-${index}`}
-                    className={cn(
-                      'flex aspect-square cursor-pointer items-center justify-center rounded-lg border-2 border-muted hover:border-primary transition-colors overflow-hidden',
-                      selectedPhotoIndex === index &&
-                        'border-primary ring-2 ring-primary ring-offset-2'
-                    )}
-                  >
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`照片 ${index + 1}`}
-                      className="w-full h-full object-cover"
+              {uploadedPhotos.map((file, index) => {
+                const isUsedByOther = usedPhotoIndexes.includes(index);
+                const isDisabled = disabled || isUsedByOther;
+                
+                return (
+                  <div key={index} className="relative">
+                    <RadioGroupItem
+                      value={index.toString()}
+                      id={`photo-${rank}-${index}`}
+                      className="peer sr-only"
+                      disabled={isDisabled}
                     />
-                    {selectedPhotoIndex === index && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                        <Check className="h-6 w-6 text-primary-foreground" />
-                      </div>
-                    )}
-                  </Label>
-                </div>
-              ))}
+                    <Label
+                      htmlFor={`photo-${rank}-${index}`}
+                      className={cn(
+                        'flex aspect-square items-center justify-center rounded-lg border-2 border-muted transition-colors overflow-hidden',
+                        !isDisabled && 'cursor-pointer hover:border-primary',
+                        isDisabled && 'opacity-40 cursor-not-allowed',
+                        selectedPhotoIndex === index &&
+                          'border-primary ring-2 ring-primary ring-offset-2'
+                      )}
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`照片 ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {selectedPhotoIndex === index && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <Check className="h-6 w-6 text-primary-foreground" />
+                        </div>
+                      )}
+                      {isUsedByOther && (
+                        <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                          <p className="text-xs font-medium text-muted-foreground">已選擇</p>
+                        </div>
+                      )}
+                    </Label>
+                  </div>
+                );
+              })}
             </RadioGroup>
           </div>
         )}
