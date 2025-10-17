@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronLeft, Sparkles, Upload, X, Image as ImageIcon, Download, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -42,12 +43,32 @@ const MonthlyReview = () => {
   // Generated graphic URL
   const [generatedGraphicUrl, setGeneratedGraphicUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState('準備中...');
   
   // Instagram sharing guide dialog
   const [showInstagramGuide, setShowInstagramGuide] = useState(false);
 
   // Fetch monthly stats (background data)
   const { data: monthlyStats } = useMonthlyReviewStats(currentMonth);
+
+  // Check for existing review
+  const reviewMonth = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-01`;
+  const { data: existingReview } = useQuery({
+    queryKey: ['existing-review', reviewMonth, user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      const { data } = await supabase
+        .from('monthly_reviews')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('review_month', reviewMonth)
+        .maybeSingle();
+      
+      return data;
+    },
+    enabled: !!user
+  });
 
   // Constants
   const MAX_PHOTOS = 10;
@@ -220,7 +241,7 @@ const MonthlyReview = () => {
 
     try {
       // 1. Upload photos to Storage
-      toast.info('上傳照片中...');
+      setCurrentProgress('📸 上傳照片中...');
       const photoUrls = await uploadPhotosToStorage(uploadedPhotos);
       
       // 2. Prepare graphic data
@@ -263,10 +284,11 @@ const MonthlyReview = () => {
       };
       
       // 3. Generate graphic with Canvas
-      toast.info('生成美術圖中...');
+      setCurrentProgress('🎨 生成美術圖中...');
       const graphicBlobUrl = await generateMonthlyReviewGraphic(graphicData);
       
       // 4. Upload graphic to Storage
+      setCurrentProgress('☁️ 保存到雲端...');
       const graphicBlob = await fetch(graphicBlobUrl).then(r => r.blob());
       const graphicFileName = `${user!.id}/review_${Date.now()}.png`;
       
@@ -283,12 +305,12 @@ const MonthlyReview = () => {
         .from('monthly-review-photos')
         .getPublicUrl(graphicFileName);
       
-      // 5. Save to database
+      // 5. Save to database using UPSERT to handle existing reviews
       const { error: dbError } = await supabase
         .from('monthly_reviews')
-        .insert({
+        .upsert({
           user_id: user!.id,
-          review_month: `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-01`,
+          review_month: reviewMonth,
           user_ranked_restaurants: [
             {
               rank: 1,
@@ -316,19 +338,38 @@ const MonthlyReview = () => {
           total_favorites: monthlyStats?.totalFavorites || 0,
           top_cuisine_type: monthlyStats?.topCuisineType || null,
           most_visited_district: monthlyStats?.mostVisitedDistrict || null
+        }, {
+          onConflict: 'user_id,review_month',
+          ignoreDuplicates: false
         });
       
       if (dbError) throw dbError;
       
       // 6. Complete
+      setCurrentProgress('✅ 完成！');
       setGeneratedGraphicUrl(graphicPublicUrl);
       setCurrentStep(5);
       toast.success('美食回顧生成完成！');
       
     } catch (error) {
       console.error('Generation failed:', error);
+      
+      let errorMessage = '請稍後再試';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate key')) {
+          errorMessage = '本月回顧已存在，請返回首頁使用「重新創作」選項';
+        } else if (error.message.includes('storage')) {
+          errorMessage = '照片上傳失敗，請檢查網路連線';
+        } else if (error.message.includes('Failed to create blob')) {
+          errorMessage = '圖片生成失敗，請重新嘗試';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast.error('生成失敗', {
-        description: error instanceof Error ? error.message : '請稍後再試'
+        description: errorMessage
       });
       setCurrentStep(3); // Return to Top 3 selection
     } finally {
@@ -374,6 +415,44 @@ const MonthlyReview = () => {
   // Step 1: Welcome Page
   const renderWelcomeStep = () => (
     <div className="space-y-6">
+      {/* Existing Review Notice */}
+      {existingReview && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="font-medium mb-1">您已創建過 {monthName} 的美食回顧</p>
+                  <p className="text-sm text-muted-foreground">
+                    您可以查看已創建的回顧，或重新創作一個新的版本
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setGeneratedGraphicUrl(existingReview.graphic_url);
+                      setCurrentStep(5);
+                    }}
+                  >
+                    查看已創建的回顧
+                  </Button>
+                  <Button 
+                    variant="default"
+                    size="sm"
+                    onClick={() => setCurrentStep(2)}
+                  >
+                    重新創作
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl">
@@ -407,7 +486,7 @@ const MonthlyReview = () => {
             className="w-full"
             size="lg"
           >
-            開始創作 →
+            {existingReview ? '開始重新創作 →' : '開始創作 →'}
           </Button>
         </CardContent>
       </Card>
@@ -620,6 +699,9 @@ const MonthlyReview = () => {
           <Sparkles className="h-5 w-5 text-primary animate-pulse" />
           正在生成你的美食回顧...
         </CardTitle>
+        <CardDescription className="text-center mt-2">
+          {currentProgress}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-lg p-8 text-center">
