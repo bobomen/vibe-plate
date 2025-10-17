@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronLeft, Sparkles, Upload, X, Image as ImageIcon, Download } from 'lucide-react';
+import { Calendar, ChevronLeft, Sparkles, Upload, X, Image as ImageIcon, Download, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { TopRestaurantSelector } from '@/components/TopRestaurantSelector';
@@ -41,6 +42,9 @@ const MonthlyReview = () => {
   // Generated graphic URL
   const [generatedGraphicUrl, setGeneratedGraphicUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Instagram sharing guide dialog
+  const [showInstagramGuide, setShowInstagramGuide] = useState(false);
 
   // Fetch monthly stats (background data)
   const { data: monthlyStats } = useMonthlyReviewStats(currentMonth);
@@ -655,11 +659,14 @@ const MonthlyReview = () => {
               <Sparkles className="h-6 w-6 text-primary" />
               完成！你的美食回顧已生成
             </CardTitle>
+            <CardDescription>
+              立即分享到社群媒體，讓朋友看見你的美食品味！
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Preview */}
             {generatedGraphicUrl && (
-              <div className="rounded-lg overflow-hidden border-2 border-border">
+              <div className="rounded-lg overflow-hidden border-2 border-border shadow-lg">
                 <img 
                   src={generatedGraphicUrl} 
                   alt={`${monthName} 美食回顧`}
@@ -668,23 +675,35 @@ const MonthlyReview = () => {
               </div>
             )}
 
-            {/* Download Button */}
-            <Button 
-              onClick={handleDownload}
-              className="w-full"
-              size="lg"
-            >
-              <Download className="mr-2 h-5 w-5" />
-              下載美術圖
-            </Button>
+            {/* Primary Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={handleDownload}
+                size="lg"
+                className="w-full"
+              >
+                <Download className="mr-2 h-5 w-5" />
+                下載圖片
+              </Button>
+              <Button 
+                onClick={() => setShowInstagramGuide(true)}
+                size="lg"
+                variant="outline"
+                className="w-full border-pink-500/50 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950"
+              >
+                <Instagram className="mr-2 h-5 w-5" />
+                分享到 IG
+              </Button>
+            </div>
 
-            <Alert>
+            <Alert className="bg-primary/5 border-primary/20">
+              <Sparkles className="h-4 w-4 text-primary" />
               <AlertDescription>
-                💡 圖片已儲存到雲端，你可以隨時從個人檔案頁面查看歷史記錄
+                圖片已自動儲存到雲端，你可以隨時從個人檔案查看歷史記錄
               </AlertDescription>
             </Alert>
 
-            {/* Action Buttons */}
+            {/* Secondary Action Buttons */}
             <div className="flex gap-2 pt-2">
               <Button 
                 variant="outline" 
@@ -708,15 +727,85 @@ const MonthlyReview = () => {
           </CardContent>
         </Card>
 
-        {/* Phase 2.5 Preview */}
-        <Card className="border-dashed">
-          <CardContent className="p-4 text-sm text-muted-foreground">
-            <p className="font-medium mb-2">📱 Phase 2.5 即將推出：</p>
-            <p>• 一鍵分享到 Instagram Stories</p>
-            <p>• 分享到其他社群平台</p>
-            <p>• 查看歷史回顧記錄</p>
-          </CardContent>
-        </Card>
+        {/* Instagram Sharing Guide Dialog */}
+        <Dialog open={showInstagramGuide} onOpenChange={setShowInstagramGuide}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Instagram className="h-5 w-5 text-pink-600" />
+                如何分享到 Instagram
+              </DialogTitle>
+              <DialogDescription>
+                跟著以下步驟，輕鬆分享你的美食回顧到 Instagram 限時動態或貼文
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Step-by-step Guide */}
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    1
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">點擊下方「下載圖片」按鈕</p>
+                    <p className="text-sm text-muted-foreground">圖片會儲存到你的手機相簿</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">開啟 Instagram 應用程式</p>
+                    <p className="text-sm text-muted-foreground">可以分享到限時動態或貼文</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    3
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">點擊「+」&gt; 選擇剛下載的圖片</p>
+                    <p className="text-sm text-muted-foreground">從相簿中選擇你的美食回顧圖</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+                    4
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">分享到你的限時動態或貼文！</p>
+                    <p className="text-sm text-muted-foreground">讓朋友看見你的美食品味</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Download Button */}
+              <Button 
+                onClick={() => {
+                  handleDownload();
+                  setShowInstagramGuide(false);
+                  toast.success('圖片已下載！', {
+                    description: '現在可以開啟 Instagram 分享了'
+                  });
+                }}
+                className="w-full"
+                size="lg"
+              >
+                <Download className="mr-2 h-5 w-5" />
+                立即下載並前往 Instagram
+              </Button>
+
+              <p className="text-xs text-center text-muted-foreground">
+                💡 提示：建議使用「限時動態」功能，可以添加更多互動貼紙和效果
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
