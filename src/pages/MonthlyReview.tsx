@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronLeft, Sparkles, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Calendar, ChevronLeft, Sparkles, Upload, X, Image as ImageIcon, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { TopRestaurantSelector } from '@/components/TopRestaurantSelector';
+import { useMonthlyReviewStats } from '@/hooks/useMonthlyReviewStats';
+import { generateMonthlyReviewGraphic } from '@/utils/generateMonthlyReviewGraphic';
 import type { TopRestaurantSelection } from '@/types/monthlyReview';
 
 const MonthlyReview = () => {
@@ -35,6 +37,13 @@ const MonthlyReview = () => {
   const [favoriteRestaurants, setFavoriteRestaurants] = useState<
     Array<{ id: string; name: string }>
   >([]);
+
+  // Generated graphic URL
+  const [generatedGraphicUrl, setGeneratedGraphicUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fetch monthly stats (background data)
+  const { data: monthlyStats } = useMonthlyReviewStats(currentMonth);
 
   // Constants
   const MAX_PHOTOS = 10;
@@ -170,15 +179,157 @@ const MonthlyReview = () => {
     setCurrentStep(3);
   };
 
-  // Handle proceed to generation
-  const handleProceedToGeneration = () => {
+  // Upload photos to Supabase Storage
+  const uploadPhotosToStorage = async (photos: File[]): Promise<string[]> => {
+    const uploadPromises = photos.map(async (photo, index) => {
+      const fileExt = photo.name.split('.').pop();
+      const fileName = `${user!.id}/${Date.now()}_${index}.${fileExt}`;
+      
+      const { error } = await supabase.storage
+        .from('monthly-review-photos')
+        .upload(fileName, photo, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('monthly-review-photos')
+        .getPublicUrl(fileName);
+      
+      return publicUrl;
+    });
+    
+    return Promise.all(uploadPromises);
+  };
+
+  // Handle generate graphic
+  const handleGenerateGraphic = async () => {
     if (!topRestaurants.top1 || !topRestaurants.top2 || !topRestaurants.top3) {
-      toast.error('請完成 Top 3 餐廳選擇', {
-        description: '請為每個排名選擇餐廳和代表照片。',
-      });
+      toast.error('請完成 Top 3 餐廳選擇');
       return;
     }
-    setCurrentStep(4);
+
+    setCurrentStep(4); // Move to generating step
+    setIsGenerating(true);
+
+    try {
+      // 1. Upload photos to Storage
+      toast.info('上傳照片中...');
+      const photoUrls = await uploadPhotosToStorage(uploadedPhotos);
+      
+      // 2. Prepare graphic data
+      const graphicData = {
+        rankedPhotos: [
+          {
+            rank: 1 as const,
+            restaurantName: topRestaurants.top1.restaurantName,
+            photoUrl: photoUrls[topRestaurants.top1.photoIndex]
+          },
+          {
+            rank: 2 as const,
+            restaurantName: topRestaurants.top2.restaurantName,
+            photoUrl: photoUrls[topRestaurants.top2.photoIndex]
+          },
+          {
+            rank: 3 as const,
+            restaurantName: topRestaurants.top3.restaurantName,
+            photoUrl: photoUrls[topRestaurants.top3.photoIndex]
+          },
+          ...photoUrls
+            .filter((_, i) => 
+              i !== topRestaurants.top1.photoIndex &&
+              i !== topRestaurants.top2.photoIndex &&
+              i !== topRestaurants.top3.photoIndex
+            )
+            .map(url => ({
+              rank: null,
+              restaurantName: '',
+              photoUrl: url
+            }))
+        ],
+        stats: {
+          totalSwipes: monthlyStats?.totalSwipes || 0,
+          likePercentage: monthlyStats?.likePercentage || 0,
+          totalFavorites: monthlyStats?.totalFavorites || 0,
+          topDistrict: monthlyStats?.mostVisitedDistrict || '未知'
+        },
+        month: monthName
+      };
+      
+      // 3. Generate graphic with Canvas
+      toast.info('生成美術圖中...');
+      const graphicBlobUrl = await generateMonthlyReviewGraphic(graphicData);
+      
+      // 4. Upload graphic to Storage
+      const graphicBlob = await fetch(graphicBlobUrl).then(r => r.blob());
+      const graphicFileName = `${user!.id}/review_${Date.now()}.png`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('monthly-review-photos')
+        .upload(graphicFileName, graphicBlob, {
+          contentType: 'image/png',
+          cacheControl: '3600'
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl: graphicPublicUrl } } = supabase.storage
+        .from('monthly-review-photos')
+        .getPublicUrl(graphicFileName);
+      
+      // 5. Save to database
+      const { error: dbError } = await supabase
+        .from('monthly_reviews')
+        .insert({
+          user_id: user!.id,
+          review_month: `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-01`,
+          user_ranked_restaurants: [
+            {
+              rank: 1,
+              restaurant_id: topRestaurants.top1.restaurantId || null,
+              restaurant_name: topRestaurants.top1.restaurantName,
+              photo_url: photoUrls[topRestaurants.top1.photoIndex]
+            },
+            {
+              rank: 2,
+              restaurant_id: topRestaurants.top2.restaurantId || null,
+              restaurant_name: topRestaurants.top2.restaurantName,
+              photo_url: photoUrls[topRestaurants.top2.photoIndex]
+            },
+            {
+              rank: 3,
+              restaurant_id: topRestaurants.top3.restaurantId || null,
+              restaurant_name: topRestaurants.top3.restaurantName,
+              photo_url: photoUrls[topRestaurants.top3.photoIndex]
+            }
+          ],
+          graphic_url: graphicPublicUrl,
+          total_swipes: monthlyStats?.totalSwipes || 0,
+          total_likes: monthlyStats?.totalLikes || 0,
+          like_percentage: monthlyStats?.likePercentage || 0,
+          total_favorites: monthlyStats?.totalFavorites || 0,
+          top_cuisine_type: monthlyStats?.topCuisineType || null,
+          most_visited_district: monthlyStats?.mostVisitedDistrict || null
+        });
+      
+      if (dbError) throw dbError;
+      
+      // 6. Complete
+      setGeneratedGraphicUrl(graphicPublicUrl);
+      setCurrentStep(5);
+      toast.success('美食回顧生成完成！');
+      
+    } catch (error) {
+      console.error('Generation failed:', error);
+      toast.error('生成失敗', {
+        description: error instanceof Error ? error.message : '請稍後再試'
+      });
+      setCurrentStep(3); // Return to Top 3 selection
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Handle top restaurant change
@@ -442,7 +593,7 @@ const MonthlyReview = () => {
             ← 返回
           </Button>
           <Button
-            onClick={handleProceedToGeneration}
+            onClick={handleGenerateGraphic}
             className="flex-1"
             disabled={!allSelected}
           >
@@ -453,47 +604,122 @@ const MonthlyReview = () => {
     );
   };
 
-  // Step 4: Generating (Placeholder)
+  // Step 4: Generating
   const renderGeneratingStep = () => (
     <Card>
       <CardHeader>
-        <CardTitle>步驟 4：生成中...</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+          正在生成你的美食回顧...
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-muted rounded-lg p-8 text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">🎨 Canvas 美術圖生成</p>
-          <p className="text-sm text-muted-foreground mt-2">即將在 Phase 2.4 推出</p>
+      <CardContent className="space-y-6">
+        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-lg p-8 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto mb-4"></div>
+          <p className="text-lg font-medium mb-2">正在處理中</p>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>📸 上傳照片到雲端儲存...</p>
+            <p>🎨 Canvas 繪製美術圖...</p>
+            <p>💾 儲存你的回顧記錄...</p>
+          </div>
         </div>
-        <Button onClick={() => setCurrentStep(5)} className="w-full">
-          查看結果 →
-        </Button>
+        <Alert>
+          <AlertDescription>
+            這可能需要幾秒鐘時間，請稍候
+          </AlertDescription>
+        </Alert>
       </CardContent>
     </Card>
   );
 
-  // Step 5: Completed (Placeholder)
-  const renderCompletedStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>步驟 5：完成！</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-muted rounded-lg p-8 text-center">
-          <p className="text-muted-foreground">🎉 下載與分享功能</p>
-          <p className="text-sm text-muted-foreground mt-2">即將在 Phase 2.5 推出</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
-            重新創作
-          </Button>
-          <Button onClick={() => navigate('/app/profile')} className="flex-1">
-            返回個人檔案
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  // Step 5: Completed
+  const renderCompletedStep = () => {
+    const handleDownload = () => {
+      if (!generatedGraphicUrl) return;
+      
+      const link = document.createElement('a');
+      link.href = generatedGraphicUrl;
+      link.download = `${monthName}_美食回顧.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('開始下載美術圖');
+    };
+
+    return (
+      <div className="space-y-4">
+        <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-primary" />
+              完成！你的美食回顧已生成
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Preview */}
+            {generatedGraphicUrl && (
+              <div className="rounded-lg overflow-hidden border-2 border-border">
+                <img 
+                  src={generatedGraphicUrl} 
+                  alt={`${monthName} 美食回顧`}
+                  className="w-full h-auto"
+                />
+              </div>
+            )}
+
+            {/* Download Button */}
+            <Button 
+              onClick={handleDownload}
+              className="w-full"
+              size="lg"
+            >
+              <Download className="mr-2 h-5 w-5" />
+              下載美術圖
+            </Button>
+
+            <Alert>
+              <AlertDescription>
+                💡 圖片已儲存到雲端，你可以隨時從個人檔案頁面查看歷史記錄
+              </AlertDescription>
+            </Alert>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCurrentStep(1);
+                  setUploadedPhotos([]);
+                  setTopRestaurants({ top1: null, top2: null, top3: null });
+                  setGeneratedGraphicUrl(null);
+                }} 
+                className="flex-1"
+              >
+                重新創作
+              </Button>
+              <Button 
+                onClick={() => navigate('/app/profile')} 
+                className="flex-1"
+              >
+                返回個人檔案
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Phase 2.5 Preview */}
+        <Card className="border-dashed">
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            <p className="font-medium mb-2">📱 Phase 2.5 即將推出：</p>
+            <p>• 一鍵分享到 Instagram Stories</p>
+            <p>• 分享到其他社群平台</p>
+            <p>• 查看歷史回顧記錄</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
