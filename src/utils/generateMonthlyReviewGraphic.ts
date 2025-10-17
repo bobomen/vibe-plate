@@ -1,0 +1,157 @@
+interface PhotoData {
+  photoUrl: string;
+  restaurantName: string;
+  rank: number | null;
+}
+
+interface StatsData {
+  totalSwipes: number;
+  likePercentage: number;
+  totalFavorites: number;
+  topDistrict: string;
+}
+
+interface GenerateGraphicData {
+  rankedPhotos: PhotoData[];
+  stats: StatsData;
+  month: string;
+}
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+export async function generateMonthlyReviewGraphic(data: GenerateGraphicData): Promise<string> {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext('2d')!;
+
+  // 1. Draw white background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, 1080, 1920);
+
+  // 2. Draw title area (top 10%)
+  ctx.fillStyle = '#000000';
+  ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${data.month} 美食回顧`, 540, 120);
+
+  // 3. Draw Rank 1 (large image, 40% height)
+  const rank1 = data.rankedPhotos.find(p => p.rank === 1);
+  if (rank1) {
+    try {
+      const img1 = await loadImage(rank1.photoUrl);
+      ctx.drawImage(img1, 90, 200, 900, 700);
+      
+      // Gold medal
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(150, 260, 50, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('1', 150, 280);
+      
+      // Restaurant name
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillText(rank1.restaurantName, 540, 950);
+    } catch (error) {
+      console.error('Error loading rank 1 image:', error);
+    }
+  }
+
+  // 4. Draw Rank 2 & 3 (side by side medium images)
+  const rank2 = data.rankedPhotos.find(p => p.rank === 2);
+  const rank3 = data.rankedPhotos.find(p => p.rank === 3);
+  
+  if (rank2) {
+    try {
+      const img2 = await loadImage(rank2.photoUrl);
+      ctx.drawImage(img2, 90, 1000, 420, 420);
+      
+      // Silver medal
+      ctx.fillStyle = '#C0C0C0';
+      ctx.beginPath();
+      ctx.arc(150, 1060, 40, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('2', 150, 1075);
+      
+      // Restaurant name
+      ctx.fillStyle = '#000000';
+      ctx.font = '32px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(rank2.restaurantName, 300, 1460);
+    } catch (error) {
+      console.error('Error loading rank 2 image:', error);
+    }
+  }
+  
+  if (rank3) {
+    try {
+      const img3 = await loadImage(rank3.photoUrl);
+      ctx.drawImage(img3, 570, 1000, 420, 420);
+      
+      // Bronze medal
+      ctx.fillStyle = '#CD7F32';
+      ctx.beginPath();
+      ctx.arc(630, 1060, 40, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('3', 630, 1075);
+      
+      // Restaurant name
+      ctx.fillStyle = '#000000';
+      ctx.font = '32px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(rank3.restaurantName, 780, 1460);
+    } catch (error) {
+      console.error('Error loading rank 3 image:', error);
+    }
+  }
+
+  // 5. Draw other photos (small grid at bottom)
+  const otherPhotos = data.rankedPhotos.filter(p => p.rank === null).slice(0, 4);
+  let xOffset = 90;
+  for (const photo of otherPhotos) {
+    try {
+      const img = await loadImage(photo.photoUrl);
+      ctx.drawImage(img, xOffset, 1500, 200, 200);
+      xOffset += 230;
+    } catch (error) {
+      console.error('Error loading other photo:', error);
+    }
+  }
+
+  // 6. Draw statistics (bottom)
+  ctx.fillStyle = '#666666';
+  ctx.font = '36px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(`探索了 ${data.stats.totalSwipes} 間餐廳`, 90, 1770);
+  ctx.fillText(`收藏了 ${data.stats.totalFavorites} 個最愛`, 90, 1820);
+  ctx.fillText(`最常去 ${data.stats.topDistrict}`, 90, 1870);
+
+  // 7. Convert to Blob URL
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(URL.createObjectURL(blob));
+      } else {
+        throw new Error('Failed to create blob');
+      }
+    }, 'image/png');
+  });
+}

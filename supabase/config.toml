@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.import-restaurants]
 verify_jwt = false
+
+[functions.monthly-review-reminder]
+verify_jwt = false

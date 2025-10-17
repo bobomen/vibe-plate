@@ -308,6 +308,31 @@ const Profile = () => {
         </div>
 
         <div className="space-y-6">
+          {/* Monthly Review Banner */}
+          <Card className="bg-gradient-to-r from-pink-500/10 to-purple-600/10 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
+                    <span className="text-lg">🎉</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">
+                      {new Date().getMonth() + 1}月美食回顧已就緒！
+                    </h3>
+                    <p className="text-xs text-muted-foreground">分享你這個月的餐廳探險到 Instagram</p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => window.location.href = '/app/monthly-review'}
+                  className="bg-gradient-to-r from-primary to-primary/80"
+                >
+                  生成回顧 →
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           {/* Premium Banner - Only show if not premium - Move to top */}
           {!isPremium && (
             <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">

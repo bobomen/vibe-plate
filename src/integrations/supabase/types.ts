@@ -171,6 +171,63 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_reviews: {
+        Row: {
+          created_at: string | null
+          generated_at: string | null
+          graphic_url: string | null
+          id: string
+          like_percentage: number | null
+          most_visited_district: string | null
+          review_month: string
+          shared_at: string | null
+          shared_to_platform: string | null
+          top_cuisine_type: string | null
+          total_favorites: number | null
+          total_likes: number | null
+          total_swipes: number | null
+          updated_at: string | null
+          user_id: string
+          user_ranked_restaurants: Json
+        }
+        Insert: {
+          created_at?: string | null
+          generated_at?: string | null
+          graphic_url?: string | null
+          id?: string
+          like_percentage?: number | null
+          most_visited_district?: string | null
+          review_month: string
+          shared_at?: string | null
+          shared_to_platform?: string | null
+          top_cuisine_type?: string | null
+          total_favorites?: number | null
+          total_likes?: number | null
+          total_swipes?: number | null
+          updated_at?: string | null
+          user_id: string
+          user_ranked_restaurants?: Json
+        }
+        Update: {
+          created_at?: string | null
+          generated_at?: string | null
+          graphic_url?: string | null
+          id?: string
+          like_percentage?: number | null
+          most_visited_district?: string | null
+          review_month?: string
+          shared_at?: string | null
+          shared_to_platform?: string | null
+          top_cuisine_type?: string | null
+          total_favorites?: number | null
+          total_likes?: number | null
+          total_swipes?: number | null
+          updated_at?: string | null
+          user_id?: string
+          user_ranked_restaurants?: Json
+        }
+        Relationships: []
+      }
       payment_history: {
         Row: {
           amount: number
