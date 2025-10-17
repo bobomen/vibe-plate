@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, LogOut, MapPin, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +34,7 @@ interface Profile {
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { isPremium, showFirstTimeModal, markModalAsSeen, upgradeToPremium, loading: premiumLoading } = usePremium();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -325,7 +327,7 @@ const Profile = () => {
                 </div>
                 <Button 
                   size="sm"
-                  onClick={() => window.location.href = '/app/monthly-review'}
+                  onClick={() => navigate('/app/monthly-review')}
                   className="bg-gradient-to-r from-primary to-primary/80"
                 >
                   生成回顧 →
