@@ -316,13 +316,13 @@ const Profile = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
-                    <span className="text-lg">🎉</span>
+                    <span className="text-lg">🎨</span>
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm">
-                      {new Date().getMonth() + 1}月美食回顧已就緒！
+                      創作你的 {new Date().getMonth() + 1} 月美食回顧
                     </h3>
-                    <p className="text-xs text-muted-foreground">分享你這個月的餐廳探險到 Instagram</p>
+                    <p className="text-xs text-muted-foreground">打造專屬美食回憶，分享到 Instagram</p>
                   </div>
                 </div>
                 <Button 
@@ -330,7 +330,7 @@ const Profile = () => {
                   onClick={() => navigate('/app/monthly-review')}
                   className="bg-gradient-to-r from-primary to-primary/80"
                 >
-                  生成回顧 →
+                  開始創作 →
                 </Button>
               </div>
             </CardContent>
