@@ -48,6 +48,7 @@ export const GroupSwipeCards = React.memo(() => {
     currentRestaurant,
     distance,
     canGoBack,
+    userLocation,
     setCurrentIndex,
     setFilters,
     applyFilters,
@@ -58,6 +59,14 @@ export const GroupSwipeCards = React.memo(() => {
   } = useSwipeState({ 
     groupId,
   }); // INVARIANT: Group swipes have groupId
+
+  // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
+  const [cardDisplayTime, setCardDisplayTime] = useState<number>(Date.now());
+
+  // 當卡片切換時重置顯示時間
+  useEffect(() => {
+    setCardDisplayTime(Date.now());
+  }, [currentIndex]);
 
   // Group swipe logic hook
   const {
@@ -149,17 +158,25 @@ export const GroupSwipeCards = React.memo(() => {
   const handleCardSwipe = useCallback(async (liked: boolean) => {
     if (!currentRestaurant) return;
     
+    // 計算停留時長
+    const swipeDuration = Date.now() - cardDisplayTime;
+    
     try {
       // Add to history before swiping
       addToSwipeHistory(currentRestaurant, liked);
       
+      // Phase 1: 傳遞上下文數據（filters, userLocation, swipeDuration）
       await handleSwipe(currentRestaurant, liked, () => {
         setCurrentIndex(prev => prev + 1);
+      }, {
+        filters,
+        userLocation,
+        swipeDuration
       });
     } catch (error) {
       console.error('Error handling group swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {

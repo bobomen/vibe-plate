@@ -476,26 +476,41 @@ export type Database = {
       user_swipes: {
         Row: {
           created_at: string
+          filter_context: Json | null
           group_id: string | null
           id: string
           liked: boolean
           restaurant_id: string
+          swipe_distance_km: number | null
+          swipe_duration_ms: number | null
+          swipe_lat: number | null
+          swipe_lng: number | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          filter_context?: Json | null
           group_id?: string | null
           id?: string
           liked: boolean
           restaurant_id: string
+          swipe_distance_km?: number | null
+          swipe_duration_ms?: number | null
+          swipe_lat?: number | null
+          swipe_lng?: number | null
           user_id: string
         }
         Update: {
           created_at?: string
+          filter_context?: Json | null
           group_id?: string | null
           id?: string
           liked?: boolean
           restaurant_id?: string
+          swipe_distance_km?: number | null
+          swipe_duration_ms?: number | null
+          swipe_lat?: number | null
+          swipe_lng?: number | null
           user_id?: string
         }
         Relationships: [

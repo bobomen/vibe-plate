@@ -4,7 +4,7 @@
  * - 個人滑卡只讀 group_id IS NULL 的記錄
  * - 重置個人滑卡記錄時，收藏記錄必須完全保留
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Utensils, MapPin, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RestaurantCardSkeleton } from '@/components/ui/RestaurantCardSkeleton';
@@ -36,6 +36,7 @@ export const SwipeCards = React.memo(() => {
     currentRestaurant,
     distance,
     canGoBack,
+    userLocation,
     setCurrentIndex,
     setFilters,
     resetPersonalSwipes,
@@ -43,6 +44,14 @@ export const SwipeCards = React.memo(() => {
     addToSwipeHistory,
     goBackToPrevious,
   } = useSwipeState({ groupId: undefined }); // INVARIANT: Personal swipes have no groupId
+
+  // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
+  const [cardDisplayTime, setCardDisplayTime] = useState<number>(Date.now());
+
+  // 當卡片切換時重置顯示時間
+  useEffect(() => {
+    setCardDisplayTime(Date.now());
+  }, [currentIndex]);
 
   // Personal swipe logic hook  
   const {
@@ -63,17 +72,25 @@ export const SwipeCards = React.memo(() => {
   const handleCardSwipe = useCallback(async (liked: boolean) => {
     if (!currentRestaurant) return;
     
+    // 計算停留時長
+    const swipeDuration = Date.now() - cardDisplayTime;
+    
     try {
       // Add to history before swiping
       addToSwipeHistory(currentRestaurant, liked);
       
+      // Phase 1: 傳遞上下文數據（filters, userLocation, swipeDuration）
       await handleSwipe(currentRestaurant, liked, () => {
         setCurrentIndex(prev => prev + 1);
+      }, {
+        filters,
+        userLocation,
+        swipeDuration
       });
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
