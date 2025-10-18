@@ -18,6 +18,7 @@ import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
 import { useGroupSwipeLogic } from '@/hooks/useGroupSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
+import { useRestaurantView } from '@/hooks/useRestaurantView';
 
 interface GroupInfo {
   id: string;
@@ -81,6 +82,9 @@ export const GroupSwipeCards = React.memo(() => {
     handleTouchMove,
     handleTouchEnd
   } = useGroupSwipeLogic(groupId || '');
+
+  // Restaurant view tracking hook
+  const { trackRestaurantView } = useRestaurantView();
 
   /**
    * INVARIANT: 任何 API 不得在未登入時回傳個資
@@ -180,9 +184,21 @@ export const GroupSwipeCards = React.memo(() => {
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
+      // Track restaurant view
+      trackRestaurantView(currentRestaurant.id, {
+        source: 'group_swipe',
+        groupId,
+        filters,
+        userLocation,
+        restaurantLocation: {
+          lat: currentRestaurant.lat,
+          lng: currentRestaurant.lng
+        }
+      });
+      
       navigate(`/app/restaurant/${currentRestaurant.id}`);
     }
-  }, [navigate, currentRestaurant]);
+  }, [navigate, currentRestaurant, trackRestaurantView, groupId, filters, userLocation]);
 
   // Event handlers with proper parameters  
   const handleMouseUpWithParams = useCallback(() => {

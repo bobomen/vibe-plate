@@ -18,6 +18,7 @@ import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
 import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
+import { useRestaurantView } from '@/hooks/useRestaurantView';
 
 
 export const SwipeCards = React.memo(() => {
@@ -67,6 +68,9 @@ export const SwipeCards = React.memo(() => {
     handleTouchEnd
   } = usePersonalSwipeLogic();
 
+  // Restaurant view tracking hook
+  const { trackRestaurantView } = useRestaurantView();
+
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
@@ -94,9 +98,20 @@ export const SwipeCards = React.memo(() => {
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
+      // Track restaurant view
+      trackRestaurantView(currentRestaurant.id, {
+        source: 'personal_swipe',
+        filters,
+        userLocation,
+        restaurantLocation: {
+          lat: currentRestaurant.lat,
+          lng: currentRestaurant.lng
+        }
+      });
+      
       navigate(`/app/restaurant/${currentRestaurant.id}`);
     }
-  }, [navigate, currentRestaurant]);
+  }, [navigate, currentRestaurant, trackRestaurantView, filters, userLocation]);
 
   // Event handlers with proper parameters
   const handleMouseUpWithParams = useCallback(() => {

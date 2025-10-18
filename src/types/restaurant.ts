@@ -26,6 +26,12 @@ export interface Restaurant {
   };
   ai_classified_at?: string;
   ai_confidence?: number;
+  phone?: string | null;
+  menu_url?: string | null;
+  website?: string | null;
+  google_maps_url?: string | null;
+  view_count?: number;
+  last_viewed_at?: string | null;
 }
 
 /**

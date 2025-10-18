@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, Clock, Heart, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Clock, Heart, ExternalLink, Phone, Globe, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,10 @@ interface Restaurant {
   business_hours: any;
   klook_url: string | null;
   photos: string[];
+  phone?: string | null;
+  menu_url?: string | null;
+  website?: string | null;
+  google_maps_url?: string | null;
 }
 
 export default function RestaurantDetail() {
@@ -242,6 +246,60 @@ export default function RestaurantDetail() {
                 <p className="text-muted-foreground">詳情請洽餐廳</p>
               </div>
             </div>
+          </Card>
+        )}
+
+        {/* Phone */}
+        {restaurant.phone && (
+          <Card className="p-4">
+            <div className="flex items-start gap-3">
+              <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-medium mb-1">電話</h3>
+                <a 
+                  href={`tel:${restaurant.phone}`}
+                  className="text-primary hover:underline"
+                >
+                  {restaurant.phone}
+                </a>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Menu URL */}
+        {restaurant.menu_url && (
+          <Card className="p-4">
+            <Button asChild variant="outline" className="w-full">
+              <a href={restaurant.menu_url} target="_blank" rel="noopener noreferrer">
+                <BookOpen className="h-4 w-4 mr-2" />
+                查看線上菜單
+              </a>
+            </Button>
+          </Card>
+        )}
+
+        {/* Website */}
+        {restaurant.website && (
+          <Card className="p-4">
+            <Button asChild variant="outline" className="w-full">
+              <a href={restaurant.website} target="_blank" rel="noopener noreferrer">
+                <Globe className="h-4 w-4 mr-2" />
+                官方網站
+              </a>
+            </Button>
+          </Card>
+        )}
+
+        {/* Google Maps */}
+        {restaurant.google_maps_url && (
+          <Card className="p-4">
+            <Button asChild variant="outline" className="w-full">
+              <a href={restaurant.google_maps_url} target="_blank" rel="noopener noreferrer">
+                <MapPin className="h-4 w-4 mr-2" />
+                在 Google 地圖中查看
+              </a>
+            </Button>
           </Card>
         )}
 
