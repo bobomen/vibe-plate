@@ -25,6 +25,7 @@ interface Profile {
   preferred_price_min: number;
   preferred_price_max: number;
   favorite_cuisines: string[];
+  min_rating?: number;
   preferences: {
     michelin_stars: boolean;
     bib_gourmand: boolean;
@@ -85,6 +86,7 @@ const Profile = () => {
           preferred_price_min: data.preferred_price_min || 1,
           preferred_price_max: data.preferred_price_max || 4,
           favorite_cuisines: Array.isArray(data.favorite_cuisines) ? data.favorite_cuisines as string[] : [],
+          min_rating: data.min_rating,
           preferences: {
             michelin_stars: (data.preferences as any)?.michelin_stars || false,
             bib_gourmand: (data.preferences as any)?.bib_gourmand || false,
@@ -397,6 +399,7 @@ const Profile = () => {
               preferred_price_min: profile.preferred_price_min,
               preferred_price_max: profile.preferred_price_max,
               favorite_cuisines: profile.favorite_cuisines,
+              min_rating: profile.min_rating,
               preferences: profile.preferences,
             }}
             onUpdate={updatePreferences}
