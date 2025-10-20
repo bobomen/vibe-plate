@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -8,6 +8,8 @@ import { SwipeCards } from '@/components/SwipeCards';
 import { GroupSwipeCards } from '@/components/GroupSwipeCards';
 import { GroupConsensus } from '@/components/GroupConsensus';
 import { GroupConsensusSummary } from '@/components/GroupConsensusSummary';
+import { OnboardingFlow } from '@/components/Onboarding/OnboardingFlow';
+import { TUTORIAL_STORAGE_KEY } from '@/config/onboardingConfig';
 import Favorites from './Favorites';
 import Groups from './Groups';
 import Profile from './Profile';
@@ -20,6 +22,9 @@ const App = memo(() => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem(TUTORIAL_STORAGE_KEY);
+  });
 
   if (loading) {
     return (
@@ -32,6 +37,11 @@ const App = memo(() => {
   // Don't redirect to auth if on reset password page
   if (!user && location.pathname !== '/reset-password') {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Show onboarding for first-time users
+  if (user && showOnboarding) {
+    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
   }
 
   return (
