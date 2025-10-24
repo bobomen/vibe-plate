@@ -1,15 +1,13 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import PremiumModal from '@/components/PremiumModal';
 import { usePremium } from '@/hooks/usePremium';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import { SwipeCards } from '@/components/SwipeCards';
 import { GroupSwipeCards } from '@/components/GroupSwipeCards';
 import { GroupConsensus } from '@/components/GroupConsensus';
 import { GroupConsensusSummary } from '@/components/GroupConsensusSummary';
-import { WelcomeScreen } from '@/components/Onboarding/WelcomeScreen';
 import Favorites from './Favorites';
 import Groups from './Groups';
 import Profile from './Profile';
@@ -22,8 +20,6 @@ const App = memo(() => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
-  const { showCoreOnboarding, completeCoreOnboarding } = useOnboarding();
-  const [welcomeCompleted, setWelcomeCompleted] = useState(false);
 
   if (loading) {
     return (
@@ -38,24 +34,11 @@ const App = memo(() => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Show welcome screen for first-time users (only on main page)
-  if (user && showCoreOnboarding && !welcomeCompleted && location.pathname === '/') {
-    return (
-      <WelcomeScreen
-        onStart={() => setWelcomeCompleted(true)}
-        onSkip={() => {
-          completeCoreOnboarding();
-          setWelcomeCompleted(true);
-        }}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <main className="pb-20">
         <Routes>
-          <Route path="/" element={<SwipeCards showTutorial={showCoreOnboarding && welcomeCompleted} />} />
+          <Route path="/" element={<SwipeCards />} />
           <Route path="/restaurant/:id" element={<RestaurantDetail />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/categories/:categoryId" element={<CategoryDetail />} />

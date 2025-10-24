@@ -5,12 +5,11 @@
  * - 重置個人滑卡記錄時，收藏記錄必須完全保留
  */
 import React, { useCallback, useState, useEffect } from 'react';
-import { Utensils, MapPin, RotateCcw } from 'lucide-react';
+import { Utensils, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RestaurantCardSkeleton } from '@/components/ui/RestaurantCardSkeleton';
 import { SwipeActionButtons } from '@/components/ui/SwipeActionButtons';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -19,25 +18,11 @@ import { SwipeCard } from './SwipeCard';
 import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
-import { useOnboarding } from '@/hooks/useOnboarding';
-import { TutorialOverlay } from './Onboarding/TutorialOverlay';
-import { PremiumTeaser } from './Onboarding/PremiumTeaser';
-import { TUTORIAL_MESSAGES } from '@/config/onboardingConfig';
 
-
-interface SwipeCardsProps {
-  showTutorial?: boolean;
-}
-
-export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps) => {
+export const SwipeCards = React.memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { completeCoreOnboarding } = useOnboarding();
-  
-  // Tutorial state
-  const [tutorialProgress, setTutorialProgress] = useState(0);
-  const [showPremiumTeaser, setShowPremiumTeaser] = useState(false);
   
   // Use unified swipe state (personal mode - no groupId)
   const {
@@ -59,7 +44,6 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
     goBackToPrevious,
   } = useSwipeState({ 
     groupId: undefined, // INVARIANT: Personal swipes have no groupId
-    showCoreOnboarding: showTutorial 
   });
 
   // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
@@ -87,30 +71,10 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();
 
-
-  // Check if current restaurant is a tutorial card
-  const isTutorialCard = currentRestaurant?.id?.startsWith('tutorial-') ?? false;
-  const tutorialMessage = isTutorialCard && currentRestaurant ? TUTORIAL_MESSAGES[currentRestaurant.id] : null;
-
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
     if (!currentRestaurant) return;
     
-    // Tutorial card: Don't write to DB, just advance
-    if (isTutorialCard) {
-      const newProgress = tutorialProgress + 1;
-      setTutorialProgress(newProgress);
-      setCurrentIndex(prev => prev + 1);
-      
-      // After completing both tutorial cards, show premium teaser
-      if (newProgress >= 2) {
-        completeCoreOnboarding();
-        setShowPremiumTeaser(true);
-      }
-      return;
-    }
-    
-    // Normal card: Full swipe logic
     const swipeDuration = Date.now() - cardDisplayTime;
     
     try {
@@ -126,7 +90,7 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, isTutorialCard, tutorialProgress, completeCoreOnboarding]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -149,52 +113,20 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
   const handleMouseUpWithParams = useCallback(() => {
     if (!currentRestaurant) return;
     
-    // Tutorial card: Don't write to DB
-    if (isTutorialCard) {
-      handleMouseUp(currentRestaurant, () => {
-        const newProgress = tutorialProgress + 1;
-        setTutorialProgress(newProgress);
-        setCurrentIndex(prev => prev + 1);
-        
-        if (newProgress >= 2) {
-          completeCoreOnboarding();
-          setShowPremiumTeaser(true);
-        }
-      });
-      return;
-    }
-    
-    // Normal card
     handleMouseUp(currentRestaurant, () => {
       addToSwipeHistory(currentRestaurant, true);
       setCurrentIndex(prev => prev + 1);
     });
-  }, [handleMouseUp, currentRestaurant, setCurrentIndex, addToSwipeHistory, isTutorialCard, tutorialProgress, completeCoreOnboarding]);
+  }, [handleMouseUp, currentRestaurant, setCurrentIndex, addToSwipeHistory]);
 
   const handleTouchEndWithParams = useCallback(() => {
     if (!currentRestaurant) return;
     
-    // Tutorial card: Don't write to DB
-    if (isTutorialCard) {
-      handleTouchEnd(currentRestaurant, () => {
-        const newProgress = tutorialProgress + 1;
-        setTutorialProgress(newProgress);
-        setCurrentIndex(prev => prev + 1);
-        
-        if (newProgress >= 2) {
-          completeCoreOnboarding();
-          setShowPremiumTeaser(true);
-        }
-      });
-      return;
-    }
-    
-    // Normal card
     handleTouchEnd(currentRestaurant, () => {
       addToSwipeHistory(currentRestaurant, true);
       setCurrentIndex(prev => prev + 1);
     });
-  }, [handleTouchEnd, currentRestaurant, setCurrentIndex, addToSwipeHistory, isTutorialCard, tutorialProgress, completeCoreOnboarding]);
+  }, [handleTouchEnd, currentRestaurant, setCurrentIndex, addToSwipeHistory]);
 
   if (loading) {
     return <RestaurantCardSkeleton />;
@@ -222,15 +154,6 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
         {/* Current Card */}
         {currentRestaurant ? (
           <div className="relative">
-            {/* Tutorial Overlay */}
-            {isTutorialCard && tutorialMessage && (
-              <TutorialOverlay
-                message={tutorialMessage.instruction}
-                direction={tutorialMessage.direction}
-                highlightCard
-              />
-            )}
-            
             {/* Swipe Card */}
             <div className="relative mx-auto max-w-sm">
               <SwipeCard
@@ -250,14 +173,12 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
               />
             </div>
 
-            {/* Action Buttons - Hidden during tutorial */}
-            {!isTutorialCard && (
-              <SwipeActionButtons
-                onGoBack={goBackToPrevious}
-                canGoBack={canGoBack}
-                disabled={isDragging}
-              />
-            )}
+            {/* Action Buttons */}
+            <SwipeActionButtons
+              onGoBack={goBackToPrevious}
+              canGoBack={canGoBack}
+              disabled={isDragging}
+            />
           </div>
         ) : (
           <EmptyState
@@ -287,14 +208,6 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
         )}
 
       </div>
-      
-      {/* Premium Teaser after tutorial */}
-      {showPremiumTeaser && (
-        <PremiumTeaser
-          onClose={() => setShowPremiumTeaser(false)}
-          onSkip={() => setShowPremiumTeaser(false)}
-        />
-      )}
     </div>
   );
 });

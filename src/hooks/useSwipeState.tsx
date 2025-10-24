@@ -4,7 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FilterOptions } from '@/components/SearchAndFilter';
 import { Restaurant } from '@/types/restaurant';
-import { TUTORIAL_RESTAURANTS } from '@/config/onboardingConfig';
 
 /**
  * INVARIANTS - 關鍵不變式 (永遠要成立的事)：
@@ -17,10 +16,9 @@ import { TUTORIAL_RESTAURANTS } from '@/config/onboardingConfig';
 interface UseSwipeStateOptions {
   groupId?: string; // undefined for personal swipes, string for group swipes
   maxRetries?: number;
-  showCoreOnboarding?: boolean; // Add tutorial cards at the beginning
 }
 
-export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = false }: UseSwipeStateOptions) => {
+export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -386,36 +384,9 @@ export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = fa
       return true;
     });
 
-    // Prepend tutorial restaurants if onboarding is active and no filters are applied
-    let finalRestaurants = filtered;
-    if (showCoreOnboarding && !groupId) {
-      try {
-        const hasAnyFilter = 
-          filters.searchTerm !== '' ||
-          filters.priceRange[0] > 0 || filters.priceRange[1] < 10 ||
-          filters.distanceRange < 999 ||
-          filters.minRating > 0 ||
-          filters.hasMichelinStars ||
-          filters.has500Dishes ||
-          filters.hasBibGourmand ||
-          filters.cuisineTypes.length > 0 ||
-          filters.dietaryOptions.length > 0 ||
-          filters.cities.length > 0 ||
-          filters.districts.length > 0;
-
-        // Only show tutorial cards if no filters are active
-        if (!hasAnyFilter && TUTORIAL_RESTAURANTS) {
-          finalRestaurants = [...TUTORIAL_RESTAURANTS, ...filtered];
-        }
-      } catch (error) {
-        console.error('Error loading tutorial restaurants:', error);
-        // Graceful degradation: skip tutorial and show normal restaurants
-      }
-    }
-
-    setRestaurants(finalRestaurants);
+    setRestaurants(filtered);
     setCurrentIndex(0);
-  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences, showCoreOnboarding, groupId]);
+  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences, groupId]);
 
   /**
    * INVARIANT: 重置個人滑卡記錄時，收藏記錄必須完全保留
