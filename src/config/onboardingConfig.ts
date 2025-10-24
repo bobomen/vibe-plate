@@ -1,85 +1,58 @@
-export interface TutorialCard {
-  id: string;
-  type: 'swipe' | 'tip' | 'premium';
-  restaurant?: {
-    name: string;
-    emoji: string;
-    description: string;
-    rating: number;
-    reviewCount: string;
-    cuisine: string;
-    badge?: {
-      text: string;
-      color: string;
-    };
-  };
-  instruction: string;
-  direction?: 'left' | 'right';
-  duration: number;
-  animation?: string;
-}
+import { Restaurant } from '@/types/restaurant';
 
-export const ONBOARDING_CARDS: TutorialCard[] = [
+// Tutorial restaurants that will appear in the swipe flow
+export const TUTORIAL_RESTAURANTS: Restaurant[] = [
   {
-    id: 'swipe-right',
-    type: 'swipe',
-    restaurant: {
-      name: '美味蟹堡',
-      emoji: '🍔',
-      description: '海綿寶寶的獨家秘方！派大星也超愛',
-      rating: 5.0,
-      reviewCount: '999+ 比奇堡居民推薦',
-      cuisine: '美式快餐',
-      badge: {
-        text: '⭐ 卡通經典',
-        color: 'bg-yellow-500'
-      }
-    },
-    instruction: '往右滑 → 收藏喜歡的餐廳',
-    direction: 'right',
-    duration: 10000
+    id: 'tutorial-crab-patty',
+    name: '美味蟹堡',
+    address: '比奇堡鳳梨屋隔壁',
+    city: '比奇堡',
+    district: '海底',
+    lat: 25.033,
+    lng: 121.565,
+    phone: '🍔',
+    google_rating: 5.0,
+    google_reviews_count: 999,
+    price_range: 1,
+    cuisine_type: '美式快餐',
+    michelin_stars: 0,
+    bib_gourmand: false,
+    has_500_dishes: false,
+    photos: [],
+    dietary_options: {},
   },
   {
-    id: 'swipe-left',
-    type: 'swipe',
-    restaurant: {
-      name: '軟飯',
-      emoji: '🍚',
-      description: '專為現代人設計的舒適餐點，讓你躺平享受',
-      rating: 2.5,
-      reviewCount: '佛系美食家推薦',
-      cuisine: '慵懶料理',
-      badge: {
-        text: '😌 躺平專用',
-        color: 'bg-purple-600'
-      }
-    },
-    instruction: '← 往左滑跳過不感興趣的餐廳',
-    direction: 'left',
-    duration: 7000
-  },
-  {
-    id: 'tap-details',
-    type: 'tip',
-    instruction: '💡 點擊卡片可以查看餐廳詳細資訊（地圖、營業時間等）',
-    duration: 3000,
-    animation: 'tap-pulse'
-  },
-  {
-    id: 'group-preview',
-    type: 'tip',
-    instruction: '🎉 想跟朋友一起選？試試底部的「群組」功能！大家一起滑卡，系統會幫你們找出共識餐廳',
-    duration: 4000,
-    animation: 'bounce'
-  },
-  {
-    id: 'premium-teaser',
-    type: 'premium',
-    instruction: '想反悔？Premium 可以無限回到上一張！',
-    duration: 5000,
-    animation: 'sparkle'
+    id: 'tutorial-soft-rice',
+    name: '軟飯',
+    address: '舒適圈1號',
+    city: '躺平市',
+    district: '佛系區',
+    lat: 25.033,
+    lng: 121.565,
+    phone: '🍚',
+    google_rating: 2.5,
+    google_reviews_count: 42,
+    price_range: 1,
+    cuisine_type: '慵懶料理',
+    michelin_stars: 0,
+    bib_gourmand: false,
+    has_500_dishes: false,
+    photos: [],
+    dietary_options: {},
   }
 ];
+
+// Tutorial messages for each card
+export const TUTORIAL_MESSAGES: { [key: string]: { instruction: string; direction: 'left' | 'right' } } = {
+  'tutorial-crab-patty': {
+    instruction: '往右滑 → 收藏喜歡的餐廳',
+    direction: 'right'
+  },
+  'tutorial-soft-rice': {
+    instruction: '← 往左滑跳過不感興趣的餐廳',
+    direction: 'left'
+  }
+};
 
 export const TUTORIAL_STORAGE_KEY = 'onboarding_completed_v1';
 export const TUTORIAL_SKIPPED_KEY = 'onboarding_skipped';

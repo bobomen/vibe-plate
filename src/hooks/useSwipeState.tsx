@@ -16,9 +16,10 @@ import { Restaurant } from '@/types/restaurant';
 interface UseSwipeStateOptions {
   groupId?: string; // undefined for personal swipes, string for group swipes
   maxRetries?: number;
+  showCoreOnboarding?: boolean; // Add tutorial cards at the beginning
 }
 
-export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions) => {
+export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = false }: UseSwipeStateOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -204,6 +205,9 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       return;
     }
 
+    // Import tutorial restaurants if needed
+    const { TUTORIAL_RESTAURANTS } = require('@/config/onboardingConfig');
+
     // Helper function to check if user has any active preferences
     const hasAnyActivePreference = (): boolean => {
       if (!profilePreferences) return false;
@@ -384,9 +388,31 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       return true;
     });
 
-    setRestaurants(filtered);
+    // Prepend tutorial restaurants if onboarding is active and no filters are applied
+    let finalRestaurants = filtered;
+    if (showCoreOnboarding && !groupId) {
+      const hasAnyFilter = 
+        filters.searchTerm !== '' ||
+        filters.priceRange[0] > 0 || filters.priceRange[1] < 10 ||
+        filters.distanceRange < 999 ||
+        filters.minRating > 0 ||
+        filters.hasMichelinStars ||
+        filters.has500Dishes ||
+        filters.hasBibGourmand ||
+        filters.cuisineTypes.length > 0 ||
+        filters.dietaryOptions.length > 0 ||
+        filters.cities.length > 0 ||
+        filters.districts.length > 0;
+
+      // Only show tutorial cards if no filters are active
+      if (!hasAnyFilter) {
+        finalRestaurants = [...TUTORIAL_RESTAURANTS, ...filtered];
+      }
+    }
+
+    setRestaurants(finalRestaurants);
     setCurrentIndex(0);
-  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences]);
+  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences, showCoreOnboarding, groupId]);
 
   /**
    * INVARIANT: 重置個人滑卡記錄時，收藏記錄必須完全保留
