@@ -89,8 +89,8 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
 
 
   // Check if current restaurant is a tutorial card
-  const isTutorialCard = currentRestaurant?.id.startsWith('tutorial-');
-  const tutorialMessage = isTutorialCard ? TUTORIAL_MESSAGES[currentRestaurant.id] : null;
+  const isTutorialCard = currentRestaurant?.id?.startsWith('tutorial-') ?? false;
+  const tutorialMessage = isTutorialCard && currentRestaurant ? TUTORIAL_MESSAGES[currentRestaurant.id] : null;
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
@@ -141,7 +141,7 @@ export const SwipeCards = React.memo(({ showTutorial = false }: SwipeCardsProps)
         }
       });
       
-      navigate(`/app/restaurant/${currentRestaurant.id}`);
+      navigate(`/restaurant/${currentRestaurant.id}`);
     }
   }, [navigate, currentRestaurant, trackRestaurantView, filters, userLocation]);
 

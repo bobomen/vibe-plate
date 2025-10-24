@@ -38,8 +38,8 @@ const App = memo(() => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Show welcome screen for first-time users
-  if (user && showCoreOnboarding && !welcomeCompleted) {
+  // Show welcome screen for first-time users (only on main page)
+  if (user && showCoreOnboarding && !welcomeCompleted && location.pathname === '/') {
     return (
       <WelcomeScreen
         onStart={() => setWelcomeCompleted(true)}
