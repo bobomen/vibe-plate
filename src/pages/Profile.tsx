@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { supabase } from '@/integrations/supabase/client';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { PreferenceSettings } from '@/components/PreferenceSettings';
 import PremiumModal from '@/components/PremiumModal';
 import { SubscriptionManagement } from '@/components/SubscriptionManagement';
 import { usePremium } from '@/hooks/usePremium';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 
 interface Profile {
@@ -469,6 +470,21 @@ const Profile = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  resetOnboarding();
+                  toast({
+                    title: "新手教學已重置",
+                    description: "下次重新載入時將再次播放",
+                  });
+                }}
+                className="w-full"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                清除新手教學紀錄
+              </Button>
+
               <Button
                 variant="outline"
                 onClick={() => {

@@ -66,6 +66,13 @@ export const ONBOARDING_CARDS: TutorialCard[] = [
     animation: 'tap-pulse'
   },
   {
+    id: 'group-preview',
+    type: 'tip',
+    instruction: '🎉 想跟朋友一起選？試試底部的「群組」功能！大家一起滑卡，系統會幫你們找出共識餐廳',
+    duration: 4000,
+    animation: 'bounce'
+  },
+  {
     id: 'premium-teaser',
     type: 'premium',
     instruction: '想反悔？Premium 可以無限回到上一張！',

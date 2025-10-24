@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 const CORE_STORAGE_KEY = 'onboarding_core_v1';
 const FILTER_TIP_KEY = 'onboarding_filter_tip_shown';
 const PROFILE_TIP_KEY = 'onboarding_profile_tip_shown';
+const GROUP_TIP_KEY = 'onboarding_group_tip_shown';
 
 export const useOnboarding = () => {
   const [coreCompleted, setCoreCompleted] = useState(() => {
@@ -15,6 +16,10 @@ export const useOnboarding = () => {
 
   const [profileTipShown, setProfileTipShown] = useState(() => {
     return localStorage.getItem(PROFILE_TIP_KEY) === 'true';
+  });
+
+  const [groupTipShown, setGroupTipShown] = useState(() => {
+    return localStorage.getItem(GROUP_TIP_KEY) === 'true';
   });
 
   const showCoreOnboarding = useCallback(() => {
@@ -44,13 +49,24 @@ export const useOnboarding = () => {
     setProfileTipShown(true);
   }, []);
 
+  const showGroupTip = useCallback(() => {
+    return !groupTipShown;
+  }, [groupTipShown]);
+
+  const markGroupTipSeen = useCallback(() => {
+    localStorage.setItem(GROUP_TIP_KEY, 'true');
+    setGroupTipShown(true);
+  }, []);
+
   const resetOnboarding = useCallback(() => {
     localStorage.removeItem(CORE_STORAGE_KEY);
     localStorage.removeItem(FILTER_TIP_KEY);
     localStorage.removeItem(PROFILE_TIP_KEY);
+    localStorage.removeItem(GROUP_TIP_KEY);
     setCoreCompleted(false);
     setFilterTipShown(false);
     setProfileTipShown(false);
+    setGroupTipShown(false);
   }, []);
 
   return {
@@ -60,6 +76,8 @@ export const useOnboarding = () => {
     markFilterTipSeen,
     showProfileTip: showProfileTip(),
     markProfileTipSeen,
+    showGroupTip: showGroupTip(),
+    markGroupTipSeen,
     resetOnboarding,
   };
 };

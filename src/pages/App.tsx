@@ -1,15 +1,15 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import PremiumModal from '@/components/PremiumModal';
 import { usePremium } from '@/hooks/usePremium';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { SwipeCards } from '@/components/SwipeCards';
 import { GroupSwipeCards } from '@/components/GroupSwipeCards';
 import { GroupConsensus } from '@/components/GroupConsensus';
 import { GroupConsensusSummary } from '@/components/GroupConsensusSummary';
 import { OnboardingFlow } from '@/components/Onboarding/OnboardingFlow';
-import { TUTORIAL_STORAGE_KEY } from '@/config/onboardingConfig';
 import Favorites from './Favorites';
 import Groups from './Groups';
 import Profile from './Profile';
@@ -22,9 +22,7 @@ const App = memo(() => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    return !localStorage.getItem(TUTORIAL_STORAGE_KEY);
-  });
+  const { showCoreOnboarding, completeCoreOnboarding } = useOnboarding();
 
   if (loading) {
     return (
@@ -40,8 +38,8 @@ const App = memo(() => {
   }
 
   // Show onboarding for first-time users
-  if (user && showOnboarding) {
-    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
+  if (user && showCoreOnboarding) {
+    return <OnboardingFlow onComplete={completeCoreOnboarding} />;
   }
 
   return (
