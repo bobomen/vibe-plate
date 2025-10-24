@@ -18,11 +18,21 @@ import { SwipeCard } from './SwipeCard';
 import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { OnboardingOverlay } from './Onboarding/OnboardingOverlay';
+import { PremiumTeaser } from './Onboarding/PremiumTeaser';
+import { usePremium } from '@/hooks/usePremium';
 
 export const SwipeCards = React.memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { showCoreOnboarding, completeCoreOnboarding } = useOnboarding();
+  const { upgradeToPremium } = usePremium();
+  
+  // Onboarding state tracking
+  const [onboardingStep, setOnboardingStep] = useState(0); // 0: 未開始, 1: 第一張, 2: 第二張
+  const [showPremiumTeaser, setShowPremiumTeaser] = useState(false);
   
   // Use unified swipe state (personal mode - no groupId)
   const {
@@ -87,10 +97,26 @@ export const SwipeCards = React.memo(() => {
         userLocation,
         swipeDuration
       });
+
+      // Onboarding tracking (non-blocking)
+      try {
+        if (showCoreOnboarding && onboardingStep < 2) {
+          setOnboardingStep(prev => prev + 1);
+          
+          if (onboardingStep === 1) {
+            // Second swipe completed
+            completeCoreOnboarding();
+            setShowPremiumTeaser(true);
+          }
+        }
+      } catch (onboardingError) {
+        console.error('Onboarding error:', onboardingError);
+        completeCoreOnboarding(); // Fail gracefully
+      }
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, onboardingStep, completeCoreOnboarding]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -208,6 +234,21 @@ export const SwipeCards = React.memo(() => {
         )}
 
       </div>
+
+      {/* Onboarding Overlay - Only during onboarding */}
+      {showCoreOnboarding && onboardingStep > 0 && onboardingStep <= 2 && (
+        <OnboardingOverlay step={onboardingStep as 1 | 2} />
+      )}
+
+      {/* Premium Teaser - After onboarding completion */}
+      <PremiumTeaser
+        open={showPremiumTeaser}
+        onClose={() => setShowPremiumTeaser(false)}
+        onUpgrade={() => {
+          setShowPremiumTeaser(false);
+          upgradeToPremium();
+        }}
+      />
     </div>
   );
 });

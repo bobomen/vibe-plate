@@ -1,9 +1,11 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import PremiumModal from '@/components/PremiumModal';
 import { usePremium } from '@/hooks/usePremium';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { WelcomeModal } from '@/components/Onboarding/WelcomeModal';
 import { SwipeCards } from '@/components/SwipeCards';
 import { GroupSwipeCards } from '@/components/GroupSwipeCards';
 import { GroupConsensus } from '@/components/GroupConsensus';
@@ -20,6 +22,31 @@ const App = memo(() => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { showFirstTimeModal, markModalAsSeen, upgradeToPremium } = usePremium();
+  const { showCoreOnboarding, completeCoreOnboarding } = useOnboarding();
+  
+  // Welcome modal state
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Initialize welcome modal when user logs in and onboarding is needed
+  useEffect(() => {
+    if (user && showCoreOnboarding && location.pathname === '/') {
+      setShowWelcome(true);
+    }
+  }, [user, showCoreOnboarding, location.pathname]);
+
+  // Handle welcome modal actions
+  const handleWelcomeStart = () => {
+    setShowWelcome(false);
+    // User will enter SwipeCards, OnboardingOverlay will show automatically
+  };
+
+  const handleWelcomeSkip = () => {
+    setShowWelcome(false);
+    completeCoreOnboarding();
+  };
+
+  // Avoid conflict between Premium modal and onboarding
+  const shouldShowPremiumModal = showFirstTimeModal && !showCoreOnboarding;
 
   if (loading) {
     return (
@@ -53,8 +80,18 @@ const App = memo(() => {
       </main>
       {!location.pathname.includes('/restaurant/') && <BottomNavigation />}
       
+      {/* Welcome Modal - First time onboarding */}
+      {location.pathname === '/' && (
+        <WelcomeModal
+          open={showWelcome}
+          onStart={handleWelcomeStart}
+          onSkip={handleWelcomeSkip}
+        />
+      )}
+      
+      {/* Premium Modal - Avoid conflict with onboarding */}
       <PremiumModal
-        open={showFirstTimeModal}
+        open={shouldShowPremiumModal}
         onClose={markModalAsSeen}
         onUpgrade={upgradeToPremium}
       />
