@@ -16,6 +16,8 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { CategoryManagement } from '@/components/CategoryManagement';
 import { CategorySelector } from '@/components/CategorySelector';
 import { useFavoriteCategories } from '@/hooks/useFavoriteCategories';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 
 const CITY_OPTIONS = [
   { id: 'all', label: '所有地區', icon: '🌏' },
@@ -70,16 +72,47 @@ const Favorites = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { categories } = useFavoriteCategories();
+  const { showFavoriteTip, markFavoriteTipSeen, showCategoryTip, markCategoryTipSeen } = useOnboarding();
   const [favorites, setFavorites] = useState<FavoriteRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'newest' | 'rating' | 'distance'>('newest');
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('list');
+  const [showFavoriteTooltip, setShowFavoriteTooltip] = useState(false);
+  const [showCategoryTooltip, setShowCategoryTooltip] = useState(false);
 
   useEffect(() => {
     fetchFavorites();
   }, [user]);
+
+  // Show contextual tip on first visit to favorites list
+  useEffect(() => {
+    if (!loading && showFavoriteTip && favorites.length > 0 && activeTab === 'list') {
+      const timer = setTimeout(() => {
+        setShowFavoriteTooltip(true);
+        setTimeout(() => {
+          markFavoriteTipSeen();
+          setShowFavoriteTooltip(false);
+        }, 4000);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showFavoriteTip, favorites.length, activeTab, markFavoriteTipSeen]);
+
+  // Show contextual tip on first visit to category management
+  useEffect(() => {
+    if (!loading && showCategoryTip && activeTab === 'categories') {
+      const timer = setTimeout(() => {
+        setShowCategoryTooltip(true);
+        setTimeout(() => {
+          markCategoryTipSeen();
+          setShowCategoryTooltip(false);
+        }, 4000);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showCategoryTip, activeTab, markCategoryTipSeen]);
 
   const fetchFavorites = async () => {
     try {
@@ -215,6 +248,28 @@ const Favorites = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {showFavoriteTooltip && activeTab === 'list' && (
+        <ContextualTip
+          message="這裡可以查看所有收藏的餐廳！使用篩選和分類功能來管理你的清單 📋"
+          direction="down"
+          duration={4000}
+          onClose={() => {
+            markFavoriteTipSeen();
+            setShowFavoriteTooltip(false);
+          }}
+        />
+      )}
+      {showCategoryTooltip && activeTab === 'categories' && (
+        <ContextualTip
+          message="建立分類來整理你的收藏餐廳，讓尋找美食更輕鬆 🗂️"
+          direction="down"
+          duration={4000}
+          onClose={() => {
+            markCategoryTipSeen();
+            setShowCategoryTooltip(false);
+          }}
+        />
+      )}
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <div>

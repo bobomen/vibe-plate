@@ -1,9 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 const CORE_STORAGE_KEY = 'onboarding_core_v1';
 const FILTER_TIP_KEY = 'onboarding_filter_tip_shown';
 const PROFILE_TIP_KEY = 'onboarding_profile_tip_shown';
 const GROUP_TIP_KEY = 'onboarding_group_tip_shown';
+const FAVORITE_TIP_KEY = 'onboarding_favorite_tip_shown';
+const CATEGORY_TIP_KEY = 'onboarding_category_tip_shown';
 
 export const useOnboarding = () => {
   const [coreCompleted, setCoreCompleted] = useState(() => {
@@ -20,6 +22,14 @@ export const useOnboarding = () => {
 
   const [groupTipShown, setGroupTipShown] = useState(() => {
     return localStorage.getItem(GROUP_TIP_KEY) === 'true';
+  });
+
+  const [favoriteTipShown, setFavoriteTipShown] = useState(() => {
+    return localStorage.getItem(FAVORITE_TIP_KEY) === 'true';
+  });
+
+  const [categoryTipShown, setCategoryTipShown] = useState(() => {
+    return localStorage.getItem(CATEGORY_TIP_KEY) === 'true';
   });
 
   const showCoreOnboarding = useCallback(() => {
@@ -58,15 +68,37 @@ export const useOnboarding = () => {
     setGroupTipShown(true);
   }, []);
 
+  const showFavoriteTip = useCallback(() => {
+    return !favoriteTipShown;
+  }, [favoriteTipShown]);
+
+  const markFavoriteTipSeen = useCallback(() => {
+    localStorage.setItem(FAVORITE_TIP_KEY, 'true');
+    setFavoriteTipShown(true);
+  }, []);
+
+  const showCategoryTip = useCallback(() => {
+    return !categoryTipShown;
+  }, [categoryTipShown]);
+
+  const markCategoryTipSeen = useCallback(() => {
+    localStorage.setItem(CATEGORY_TIP_KEY, 'true');
+    setCategoryTipShown(true);
+  }, []);
+
   const resetOnboarding = useCallback(() => {
     localStorage.removeItem(CORE_STORAGE_KEY);
     localStorage.removeItem(FILTER_TIP_KEY);
     localStorage.removeItem(PROFILE_TIP_KEY);
     localStorage.removeItem(GROUP_TIP_KEY);
+    localStorage.removeItem(FAVORITE_TIP_KEY);
+    localStorage.removeItem(CATEGORY_TIP_KEY);
     setCoreCompleted(false);
     setFilterTipShown(false);
     setProfileTipShown(false);
     setGroupTipShown(false);
+    setFavoriteTipShown(false);
+    setCategoryTipShown(false);
   }, []);
 
   return {
@@ -78,6 +110,10 @@ export const useOnboarding = () => {
     markProfileTipSeen,
     showGroupTip: showGroupTip(),
     markGroupTipSeen,
+    showFavoriteTip: showFavoriteTip(),
+    markFavoriteTipSeen,
+    showCategoryTip: showCategoryTip(),
+    markCategoryTipSeen,
     resetOnboarding,
   };
 };

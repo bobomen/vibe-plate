@@ -16,9 +16,10 @@ import { Restaurant } from '@/types/restaurant';
 interface UseSwipeStateOptions {
   groupId?: string; // undefined for personal swipes, string for group swipes
   maxRetries?: number;
+  showCoreOnboarding?: boolean; // For tutorial mode with specific restaurants
 }
 
-export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions) => {
+export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = false }: UseSwipeStateOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -340,7 +341,7 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
     };
 
     // Priority logic: Immediate filters are HARD requirements, profile preferences are soft preferences
-    const filtered = allRestaurants.filter(restaurant => {
+    let filtered = allRestaurants.filter(restaurant => {
       // Always exclude swiped restaurants
       if (userSwipes.has(restaurant.id)) {
         return false;
@@ -384,9 +385,28 @@ export const useSwipeState = ({ groupId, maxRetries = 3 }: UseSwipeStateOptions)
       return true;
     });
 
+    // Tutorial mode: Put "美味蟹堡" and "軟飯" at the front if this is first-time onboarding
+    if (showCoreOnboarding && !groupId) {
+      const tutorialRestaurants = filtered.filter(r => 
+        r.name === '美味蟹堡' || r.name === '軟飯'
+      );
+      const otherRestaurants = filtered.filter(r => 
+        r.name !== '美味蟹堡' && r.name !== '軟飯'
+      );
+      
+      // Sort tutorial restaurants to ensure "美味蟹堡" comes first, then "軟飯"
+      tutorialRestaurants.sort((a, b) => {
+        if (a.name === '美味蟹堡') return -1;
+        if (b.name === '美味蟹堡') return 1;
+        return 0;
+      });
+      
+      filtered = [...tutorialRestaurants, ...otherRestaurants];
+    }
+
     setRestaurants(filtered);
     setCurrentIndex(0);
-  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences, groupId]);
+  }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences, groupId, showCoreOnboarding]);
 
   /**
    * INVARIANT: 重置個人滑卡記錄時，收藏記錄必須完全保留

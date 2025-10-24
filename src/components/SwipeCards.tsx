@@ -31,7 +31,6 @@ export const SwipeCards = React.memo(() => {
   const { upgradeToPremium } = usePremium();
   
   // Onboarding state tracking
-  const [onboardingStep, setOnboardingStep] = useState(0); // 0: 未開始, 1: 第一張, 2: 第二張
   const [showPremiumTeaser, setShowPremiumTeaser] = useState(false);
   
   // Use unified swipe state (personal mode - no groupId)
@@ -54,6 +53,7 @@ export const SwipeCards = React.memo(() => {
     goBackToPrevious,
   } = useSwipeState({ 
     groupId: undefined, // INVARIANT: Personal swipes have no groupId
+    showCoreOnboarding, // Pass onboarding state to prioritize tutorial restaurants
   });
 
   // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
@@ -100,11 +100,9 @@ export const SwipeCards = React.memo(() => {
 
       // Onboarding tracking (non-blocking)
       try {
-        if (showCoreOnboarding && onboardingStep < 2) {
-          setOnboardingStep(prev => prev + 1);
-          
-          if (onboardingStep === 1) {
-            // Second swipe completed
+        if (showCoreOnboarding && currentIndex <= 1) {
+          // After swiping second card, complete onboarding
+          if (currentIndex === 1) {
             completeCoreOnboarding();
             setShowPremiumTeaser(true);
           }
@@ -116,7 +114,7 @@ export const SwipeCards = React.memo(() => {
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, onboardingStep, completeCoreOnboarding]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, currentIndex, completeCoreOnboarding]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -235,9 +233,12 @@ export const SwipeCards = React.memo(() => {
 
       </div>
 
-      {/* Onboarding Overlay - Only during onboarding */}
-      {showCoreOnboarding && onboardingStep > 0 && onboardingStep <= 2 && (
-        <OnboardingOverlay step={onboardingStep as 1 | 2} />
+      {/* Onboarding Overlay - Show hints for first two cards */}
+      {showCoreOnboarding && currentIndex === 0 && currentRestaurant && (
+        <OnboardingOverlay step={1} />
+      )}
+      {showCoreOnboarding && currentIndex === 1 && currentRestaurant && (
+        <OnboardingOverlay step={2} />
       )}
 
       {/* Premium Teaser - After onboarding completion */}
