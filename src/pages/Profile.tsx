@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, MapPin, Settings } from 'lucide-react';
+import { User, LogOut, MapPin, Settings, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,8 @@ import { PreferenceSettings } from '@/components/PreferenceSettings';
 import PremiumModal from '@/components/PremiumModal';
 import { SubscriptionManagement } from '@/components/SubscriptionManagement';
 import { usePremium } from '@/hooks/usePremium';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 
 interface Profile {
   display_name: string;
@@ -38,7 +40,9 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isPremium, showFirstTimeModal, markModalAsSeen, upgradeToPremium, loading: premiumLoading } = usePremium();
+  const { showProfileTip, markProfileTipSeen, resetOnboarding } = useOnboarding();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showProfileTooltip, setShowProfileTooltip] = useState(false);
   const [profile, setProfile] = useState<Profile>({ 
     display_name: '',
     dietary_preferences: [],
@@ -62,6 +66,20 @@ const Profile = () => {
       fetchProfile();
     }
   }, [user]);
+
+  // Show contextual tip on first visit
+  useEffect(() => {
+    if (!loading && showProfileTip) {
+      const timer = setTimeout(() => {
+        setShowProfileTooltip(true);
+        setTimeout(() => {
+          markProfileTipSeen();
+          setShowProfileTooltip(false);
+        }, 3000);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showProfileTip, markProfileTipSeen]);
 
   const fetchProfile = async () => {
     try {
@@ -450,7 +468,19 @@ const Profile = () => {
                 設定
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  resetOnboarding();
+                  navigate('/');
+                }}
+                className="w-full"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                重新播放新手教學
+              </Button>
+              
               <Button
                 variant="outline"
                 onClick={handleSignOut}
@@ -480,6 +510,18 @@ const Profile = () => {
           setShowUpgradeModal(false);
         }}
       />
+      
+      {/* Contextual Tip for First Time Profile Visit */}
+      {showProfileTooltip && (
+        <ContextualTip
+          message="這裡可以管理你的收藏和偏好設定！"
+          direction="down"
+          onClose={() => {
+            markProfileTipSeen();
+            setShowProfileTooltip(false);
+          }}
+        />
+      )}
     </div>
   );
 };

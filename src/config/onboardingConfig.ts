@@ -1,6 +1,6 @@
 export interface TutorialCard {
   id: string;
-  type: 'swipe' | 'tip';
+  type: 'swipe' | 'tip' | 'premium';
   restaurant?: {
     name: string;
     emoji: string;
@@ -43,14 +43,14 @@ export const ONBOARDING_CARDS: TutorialCard[] = [
     id: 'swipe-left',
     type: 'swipe',
     restaurant: {
-      name: '好吃粗飯',
+      name: '軟飯',
       emoji: '🍚',
-      description: '傳說中最難吃的食物，勇者才敢挑戰',
-      rating: 1.5,
-      reviewCount: '勇者限定',
-      cuisine: '創意料理',
+      description: '專為現代人設計的舒適餐點，讓你躺平享受',
+      rating: 2.5,
+      reviewCount: '佛系美食家推薦',
+      cuisine: '慵懶料理',
       badge: {
-        text: '🫣 傳說黑暗料理',
+        text: '😌 躺平專用',
         color: 'bg-purple-600'
       }
     },
@@ -61,16 +61,16 @@ export const ONBOARDING_CARDS: TutorialCard[] = [
   {
     id: 'tap-details',
     type: 'tip',
-    instruction: '點擊卡片可以查看餐廳詳細資訊',
+    instruction: '💡 點擊卡片可以查看餐廳詳細資訊（地圖、營業時間等）',
     duration: 3000,
     animation: 'tap-pulse'
   },
   {
-    id: 'filters',
-    type: 'tip',
-    instruction: '點這裡可以篩選價位、菜系和評分',
-    duration: 2000,
-    animation: 'arrow-up'
+    id: 'premium-teaser',
+    type: 'premium',
+    instruction: '想反悔？Premium 可以無限回到上一張！',
+    duration: 5000,
+    animation: 'sparkle'
   }
 ];
 

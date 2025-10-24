@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { WelcomeScreen } from './WelcomeScreen';
 import { TutorialSwipeCard } from './TutorialSwipeCard';
 import { QuickTip } from './QuickTip';
+import { PremiumTeaser } from './PremiumTeaser';
 import { ONBOARDING_CARDS, TUTORIAL_STORAGE_KEY, TUTORIAL_SKIPPED_KEY } from '@/config/onboardingConfig';
 
 interface OnboardingFlowProps {
@@ -33,6 +34,11 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
     }
   }, [tutorialIndex, onComplete]);
   
+  const handlePremiumTeaserClose = useCallback(() => {
+    localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true');
+    onComplete();
+  }, [onComplete]);
+  
   if (currentStep === 'welcome') {
     return <WelcomeScreen onStart={handleStart} onSkip={handleSkip} />;
   }
@@ -48,6 +54,10 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   
   if (currentTutorial.type === 'tip') {
     return <QuickTip tutorialCard={currentTutorial} onComplete={handleNextStep} />;
+  }
+  
+  if (currentTutorial.type === 'premium') {
+    return <PremiumTeaser onClose={handlePremiumTeaserClose} onSkip={handleNextStep} />;
   }
   
   return null;

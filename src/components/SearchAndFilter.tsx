@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { usePremium } from '@/hooks/usePremium';
 import PremiumModal from '@/components/PremiumModal';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 
 export interface FilterOptions {
   searchTerm: string;
@@ -114,6 +116,20 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { isPremium, upgradeToPremium } = usePremium();
+  const { showFilterTip, markFilterTipSeen } = useOnboarding();
+  const [showFilterTooltip, setShowFilterTooltip] = useState(false);
+
+  // Show contextual tip when filter is opened for the first time
+  useEffect(() => {
+    if (isFilterOpen && showFilterTip) {
+      setShowFilterTooltip(true);
+      const timer = setTimeout(() => {
+        markFilterTipSeen();
+        setShowFilterTooltip(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isFilterOpen, showFilterTip, markFilterTipSeen]);
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
     // Allow basic filters (search, price, distance) for everyone
@@ -643,6 +659,18 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           }
         }}
       />
+      
+      {/* Contextual Tip for First Time Filter */}
+      {showFilterTooltip && (
+        <ContextualTip
+          message="這裡可以篩選價位、菜系和評分！"
+          direction="down"
+          onClose={() => {
+            markFilterTipSeen();
+            setShowFilterTooltip(false);
+          }}
+        />
+      )}
     </div>
   );
 };
