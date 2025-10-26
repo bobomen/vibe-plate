@@ -16,7 +16,6 @@ import { PreferenceSettings } from '@/components/PreferenceSettings';
 import PremiumModal from '@/components/PremiumModal';
 import { SubscriptionManagement } from '@/components/SubscriptionManagement';
 import { usePremium } from '@/hooks/usePremium';
-import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 
 interface Profile {
   display_name: string;
@@ -41,9 +40,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isPremium, showFirstTimeModal, markModalAsSeen, upgradeToPremium, loading: premiumLoading } = usePremium();
-  const { showProfileTip, markProfileTipSeen, resetOnboarding } = useOnboarding();
+  const { resetOnboarding } = useOnboarding();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showProfileTooltip, setShowProfileTooltip] = useState(false);
   const [profile, setProfile] = useState<Profile>({ 
     display_name: '',
     dietary_preferences: [],
@@ -67,34 +65,6 @@ const Profile = () => {
       fetchProfile();
     }
   }, [user]);
-
-  // ✅ 優化的教學提示邏輯
-  useEffect(() => {
-    // 只在頁面載入完成且未看過教學時顯示
-    const shouldShowTip = !loading && showProfileTip;
-    
-    console.log('[Profile] Onboarding check:', {
-      loading,
-      showProfileTip,
-      shouldShowTip
-    });
-
-    if (shouldShowTip) {
-      console.log('[Profile] Showing profile tip');
-      const timer = setTimeout(() => {
-        setShowProfileTooltip(true);
-        
-        // 3秒後自動關閉並標記為已看過
-        setTimeout(() => {
-          console.log('[Profile] Auto-closing profile tip');
-          markProfileTipSeen();
-          setShowProfileTooltip(false);
-        }, 3000);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [loading, showProfileTip, markProfileTipSeen]);
 
   const fetchProfile = async () => {
     try {
@@ -338,18 +308,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {showProfileTooltip && (
-        <ContextualTip
-          message="在這裡設定您的位置和偏好，獲得更精準的餐廳推薦 🎯"
-          direction="down"
-          duration={3000}
-          onClose={() => {
-            markProfileTipSeen();
-            setShowProfileTooltip(false);
-          }}
-        />
-      )}
-      
       <div className="p-4">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">個人資料</h1>
@@ -568,18 +526,6 @@ const Profile = () => {
           setShowUpgradeModal(false);
         }}
       />
-      
-      {/* Contextual Tip for First Time Profile Visit */}
-      {showProfileTooltip && (
-        <ContextualTip
-          message="這裡可以管理你的收藏和偏好設定！"
-          direction="down"
-          onClose={() => {
-            markProfileTipSeen();
-            setShowProfileTooltip(false);
-          }}
-        />
-      )}
     </div>
   );
 };
