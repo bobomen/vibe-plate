@@ -89,17 +89,7 @@ export const SwipeCards = React.memo(() => {
       setHasSeenOnboardingSession(false);
       setHasStartedOnboarding(false);
     }
-  }, [showCoreOnboarding]);
-
-  // CRITICAL: Mark onboarding as started when it first appears
-  // This ensures onboarding won't re-trigger in the same session
-  // even if user resets swipes or goes back to previous cards
-  useEffect(() => {
-    if (showCoreOnboarding && !hasSeenOnboardingSession && currentIndex < 2 && !hasStartedOnboarding) {
-      console.log('[Onboarding] Tutorial started for the first time in this session');
-      setHasStartedOnboarding(true);
-    }
-  }, [currentIndex, showCoreOnboarding, hasSeenOnboardingSession, hasStartedOnboarding]);
+  }, [showCoreOnboarding, hasSeenOnboardingSession, hasStartedOnboarding]);
 
   // Personal swipe logic hook  
   const {
@@ -136,6 +126,13 @@ export const SwipeCards = React.memo(() => {
     
     const swipeDuration = Date.now() - cardDisplayTime;
     
+    // CRITICAL: Mark onboarding as started when user interacts (swipes)
+    // This prevents re-triggering on reset/back, but allows replay via "重新播放新手教學"
+    if (showCoreOnboarding && !hasStartedOnboarding && currentIndex < 2) {
+      console.log('[Onboarding] User interacted with tutorial, marking as started');
+      setHasStartedOnboarding(true);
+    }
+    
     try {
       addToSwipeHistory(currentRestaurant, liked);
       
@@ -167,7 +164,7 @@ export const SwipeCards = React.memo(() => {
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, currentIndex, completeCoreOnboarding]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, currentIndex, completeCoreOnboarding, hasStartedOnboarding, hasSeenOnboardingSession]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {

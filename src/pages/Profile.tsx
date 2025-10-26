@@ -493,9 +493,9 @@ const Profile = () => {
                       description: "即將返回首頁重新開始",
                     });
                     
-                    // 3. Navigate to home after short delay
+                    // 3. Navigate to swipe page after short delay
                     setTimeout(() => {
-                      navigate('/');
+                      navigate('/app/');
                     }, 500);
                     
                   } catch (error) {
