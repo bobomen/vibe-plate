@@ -60,30 +60,21 @@ export const SwipeCards = React.memo(() => {
   const [cardDisplayTime, setCardDisplayTime] = useState<number>(Date.now());
   
   // Local state to track if onboarding has been shown in this session
-  // This prevents re-showing onboarding when resetting swipe history
-  const [hasSeenOnboardingSession, setHasSeenOnboardingSession] = useState(false);
+  // CRITICAL: Initialize based on showCoreOnboarding to prevent re-triggering
+  // If user has already completed onboarding (showCoreOnboarding = false), 
+  // mark session as seen immediately to prevent accidental re-triggers
+  const [hasSeenOnboardingSession, setHasSeenOnboardingSession] = useState(() => {
+    const initialValue = !showCoreOnboarding;
+    if (initialValue) {
+      console.log('[Onboarding] User has completed onboarding before, session marked as seen on init');
+    }
+    return initialValue;
+  });
 
   // 當卡片切換時重置顯示時間
   useEffect(() => {
     setCardDisplayTime(Date.now());
   }, [currentIndex]);
-
-  // Initialize onboarding session state
-  // If user has already completed onboarding, mark session as seen immediately
-  useEffect(() => {
-    if (!showCoreOnboarding) {
-      setHasSeenOnboardingSession(true);
-      console.log('[Onboarding] User has completed onboarding before, session marked as seen');
-    }
-  }, [showCoreOnboarding]);
-
-  // Mark session as seen once onboarding is completed
-  useEffect(() => {
-    if (!showCoreOnboarding && !hasSeenOnboardingSession) {
-      setHasSeenOnboardingSession(true);
-      console.log('[Onboarding] Onboarding completed, session marked as seen');
-    }
-  }, [showCoreOnboarding, hasSeenOnboardingSession]);
 
   // Personal swipe logic hook  
   const {

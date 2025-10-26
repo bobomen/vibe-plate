@@ -55,8 +55,16 @@ export const ContextualTip = ({
   };
 
   const tipContent = (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] animate-in fade-in duration-300 pointer-events-none">
-      <div className="pointer-events-auto">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] animate-in fade-in duration-300"
+      onClick={(e) => {
+        // 只在點擊背景時關閉，不干擾其他 UI 元素
+        if (e.target === e.currentTarget) {
+          onClose?.();
+        }
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()}>
         <Card className="max-w-sm mx-4 p-6 text-center animate-in zoom-in-95 duration-300 shadow-xl">
           <div className="space-y-4">
             {/* 動畫箭頭 */}
@@ -72,7 +80,10 @@ export const ContextualTip = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
+                onClick={(e) => {
+                  e.stopPropagation(); // 阻止事件冒泡到父層
+                  onClose();
+                }}
                 className="w-full"
               >
                 知道了
