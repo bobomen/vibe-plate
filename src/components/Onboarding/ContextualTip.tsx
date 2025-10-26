@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Card } from '@/components/ui/card';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ export const ContextualTip = ({
     }
   };
 
-  return (
+  const tipContent = (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] animate-in fade-in duration-300 pointer-events-none">
       <div className="pointer-events-auto">
         <Card className="max-w-sm mx-4 p-6 text-center animate-in zoom-in-95 duration-300 shadow-xl">
@@ -82,4 +83,7 @@ export const ContextualTip = ({
       </div>
     </div>
   );
+
+  // 使用 Portal 渲染到 body，完全脫離父組件的 stacking context
+  return ReactDOM.createPortal(tipContent, document.body);
 };

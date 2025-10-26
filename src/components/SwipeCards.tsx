@@ -58,11 +58,32 @@ export const SwipeCards = React.memo(() => {
 
   // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
   const [cardDisplayTime, setCardDisplayTime] = useState<number>(Date.now());
+  
+  // Local state to track if onboarding has been shown in this session
+  // This prevents re-showing onboarding when resetting swipe history
+  const [hasSeenOnboardingSession, setHasSeenOnboardingSession] = useState(false);
 
   // 當卡片切換時重置顯示時間
   useEffect(() => {
     setCardDisplayTime(Date.now());
   }, [currentIndex]);
+
+  // Initialize onboarding session state
+  // If user has already completed onboarding, mark session as seen immediately
+  useEffect(() => {
+    if (!showCoreOnboarding) {
+      setHasSeenOnboardingSession(true);
+      console.log('[Onboarding] User has completed onboarding before, session marked as seen');
+    }
+  }, [showCoreOnboarding]);
+
+  // Mark session as seen once onboarding is completed
+  useEffect(() => {
+    if (!showCoreOnboarding && !hasSeenOnboardingSession) {
+      setHasSeenOnboardingSession(true);
+      console.log('[Onboarding] Onboarding completed, session marked as seen');
+    }
+  }, [showCoreOnboarding, hasSeenOnboardingSession]);
 
   // Personal swipe logic hook  
   const {
@@ -99,14 +120,15 @@ export const SwipeCards = React.memo(() => {
       });
 
       // Onboarding tracking (non-blocking)
-      // INVARIANT: Only trigger onboarding completion during actual onboarding flow
-      // This ensures onboarding is completed only once and never re-triggered
+      // CRITICAL: Only complete onboarding during active onboarding flow
+      // hasSeenOnboardingSession prevents re-triggering after reset
       try {
-        if (showCoreOnboarding && currentIndex <= 1) {
+        if (showCoreOnboarding && !hasSeenOnboardingSession && currentIndex <= 1) {
           // After swiping second card (index 1), complete onboarding permanently
           if (currentIndex === 1) {
             console.log('[Onboarding] Completing core onboarding after second swipe');
             completeCoreOnboarding();
+            setHasSeenOnboardingSession(true);
             setShowPremiumTeaser(true);
           }
         }
@@ -114,6 +136,7 @@ export const SwipeCards = React.memo(() => {
         console.error('[Onboarding] Error:', onboardingError);
         // Fail gracefully but still mark as complete to prevent infinite loop
         completeCoreOnboarding();
+        setHasSeenOnboardingSession(true);
       }
     } catch (error) {
       console.error('Error handling swipe:', error);
@@ -202,9 +225,11 @@ export const SwipeCards = React.memo(() => {
                 onboardingStep={(currentIndex + 1) as 1 | 2}
               />
               
-              {/* Onboarding Overlay - 浮動提示在卡片下方 */}
-              {showCoreOnboarding && currentIndex < 2 && (
-                <OnboardingOverlay step={(currentIndex + 1) as 1 | 2} />
+              {/* Onboarding Overlay - only show if not seen in this session */}
+              {showCoreOnboarding && !hasSeenOnboardingSession && currentIndex < 2 && (
+                <OnboardingOverlay 
+                  step={(currentIndex + 1) as 1 | 2}
+                />
               )}
             </div>
 
