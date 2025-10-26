@@ -18,20 +18,11 @@ import { SwipeCard } from './SwipeCard';
 import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
-import { useOnboarding } from '@/hooks/useOnboarding';
-import { OnboardingOverlay } from './Onboarding/OnboardingOverlay';
-import { PremiumTeaser } from './Onboarding/PremiumTeaser';
-import { usePremium } from '@/hooks/usePremium';
 
 export const SwipeCards = React.memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { showCoreOnboarding, completeCoreOnboarding } = useOnboarding();
-  const { upgradeToPremium } = usePremium();
-  
-  // Onboarding state tracking
-  const [showPremiumTeaser, setShowPremiumTeaser] = useState(false);
   
   // Use unified swipe state (personal mode - no groupId)
   const {
@@ -53,7 +44,6 @@ export const SwipeCards = React.memo(() => {
     goBackToPrevious,
   } = useSwipeState({ 
     groupId: undefined, // INVARIANT: Personal swipes have no groupId
-    showCoreOnboarding, // Pass onboarding state to prioritize tutorial restaurants
   });
 
   // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
@@ -81,9 +71,6 @@ export const SwipeCards = React.memo(() => {
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();
 
-  // ✅ 簡化：教學顯示邏輯只基於 localStorage 和當前卡片索引
-  const shouldShowOnboarding = showCoreOnboarding && currentIndex < 2;
-
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
     if (!currentRestaurant) return;
@@ -100,16 +87,10 @@ export const SwipeCards = React.memo(() => {
         userLocation,
         swipeDuration
       });
-
-      // ✅ 簡化：只在教學期間且第一次滑動時完成教學並顯示 Premium 推廣
-      if (shouldShowOnboarding && currentIndex === 0) {
-        completeCoreOnboarding(); // 立即寫入 localStorage
-        setShowPremiumTeaser(true);
-      }
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, shouldShowOnboarding, currentIndex, completeCoreOnboarding]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -189,16 +170,7 @@ export const SwipeCards = React.memo(() => {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEndWithParams}
-                isOnboarding={shouldShowOnboarding}
-                onboardingStep={(currentIndex + 1) as 1 | 2}
               />
-              
-              {/* Onboarding Overlay - only show during active tutorial */}
-              {shouldShowOnboarding && (
-                <OnboardingOverlay 
-                  step={(currentIndex + 1) as 1 | 2}
-                />
-              )}
             </div>
 
             {/* Action Buttons */}
@@ -236,16 +208,6 @@ export const SwipeCards = React.memo(() => {
         )}
 
       </div>
-
-      {/* Premium Teaser - After onboarding completion */}
-      <PremiumTeaser
-        open={showPremiumTeaser}
-        onClose={() => setShowPremiumTeaser(false)}
-        onUpgrade={() => {
-          setShowPremiumTeaser(false);
-          upgradeToPremium();
-        }}
-      />
     </div>
   );
 });
