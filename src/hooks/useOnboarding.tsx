@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 
+// ✅ 教學狀態的 localStorage keys
 const CORE_STORAGE_KEY = 'onboarding_core_v1';
 const FILTER_TIP_KEY = 'onboarding_filter_tip_shown';
 const PROFILE_TIP_KEY = 'onboarding_profile_tip_shown';
@@ -7,86 +8,90 @@ const GROUP_TIP_KEY = 'onboarding_group_tip_shown';
 const FAVORITE_TIP_KEY = 'onboarding_favorite_tip_shown';
 const CATEGORY_TIP_KEY = 'onboarding_category_tip_shown';
 
+/**
+ * ✅ 優化的 Onboarding Hook
+ * 
+ * 功能：
+ * - 管理所有教學提示的顯示狀態
+ * - 使用 localStorage 持久化狀態
+ * - 提供簡潔的 API 來檢查和更新教學狀態
+ * 
+ * 邏輯：
+ * - showXxxTip: true = 需要顯示教學，false = 已經看過
+ * - markXxxTipSeen: 標記教學為已看過
+ */
 export const useOnboarding = () => {
-  const [coreCompleted, setCoreCompleted] = useState(() => {
-    return localStorage.getItem(CORE_STORAGE_KEY) === 'true';
-  });
+  // ✅ 滑卡頁面核心教學狀態
+  const [coreCompleted, setCoreCompleted] = useState(() => 
+    localStorage.getItem(CORE_STORAGE_KEY) === 'true'
+  );
 
-  const [filterTipShown, setFilterTipShown] = useState(() => {
-    return localStorage.getItem(FILTER_TIP_KEY) === 'true';
-  });
+  // ✅ 各頁面教學提示狀態
+  const [filterTipShown, setFilterTipShown] = useState(() => 
+    localStorage.getItem(FILTER_TIP_KEY) === 'true'
+  );
 
-  const [profileTipShown, setProfileTipShown] = useState(() => {
-    return localStorage.getItem(PROFILE_TIP_KEY) === 'true';
-  });
+  const [profileTipShown, setProfileTipShown] = useState(() => 
+    localStorage.getItem(PROFILE_TIP_KEY) === 'true'
+  );
 
-  const [groupTipShown, setGroupTipShown] = useState(() => {
-    return localStorage.getItem(GROUP_TIP_KEY) === 'true';
-  });
+  const [groupTipShown, setGroupTipShown] = useState(() => 
+    localStorage.getItem(GROUP_TIP_KEY) === 'true'
+  );
 
-  const [favoriteTipShown, setFavoriteTipShown] = useState(() => {
-    return localStorage.getItem(FAVORITE_TIP_KEY) === 'true';
-  });
+  const [favoriteTipShown, setFavoriteTipShown] = useState(() => 
+    localStorage.getItem(FAVORITE_TIP_KEY) === 'true'
+  );
 
-  const [categoryTipShown, setCategoryTipShown] = useState(() => {
-    return localStorage.getItem(CATEGORY_TIP_KEY) === 'true';
-  });
+  const [categoryTipShown, setCategoryTipShown] = useState(() => 
+    localStorage.getItem(CATEGORY_TIP_KEY) === 'true'
+  );
 
-  const showCoreOnboarding = useCallback(() => {
-    return !coreCompleted;
-  }, [coreCompleted]);
-
+  // ✅ 滑卡頁面核心教學
   const completeCoreOnboarding = useCallback(() => {
+    console.log('[Onboarding] Core onboarding completed');
     localStorage.setItem(CORE_STORAGE_KEY, 'true');
     setCoreCompleted(true);
   }, []);
 
-  const showFilterTip = useCallback(() => {
-    return !filterTipShown;
-  }, [filterTipShown]);
-
+  // ✅ 篩選提示
   const markFilterTipSeen = useCallback(() => {
+    console.log('[Onboarding] Filter tip marked as seen');
     localStorage.setItem(FILTER_TIP_KEY, 'true');
     setFilterTipShown(true);
   }, []);
 
-  const showProfileTip = useCallback(() => {
-    return !profileTipShown;
-  }, [profileTipShown]);
-
+  // ✅ 個人資料提示
   const markProfileTipSeen = useCallback(() => {
+    console.log('[Onboarding] Profile tip marked as seen');
     localStorage.setItem(PROFILE_TIP_KEY, 'true');
     setProfileTipShown(true);
   }, []);
 
-  const showGroupTip = useCallback(() => {
-    return !groupTipShown;
-  }, [groupTipShown]);
-
+  // ✅ 群組提示
   const markGroupTipSeen = useCallback(() => {
+    console.log('[Onboarding] Group tip marked as seen');
     localStorage.setItem(GROUP_TIP_KEY, 'true');
     setGroupTipShown(true);
   }, []);
 
-  const showFavoriteTip = useCallback(() => {
-    return !favoriteTipShown;
-  }, [favoriteTipShown]);
-
+  // ✅ 收藏提示
   const markFavoriteTipSeen = useCallback(() => {
+    console.log('[Onboarding] Favorite tip marked as seen');
     localStorage.setItem(FAVORITE_TIP_KEY, 'true');
     setFavoriteTipShown(true);
   }, []);
 
-  const showCategoryTip = useCallback(() => {
-    return !categoryTipShown;
-  }, [categoryTipShown]);
-
+  // ✅ 分類提示
   const markCategoryTipSeen = useCallback(() => {
+    console.log('[Onboarding] Category tip marked as seen');
     localStorage.setItem(CATEGORY_TIP_KEY, 'true');
     setCategoryTipShown(true);
   }, []);
 
+  // ✅ 重置所有教學狀態
   const resetOnboarding = useCallback(() => {
+    console.log('[Onboarding] Resetting all onboarding states');
     localStorage.removeItem(CORE_STORAGE_KEY);
     localStorage.removeItem(FILTER_TIP_KEY);
     localStorage.removeItem(PROFILE_TIP_KEY);
@@ -102,18 +107,27 @@ export const useOnboarding = () => {
   }, []);
 
   return {
-    showCoreOnboarding: showCoreOnboarding(),
+    // ✅ 滑卡頁面核心教學（true = 需要顯示）
+    showCoreOnboarding: !coreCompleted,
     completeCoreOnboarding,
-    showFilterTip: showFilterTip(),
+    
+    // ✅ 各頁面教學提示（true = 需要顯示）
+    showFilterTip: !filterTipShown,
     markFilterTipSeen,
-    showProfileTip: showProfileTip(),
+    
+    showProfileTip: !profileTipShown,
     markProfileTipSeen,
-    showGroupTip: showGroupTip(),
+    
+    showGroupTip: !groupTipShown,
     markGroupTipSeen,
-    showFavoriteTip: showFavoriteTip(),
+    
+    showFavoriteTip: !favoriteTipShown,
     markFavoriteTipSeen,
-    showCategoryTip: showCategoryTip(),
+    
+    showCategoryTip: !categoryTipShown,
     markCategoryTipSeen,
+    
+    // ✅ 重置功能
     resetOnboarding,
   };
 };

@@ -68,16 +68,30 @@ const Profile = () => {
     }
   }, [user]);
 
-  // Show contextual tip on first visit
+  // ✅ 優化的教學提示邏輯
   useEffect(() => {
-    if (!loading && showProfileTip) {
+    // 只在頁面載入完成且未看過教學時顯示
+    const shouldShowTip = !loading && showProfileTip;
+    
+    console.log('[Profile] Onboarding check:', {
+      loading,
+      showProfileTip,
+      shouldShowTip
+    });
+
+    if (shouldShowTip) {
+      console.log('[Profile] Showing profile tip');
       const timer = setTimeout(() => {
         setShowProfileTooltip(true);
+        
+        // 3秒後自動關閉並標記為已看過
         setTimeout(() => {
+          console.log('[Profile] Auto-closing profile tip');
           markProfileTipSeen();
           setShowProfileTooltip(false);
         }, 3000);
       }, 500);
+      
       return () => clearTimeout(timer);
     }
   }, [loading, showProfileTip, markProfileTipSeen]);

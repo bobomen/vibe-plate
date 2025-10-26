@@ -48,16 +48,31 @@ const Groups = () => {
     fetchGroups();
   }, [user]);
 
-  // Show contextual tip on first visit
+  // ✅ 優化的教學提示邏輯
   useEffect(() => {
-    if (!loading && showGroupTip && groups.length === 0) {
+    // 只在頁面載入完成且未看過教學且沒有群組時顯示
+    const shouldShowTip = !loading && showGroupTip && groups.length === 0;
+    
+    console.log('[Groups] Onboarding check:', {
+      loading,
+      showGroupTip,
+      groupsCount: groups.length,
+      shouldShowTip
+    });
+
+    if (shouldShowTip) {
+      console.log('[Groups] Showing group tip');
       const timer = setTimeout(() => {
         setShowGroupTooltip(true);
+        
+        // 5秒後自動關閉並標記為已看過
         setTimeout(() => {
+          console.log('[Groups] Auto-closing group tip');
           markGroupTipSeen();
           setShowGroupTooltip(false);
         }, 5000);
       }, 500);
+      
       return () => clearTimeout(timer);
     }
   }, [loading, showGroupTip, groups.length, markGroupTipSeen]);
