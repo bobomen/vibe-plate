@@ -15,6 +15,7 @@ interface ContextualTipProps {
  * - 全屏遮罩，聚焦用戶注意力
  * - 只能透過「知道了」按鈕關閉
  * - 統一的動畫和樣式
+ * - z-index 最高，確保在所有內容之上
  */
 export const ContextualTip = ({ 
   message, 
@@ -33,15 +34,18 @@ export const ContextualTip = ({
 
   const tipContent = (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] animate-in fade-in duration-300"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[99999] animate-in fade-in duration-300"
       onClick={(e) => {
-        // 只在點擊背景時關閉
+        // 點擊背景也可關閉
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      <div onClick={(e) => e.stopPropagation()}>
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="relative z-[100000]"
+      >
         <Card className="max-w-sm mx-4 p-6 text-center animate-in zoom-in-95 duration-300 shadow-xl">
           <div className="space-y-4">
             {/* 動畫箭頭 */}
@@ -58,9 +62,10 @@ export const ContextualTip = ({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 onClose();
               }}
-              className="w-full"
+              className="w-full pointer-events-auto"
             >
               知道了
             </Button>

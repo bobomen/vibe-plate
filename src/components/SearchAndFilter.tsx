@@ -119,17 +119,12 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const { showFilterTip, markFilterTipSeen } = useOnboarding();
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
 
-  // Show contextual tip when filter is opened for the first time
+  // ✅ 當篩選打開且首次使用時顯示教學訊息
   useEffect(() => {
     if (isFilterOpen && showFilterTip) {
       setShowFilterTooltip(true);
-      const timer = setTimeout(() => {
-        markFilterTipSeen();
-        setShowFilterTooltip(false);
-      }, 3000);
-      return () => clearTimeout(timer);
     }
-  }, [isFilterOpen, showFilterTip, markFilterTipSeen]);
+  }, [isFilterOpen, showFilterTip]);
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
     // Allow basic filters (search, price, distance) for everyone
