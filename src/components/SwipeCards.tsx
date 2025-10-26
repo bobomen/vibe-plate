@@ -163,7 +163,6 @@ export const SwipeCards = React.memo(() => {
         <ContextualTip
           message="向右滑表示喜歡，向左滑跳過。點擊卡片查看詳情 ✨"
           direction="down"
-          duration={5000}
           onClose={() => {
             completeCoreOnboarding();
             setShowTip(false);

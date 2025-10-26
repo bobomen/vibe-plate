@@ -327,7 +327,6 @@ const Profile = () => {
         <ContextualTip
           message="設定您的位置和偏好，獲得更精準的餐廳推薦 🎯"
           direction="down"
-          duration={5000}
           onClose={() => {
             markProfileTipSeen();
             setShowTip(false);

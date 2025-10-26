@@ -302,7 +302,6 @@ const Groups = () => {
         <ContextualTip
           message="建立群組和朋友一起滑卡，系統會自動找出大家都喜歡的餐廳 🎉"
           direction="down"
-          duration={5000}
           onClose={() => {
             markGroupTipSeen();
             setShowTip(false);

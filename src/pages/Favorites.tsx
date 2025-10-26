@@ -252,7 +252,6 @@ const Favorites = () => {
         <ContextualTip
           message="這裡可以查看所有收藏的餐廳！使用篩選和分類功能來管理你的清單 📋"
           direction="down"
-          duration={4000}
           onClose={() => {
             markFavoriteTipSeen();
             setShowFavoriteTooltip(false);
@@ -263,7 +262,6 @@ const Favorites = () => {
         <ContextualTip
           message="建立分類來整理你的收藏餐廳，讓尋找美食更輕鬆 🗂️"
           direction="down"
-          duration={4000}
           onClose={() => {
             markCategoryTipSeen();
             setShowCategoryTooltip(false);
