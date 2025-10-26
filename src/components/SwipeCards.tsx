@@ -89,7 +89,7 @@ export const SwipeCards = React.memo(() => {
       setHasSeenOnboardingSession(false);
       setHasStartedOnboarding(false);
     }
-  }, [showCoreOnboarding, hasSeenOnboardingSession, hasStartedOnboarding]);
+  }, [showCoreOnboarding]);
 
   // Personal swipe logic hook  
   const {
@@ -144,16 +144,18 @@ export const SwipeCards = React.memo(() => {
         swipeDuration
       });
 
-      // Onboarding tracking (non-blocking)
-      // CRITICAL: Only complete onboarding during active onboarding flow
-      // Check hasStartedOnboarding to ensure we're in an active tutorial session
+      // CRITICAL: Complete onboarding after FIRST swipe to persist to localStorage immediately
+      // This prevents re-triggering when navigating between pages
       try {
-        if (showCoreOnboarding && hasStartedOnboarding && !hasSeenOnboardingSession && currentIndex === 1) {
-          // After swiping second card (index 1), complete onboarding permanently
-          console.log('[Onboarding] Completing core onboarding after second swipe');
+        if (showCoreOnboarding && !hasSeenOnboardingSession && currentIndex < 2) {
+          console.log('[Onboarding] Completing core onboarding after first interaction');
           completeCoreOnboarding();
           setHasSeenOnboardingSession(true);
-          setShowPremiumTeaser(true);
+          
+          // Show premium teaser only after first swipe
+          if (currentIndex === 0) {
+            setShowPremiumTeaser(true);
+          }
         }
       } catch (onboardingError) {
         console.error('[Onboarding] Error:', onboardingError);
@@ -164,7 +166,7 @@ export const SwipeCards = React.memo(() => {
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, currentIndex, completeCoreOnboarding, hasStartedOnboarding, hasSeenOnboardingSession]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, currentIndex, completeCoreOnboarding, hasSeenOnboardingSession, hasStartedOnboarding]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
