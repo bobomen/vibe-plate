@@ -58,38 +58,11 @@ export const SwipeCards = React.memo(() => {
 
   // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
   const [cardDisplayTime, setCardDisplayTime] = useState<number>(Date.now());
-  
-  // Local state to track if onboarding has been shown in this session
-  // CRITICAL: Initialize based on showCoreOnboarding to prevent re-triggering
-  // If user has already completed onboarding (showCoreOnboarding = false), 
-  // mark session as seen immediately to prevent accidental re-triggers
-  const [hasSeenOnboardingSession, setHasSeenOnboardingSession] = useState(() => {
-    const initialValue = !showCoreOnboarding;
-    if (initialValue) {
-      console.log('[Onboarding] User has completed onboarding before, session marked as seen on init');
-    }
-    return initialValue;
-  });
-
-  // CRITICAL: Track if user has started onboarding flow in this session
-  // This prevents re-triggering onboarding when resetting swipes or going back
-  // Once onboarding starts, it should not restart in the same session
-  const [hasStartedOnboarding, setHasStartedOnboarding] = useState(false);
 
   // 當卡片切換時重置顯示時間
   useEffect(() => {
     setCardDisplayTime(Date.now());
   }, [currentIndex]);
-
-  // CRITICAL: Reset session states when onboarding is reset via localStorage
-  // This allows tutorial to replay after user clicks "重新播放新手教學"
-  useEffect(() => {
-    if (showCoreOnboarding && (hasSeenOnboardingSession || hasStartedOnboarding)) {
-      console.log('[Onboarding] Detected onboarding reset, clearing session states');
-      setHasSeenOnboardingSession(false);
-      setHasStartedOnboarding(false);
-    }
-  }, [showCoreOnboarding]);
 
   // Personal swipe logic hook  
   const {
@@ -108,30 +81,14 @@ export const SwipeCards = React.memo(() => {
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();
 
-  // Calculate if onboarding should be shown
-  // Only show if ALL conditions are met:
-  // 1. Core onboarding not completed (localStorage)
-  // 2. Not seen in this session
-  // 3. Not started in this session (prevents re-trigger on reset/back)
-  // 4. Currently on first two cards
-  const shouldShowOnboarding = 
-    showCoreOnboarding && 
-    !hasSeenOnboardingSession && 
-    !hasStartedOnboarding && 
-    currentIndex < 2;
+  // ✅ 簡化：教學顯示邏輯只基於 localStorage 和當前卡片索引
+  const shouldShowOnboarding = showCoreOnboarding && currentIndex < 2;
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
     if (!currentRestaurant) return;
     
     const swipeDuration = Date.now() - cardDisplayTime;
-    
-    // CRITICAL: Mark onboarding as started when user interacts (swipes)
-    // This prevents re-triggering on reset/back, but allows replay via "重新播放新手教學"
-    if (showCoreOnboarding && !hasStartedOnboarding && currentIndex < 2) {
-      console.log('[Onboarding] User interacted with tutorial, marking as started');
-      setHasStartedOnboarding(true);
-    }
     
     try {
       addToSwipeHistory(currentRestaurant, liked);
@@ -144,29 +101,15 @@ export const SwipeCards = React.memo(() => {
         swipeDuration
       });
 
-      // CRITICAL: Complete onboarding after FIRST swipe to persist to localStorage immediately
-      // This prevents re-triggering when navigating between pages
-      try {
-        if (showCoreOnboarding && !hasSeenOnboardingSession && currentIndex < 2) {
-          console.log('[Onboarding] Completing core onboarding after first interaction');
-          completeCoreOnboarding();
-          setHasSeenOnboardingSession(true);
-          
-          // Show premium teaser only after first swipe
-          if (currentIndex === 0) {
-            setShowPremiumTeaser(true);
-          }
-        }
-      } catch (onboardingError) {
-        console.error('[Onboarding] Error:', onboardingError);
-        // Fail gracefully but still mark as complete to prevent infinite loop
-        completeCoreOnboarding();
-        setHasSeenOnboardingSession(true);
+      // ✅ 簡化：只在教學期間且第一次滑動時完成教學並顯示 Premium 推廣
+      if (shouldShowOnboarding && currentIndex === 0) {
+        completeCoreOnboarding(); // 立即寫入 localStorage
+        setShowPremiumTeaser(true);
       }
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, showCoreOnboarding, currentIndex, completeCoreOnboarding, hasSeenOnboardingSession, hasStartedOnboarding]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime, shouldShowOnboarding, currentIndex, completeCoreOnboarding]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
