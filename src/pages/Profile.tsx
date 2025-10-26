@@ -472,24 +472,40 @@ const Profile = () => {
             <CardContent className="space-y-3">
               <Button
                 variant="outline"
-                onClick={() => {
-                  resetOnboarding();
-                  toast({
-                    title: "新手教學已重置",
-                    description: "下次重新載入時將再次播放",
-                  });
-                }}
-                className="w-full"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                清除新手教學紀錄
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  resetOnboarding();
-                  navigate('/');
+                onClick={async () => {
+                  if (!user?.id) return;
+                  
+                  try {
+                    // 1. Reset onboarding state in localStorage
+                    resetOnboarding();
+                    
+                    // 2. Clear personal swipe records (ensures tutorial restaurants appear)
+                    const { error } = await supabase
+                      .from('user_swipes')
+                      .delete()
+                      .eq('user_id', user.id)
+                      .is('group_id', null);
+                    
+                    if (error) throw error;
+                    
+                    toast({
+                      title: "教學已重置",
+                      description: "即將返回首頁重新開始",
+                    });
+                    
+                    // 3. Navigate to home after short delay
+                    setTimeout(() => {
+                      navigate('/');
+                    }, 500);
+                    
+                  } catch (error) {
+                    console.error('Error resetting onboarding:', error);
+                    toast({
+                      title: "重置失敗",
+                      description: "請重試",
+                      variant: "destructive",
+                    });
+                  }
                 }}
                 className="w-full"
               >

@@ -81,6 +81,16 @@ export const SwipeCards = React.memo(() => {
     setCardDisplayTime(Date.now());
   }, [currentIndex]);
 
+  // CRITICAL: Reset session states when onboarding is reset via localStorage
+  // This allows tutorial to replay after user clicks "重新播放新手教學"
+  useEffect(() => {
+    if (showCoreOnboarding && (hasSeenOnboardingSession || hasStartedOnboarding)) {
+      console.log('[Onboarding] Detected onboarding reset, clearing session states');
+      setHasSeenOnboardingSession(false);
+      setHasStartedOnboarding(false);
+    }
+  }, [showCoreOnboarding]);
+
   // CRITICAL: Mark onboarding as started when it first appears
   // This ensures onboarding won't re-trigger in the same session
   // even if user resets swipes or goes back to previous cards
