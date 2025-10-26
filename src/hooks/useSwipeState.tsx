@@ -385,23 +385,29 @@ export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = fa
       return true;
     });
 
-    // Tutorial mode: Put "美味蟹堡" and "軟飯" at the front if this is first-time onboarding
+    // Tutorial mode: Put "美味蟹堡" and "軟飯" at the front ONLY during first-time onboarding
+    // This ensures tutorial restaurants appear first ONLY when onboarding is active
+    // After onboarding is complete, restaurants are shown in normal order
     if (showCoreOnboarding && !groupId) {
       const tutorialRestaurants = filtered.filter(r => 
         r.name === '美味蟹堡' || r.name === '軟飯'
       );
-      const otherRestaurants = filtered.filter(r => 
-        r.name !== '美味蟹堡' && r.name !== '軟飯'
-      );
       
-      // Sort tutorial restaurants to ensure "美味蟹堡" comes first, then "軟飯"
-      tutorialRestaurants.sort((a, b) => {
-        if (a.name === '美味蟹堡') return -1;
-        if (b.name === '美味蟹堡') return 1;
-        return 0;
-      });
-      
-      filtered = [...tutorialRestaurants, ...otherRestaurants];
+      // Only apply tutorial priority if tutorial restaurants exist
+      if (tutorialRestaurants.length > 0) {
+        const otherRestaurants = filtered.filter(r => 
+          r.name !== '美味蟹堡' && r.name !== '軟飯'
+        );
+        
+        // Sort tutorial restaurants to ensure "美味蟹堡" comes first, then "軟飯"
+        tutorialRestaurants.sort((a, b) => {
+          if (a.name === '美味蟹堡') return -1;
+          if (b.name === '美味蟹堡') return 1;
+          return 0;
+        });
+        
+        filtered = [...tutorialRestaurants, ...otherRestaurants];
+      }
     }
 
     setRestaurants(filtered);

@@ -99,17 +99,21 @@ export const SwipeCards = React.memo(() => {
       });
 
       // Onboarding tracking (non-blocking)
+      // INVARIANT: Only trigger onboarding completion during actual onboarding flow
+      // This ensures onboarding is completed only once and never re-triggered
       try {
         if (showCoreOnboarding && currentIndex <= 1) {
-          // After swiping second card, complete onboarding
+          // After swiping second card (index 1), complete onboarding permanently
           if (currentIndex === 1) {
+            console.log('[Onboarding] Completing core onboarding after second swipe');
             completeCoreOnboarding();
             setShowPremiumTeaser(true);
           }
         }
       } catch (onboardingError) {
-        console.error('Onboarding error:', onboardingError);
-        completeCoreOnboarding(); // Fail gracefully
+        console.error('[Onboarding] Error:', onboardingError);
+        // Fail gracefully but still mark as complete to prevent infinite loop
+        completeCoreOnboarding();
       }
     } catch (error) {
       console.error('Error handling swipe:', error);
