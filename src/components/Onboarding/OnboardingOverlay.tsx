@@ -7,42 +7,35 @@ interface OnboardingOverlayProps {
 
 export const OnboardingOverlay = memo(({ step }: OnboardingOverlayProps) => {
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-      {/* 半透明背景 */}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+    <div className="absolute bottom-[-80px] left-0 right-0 z-50 pointer-events-none">
+      {/* 手勢動畫提示 */}
+      {step === 1 && (
+        <div className="absolute bottom-24 right-8 animate-[swipeRight_1.5s_ease-in-out_infinite]">
+          <ArrowRight className="h-12 w-12 text-primary opacity-60" />
+        </div>
+      )}
+      {step === 2 && (
+        <div className="absolute bottom-24 left-8 animate-[swipeLeft_1.5s_ease-in-out_infinite]">
+          <ArrowLeft className="h-12 w-12 text-destructive opacity-60" />
+        </div>
+      )}
       
-      {/* 提示內容 */}
-      <div className="relative z-10 max-w-md mx-auto px-4">
-        <div className="bg-card border border-border rounded-lg p-6 shadow-lg animate-fade-in">
-          {step === 1 ? (
-            <>
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-                  <ArrowRight className="w-8 h-8 text-primary" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-center mb-2">
-                向右滑動
-              </h3>
-              <p className="text-sm text-muted-foreground text-center">
-                如果你喜歡這間餐廳，向右滑動或點擊右側按鈕
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center animate-pulse">
-                  <ArrowLeft className="w-8 h-8 text-destructive" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-center mb-2">
-                向左滑動
-              </h3>
-              <p className="text-sm text-muted-foreground text-center">
-                不喜歡的話，向左滑動或點擊左側按鈕跳過
-              </p>
-            </>
-          )}
+      {/* 提示氣泡 */}
+      <div className="mx-auto max-w-xs">
+        <div className="bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow-lg animate-bounce">
+          <div className="flex items-center justify-center gap-2">
+            {step === 1 ? (
+              <>
+                <ArrowRight className="h-5 w-5 animate-pulse" />
+                <span className="text-sm font-medium">向右滑動表示喜歡 →</span>
+              </>
+            ) : (
+              <>
+                <ArrowLeft className="h-5 w-5 animate-pulse" />
+                <span className="text-sm font-medium">← 向左滑動跳過</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

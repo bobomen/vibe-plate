@@ -35,6 +35,8 @@ interface SwipeCardProps {
   onTouchStart: (e: React.TouchEvent) => void;
   onTouchMove: (e: React.TouchEvent) => void;
   onTouchEnd: () => void;
+  isOnboarding?: boolean;
+  onboardingStep?: 1 | 2;
 }
 
 export const SwipeCard = memo(({
@@ -50,7 +52,9 @@ export const SwipeCard = memo(({
   onMouseUp,
   onTouchStart,
   onTouchMove,
-  onTouchEnd
+  onTouchEnd,
+  isOnboarding,
+  onboardingStep
 }: SwipeCardProps) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   
@@ -222,7 +226,11 @@ export const SwipeCard = memo(({
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full border-2 border-red-200 hover:bg-red-50 hover:border-red-300"
+            className={`rounded-full border-2 border-red-200 hover:bg-red-50 hover:border-red-300 transition-all ${
+              isOnboarding && onboardingStep === 2 
+                ? 'animate-pulse ring-4 ring-destructive/30 ring-offset-2 ring-offset-background' 
+                : ''
+            }`}
             onClick={handleDislikeClick}
           >
             <X className="h-5 w-5 text-red-500" />
@@ -243,7 +251,11 @@ export const SwipeCard = memo(({
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full border-2 border-green-200 hover:bg-green-50 hover:border-green-300"
+            className={`rounded-full border-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all ${
+              isOnboarding && onboardingStep === 1 
+                ? 'animate-pulse ring-4 ring-green-300 ring-offset-2 ring-offset-background' 
+                : ''
+            }`}
             onClick={handleLikeClick}
           >
             <Heart className="h-5 w-5 text-green-500" />

@@ -194,7 +194,14 @@ export const SwipeCards = React.memo(() => {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEndWithParams}
+                isOnboarding={showCoreOnboarding && currentIndex < 2}
+                onboardingStep={(currentIndex + 1) as 1 | 2}
               />
+              
+              {/* Onboarding Overlay - 浮動提示在卡片下方 */}
+              {showCoreOnboarding && currentIndex < 2 && (
+                <OnboardingOverlay step={(currentIndex + 1) as 1 | 2} />
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -232,14 +239,6 @@ export const SwipeCards = React.memo(() => {
         )}
 
       </div>
-
-      {/* Onboarding Overlay - Show hints for first two cards */}
-      {showCoreOnboarding && currentIndex === 0 && currentRestaurant && (
-        <OnboardingOverlay step={1} />
-      )}
-      {showCoreOnboarding && currentIndex === 1 && currentRestaurant && (
-        <OnboardingOverlay step={2} />
-      )}
 
       {/* Premium Teaser - After onboarding completion */}
       <PremiumTeaser
