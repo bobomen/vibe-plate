@@ -71,10 +71,25 @@ export const SwipeCards = React.memo(() => {
     return initialValue;
   });
 
+  // CRITICAL: Track if user has started onboarding flow in this session
+  // This prevents re-triggering onboarding when resetting swipes or going back
+  // Once onboarding starts, it should not restart in the same session
+  const [hasStartedOnboarding, setHasStartedOnboarding] = useState(false);
+
   // 當卡片切換時重置顯示時間
   useEffect(() => {
     setCardDisplayTime(Date.now());
   }, [currentIndex]);
+
+  // CRITICAL: Mark onboarding as started when it first appears
+  // This ensures onboarding won't re-trigger in the same session
+  // even if user resets swipes or goes back to previous cards
+  useEffect(() => {
+    if (showCoreOnboarding && !hasSeenOnboardingSession && currentIndex < 2 && !hasStartedOnboarding) {
+      console.log('[Onboarding] Tutorial started for the first time in this session');
+      setHasStartedOnboarding(true);
+    }
+  }, [currentIndex, showCoreOnboarding, hasSeenOnboardingSession, hasStartedOnboarding]);
 
   // Personal swipe logic hook  
   const {
@@ -92,6 +107,18 @@ export const SwipeCards = React.memo(() => {
 
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();
+
+  // Calculate if onboarding should be shown
+  // Only show if ALL conditions are met:
+  // 1. Core onboarding not completed (localStorage)
+  // 2. Not seen in this session
+  // 3. Not started in this session (prevents re-trigger on reset/back)
+  // 4. Currently on first two cards
+  const shouldShowOnboarding = 
+    showCoreOnboarding && 
+    !hasSeenOnboardingSession && 
+    !hasStartedOnboarding && 
+    currentIndex < 2;
 
   // Handle card interactions
   const handleCardSwipe = useCallback(async (liked: boolean) => {
@@ -112,16 +139,14 @@ export const SwipeCards = React.memo(() => {
 
       // Onboarding tracking (non-blocking)
       // CRITICAL: Only complete onboarding during active onboarding flow
-      // hasSeenOnboardingSession prevents re-triggering after reset
+      // Check hasStartedOnboarding to ensure we're in an active tutorial session
       try {
-        if (showCoreOnboarding && !hasSeenOnboardingSession && currentIndex <= 1) {
+        if (showCoreOnboarding && hasStartedOnboarding && !hasSeenOnboardingSession && currentIndex === 1) {
           // After swiping second card (index 1), complete onboarding permanently
-          if (currentIndex === 1) {
-            console.log('[Onboarding] Completing core onboarding after second swipe');
-            completeCoreOnboarding();
-            setHasSeenOnboardingSession(true);
-            setShowPremiumTeaser(true);
-          }
+          console.log('[Onboarding] Completing core onboarding after second swipe');
+          completeCoreOnboarding();
+          setHasSeenOnboardingSession(true);
+          setShowPremiumTeaser(true);
         }
       } catch (onboardingError) {
         console.error('[Onboarding] Error:', onboardingError);
@@ -212,12 +237,12 @@ export const SwipeCards = React.memo(() => {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEndWithParams}
-                isOnboarding={showCoreOnboarding && currentIndex < 2}
+                isOnboarding={shouldShowOnboarding}
                 onboardingStep={(currentIndex + 1) as 1 | 2}
               />
               
-              {/* Onboarding Overlay - only show if not seen in this session */}
-              {showCoreOnboarding && !hasSeenOnboardingSession && currentIndex < 2 && (
+              {/* Onboarding Overlay - only show during active tutorial */}
+              {shouldShowOnboarding && (
                 <OnboardingOverlay 
                   step={(currentIndex + 1) as 1 | 2}
                 />
