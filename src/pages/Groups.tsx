@@ -50,15 +50,15 @@ const Groups = () => {
     fetchGroups();
   }, [user]);
 
-  // ✅ 首次訪問且無群組時顯示教學訊息
+  // ✅ 首次訪問時顯示教學訊息（不限制是否有群組）
   useEffect(() => {
-    if (!loading && showGroupTip && groups.length === 0) {
+    if (!loading && showGroupTip) {
       const timer = setTimeout(() => {
         setShowTip(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [loading, showGroupTip, groups.length]);
+  }, [loading, showGroupTip]);
 
   const fetchGroups = async () => {
     if (!user?.id) {
