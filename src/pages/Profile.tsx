@@ -324,6 +324,18 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {showProfileTooltip && (
+        <ContextualTip
+          message="在這裡設定您的位置和偏好，獲得更精準的餐廳推薦 🎯"
+          direction="down"
+          duration={3000}
+          onClose={() => {
+            markProfileTipSeen();
+            setShowProfileTooltip(false);
+          }}
+        />
+      )}
+      
       <div className="p-4">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">個人資料</h1>
