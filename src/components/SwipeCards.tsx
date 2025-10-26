@@ -18,11 +18,17 @@ import { SwipeCard } from './SwipeCard';
 import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { ContextualTip } from './Onboarding/ContextualTip';
 
 export const SwipeCards = React.memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { showCoreOnboarding, completeCoreOnboarding } = useOnboarding();
+  
+  // ✅ 教學訊息控制
+  const [showTip, setShowTip] = useState(false);
   
   // Use unified swipe state (personal mode - no groupId)
   const {
@@ -53,6 +59,16 @@ export const SwipeCards = React.memo(() => {
   useEffect(() => {
     setCardDisplayTime(Date.now());
   }, [currentIndex]);
+
+  // ✅ 首次訪問時顯示教學訊息
+  useEffect(() => {
+    if (!loading && showCoreOnboarding) {
+      const timer = setTimeout(() => {
+        setShowTip(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showCoreOnboarding]);
 
   // Personal swipe logic hook  
   const {
@@ -142,6 +158,19 @@ export const SwipeCards = React.memo(() => {
 
   return (
     <div className="space-y-4">
+      {/* ✅ 教學訊息 */}
+      {showTip && (
+        <ContextualTip
+          message="向右滑表示喜歡，向左滑跳過。點擊卡片查看詳情 ✨"
+          direction="down"
+          duration={5000}
+          onClose={() => {
+            completeCoreOnboarding();
+            setShowTip(false);
+          }}
+        />
+      )}
+
       <div className="space-y-4">
         {/* Filter */}
         <SearchAndFilter

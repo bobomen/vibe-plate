@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 
 interface Group {
   id: string;
@@ -32,6 +34,7 @@ const Groups = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { showGroupTip, markGroupTipSeen } = useOnboarding();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -39,10 +42,23 @@ const Groups = () => {
   const [groupName, setGroupName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [selectedRegions, setSelectedRegions] = useState<Array<{city: string, district: string}>>([]);
+  
+  // ✅ 教學訊息控制
+  const [showTip, setShowTip] = useState(false);
 
   useEffect(() => {
     fetchGroups();
   }, [user]);
+
+  // ✅ 首次訪問且無群組時顯示教學訊息
+  useEffect(() => {
+    if (!loading && showGroupTip && groups.length === 0) {
+      const timer = setTimeout(() => {
+        setShowTip(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showGroupTip, groups.length]);
 
   const fetchGroups = async () => {
     if (!user?.id) {
@@ -281,6 +297,19 @@ const Groups = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* ✅ 教學訊息 */}
+      {showTip && (
+        <ContextualTip
+          message="建立群組和朋友一起滑卡，系統會自動找出大家都喜歡的餐廳 🎉"
+          direction="down"
+          duration={5000}
+          onClose={() => {
+            markGroupTipSeen();
+            setShowTip(false);
+          }}
+        />
+      )}
+      
       <div className="p-4">
         <div className="flex items-center justify-between mb-6">
           <div>

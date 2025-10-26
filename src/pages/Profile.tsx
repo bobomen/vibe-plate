@@ -16,6 +16,7 @@ import { PreferenceSettings } from '@/components/PreferenceSettings';
 import PremiumModal from '@/components/PremiumModal';
 import { SubscriptionManagement } from '@/components/SubscriptionManagement';
 import { usePremium } from '@/hooks/usePremium';
+import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 
 interface Profile {
   display_name: string;
@@ -40,7 +41,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isPremium, showFirstTimeModal, markModalAsSeen, upgradeToPremium, loading: premiumLoading } = usePremium();
-  const { resetOnboarding } = useOnboarding();
+  const { showProfileTip, markProfileTipSeen, resetOnboarding } = useOnboarding();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [profile, setProfile] = useState<Profile>({ 
     display_name: '',
@@ -59,12 +60,25 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState('');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  
+  // ✅ 教學訊息控制
+  const [showTip, setShowTip] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchProfile();
     }
   }, [user]);
+
+  // ✅ 首次訪問時顯示教學訊息
+  useEffect(() => {
+    if (!loading && showProfileTip) {
+      const timer = setTimeout(() => {
+        setShowTip(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showProfileTip]);
 
   const fetchProfile = async () => {
     try {
@@ -308,6 +322,19 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* ✅ 教學訊息 */}
+      {showTip && (
+        <ContextualTip
+          message="設定您的位置和偏好，獲得更精準的餐廳推薦 🎯"
+          direction="down"
+          duration={5000}
+          onClose={() => {
+            markProfileTipSeen();
+            setShowTip(false);
+          }}
+        />
+      )}
+      
       <div className="p-4">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">個人資料</h1>
