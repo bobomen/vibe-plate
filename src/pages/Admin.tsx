@@ -63,7 +63,7 @@ export default function Admin() {
             description: '您沒有管理員權限',
             variant: 'destructive',
           });
-          navigate('/');
+          navigate('/app/');
           return;
         }
 
@@ -72,7 +72,7 @@ export default function Admin() {
         await loadRestaurants();
       } catch (error) {
         console.error('Error checking admin status:', error);
-        navigate('/');
+        navigate('/app/');
       } finally {
         setLoading(false);
       }
@@ -266,7 +266,7 @@ export default function Admin() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">餐廳管理後台</h1>
-        <Button onClick={() => navigate('/')}>返回首頁</Button>
+        <Button onClick={() => navigate('/app/')}>返回首頁</Button>
       </div>
 
       {/* Statistics */}

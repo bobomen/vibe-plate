@@ -121,7 +121,7 @@ export const SwipeCards = React.memo(() => {
         }
       });
       
-      navigate(`/restaurant/${currentRestaurant.id}`);
+      navigate(`/app/restaurant/${currentRestaurant.id}`);
     }
   }, [navigate, currentRestaurant, trackRestaurantView, filters, userLocation]);
 
