@@ -199,8 +199,11 @@ export const useSwipeLogic = ({ mode, groupId, onSwipeComplete }: UseSwipeLogicO
   }, []);
 
   const handleMouseUp = useCallback((restaurant: Restaurant, onNext: () => void) => {
-    if (isDragging && Math.abs(dragOffset.x) > 100) {
-      const liked = dragOffset.x > 0;
+    const currentDragOffset = dragOffset;
+    const currentIsDragging = isDragging;
+    
+    if (currentIsDragging && Math.abs(currentDragOffset.x) > 100) {
+      const liked = currentDragOffset.x > 0;
       handleSwipe(restaurant, liked, onNext);
     }
     
@@ -231,8 +234,11 @@ export const useSwipeLogic = ({ mode, groupId, onSwipeComplete }: UseSwipeLogicO
   }, []);
 
   const handleTouchEnd = useCallback((restaurant: Restaurant, onNext: () => void) => {
-    if (isDragging && Math.abs(dragOffset.x) > 100) {
-      const liked = dragOffset.x > 0;
+    const currentDragOffset = dragOffset;
+    const currentIsDragging = isDragging;
+    
+    if (currentIsDragging && Math.abs(currentDragOffset.x) > 100) {
+      const liked = currentDragOffset.x > 0;
       handleSwipe(restaurant, liked, onNext);
     }
     

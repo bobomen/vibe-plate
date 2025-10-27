@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
-import { usePersonalSwipeLogic } from '@/hooks/usePersonalSwipeLogic';
+import { useSwipeLogic } from '@/hooks/useSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -70,7 +70,7 @@ export const SwipeCards = React.memo(() => {
     }
   }, [loading, showCoreOnboarding]);
 
-  // Personal swipe logic hook  
+  // Personal swipe logic hook (unified)
   const {
     swipeDirection,
     isDragging,
@@ -82,7 +82,7 @@ export const SwipeCards = React.memo(() => {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd
-  } = usePersonalSwipeLogic();
+  } = useSwipeLogic({ mode: 'personal' });
 
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();

@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import SearchAndFilter from './SearchAndFilter';
 import { SwipeCard } from './SwipeCard';
-import { useGroupSwipeLogic } from '@/hooks/useGroupSwipeLogic';
+import { useSwipeLogic } from '@/hooks/useSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
 
@@ -69,7 +69,7 @@ export const GroupSwipeCards = React.memo(() => {
     setCardDisplayTime(Date.now());
   }, [currentIndex]);
 
-  // Group swipe logic hook
+  // Group swipe logic hook (unified)
   const {
     swipeDirection,
     isDragging,
@@ -81,7 +81,7 @@ export const GroupSwipeCards = React.memo(() => {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd
-  } = useGroupSwipeLogic(groupId || '');
+  } = useSwipeLogic({ mode: 'group', groupId: groupId || '' });
 
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();
