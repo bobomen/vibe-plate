@@ -69,15 +69,7 @@ export const useGroupSwipeLogic = (groupId: string) => {
       );
     }
     
-    console.log('[GroupSwipe] Recording group swipe:', {
-      userId: user.id,
-      restaurantId: restaurant.id,
-      restaurantName: restaurant.name,
-      liked,
-      groupId,
-      swipeDistance: distance,
-      swipeDuration: context?.swipeDuration
-    });
+    // Group swipe tracking for analytics (removed verbose logging)
     
     setSwipeDirection(liked ? 'right' : 'left');
     
@@ -93,7 +85,6 @@ export const useGroupSwipeLogic = (groupId: string) => {
       if (membershipError || !membership) {
         throw new Error('您不是此群組的成員，無法投票');
       }
-      console.log('[GroupSwipe] Group membership validated');
 
       // Record the group swipe with context data
       const swipeData = {
@@ -126,8 +117,6 @@ export const useGroupSwipeLogic = (groupId: string) => {
         swipe_duration_ms: context?.swipeDuration || null
       };
       
-      console.log('[GroupSwipe] Inserting group swipe data:', swipeData);
-      
       // Try insert first, if conflict then update
       const { data: insertData, error: insertError } = await supabase
         .from('user_swipes')
@@ -137,8 +126,6 @@ export const useGroupSwipeLogic = (groupId: string) => {
       if (insertError) {
         // If it's a duplicate error, try update instead
         if (insertError.code === '23505') {
-          console.log('[GroupSwipe] Duplicate found, updating existing record');
-          
           const { data: updateData, error: updateError } = await supabase
             .from('user_swipes')
             .update({ liked })
@@ -148,12 +135,9 @@ export const useGroupSwipeLogic = (groupId: string) => {
             .select();
             
           if (updateError) throw updateError;
-          console.log('[GroupSwipe] Group swipe updated successfully:', updateData);
         } else {
           throw insertError;
         }
-      } else {
-        console.log('[GroupSwipe] Group swipe recorded successfully:', insertData);
       }
 
       // Show appropriate toast for group swipe

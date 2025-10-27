@@ -49,49 +49,42 @@ export const useOnboarding = () => {
 
   // ✅ 滑卡頁面核心教學
   const completeCoreOnboarding = useCallback(() => {
-    console.log('[Onboarding] Core onboarding completed');
     localStorage.setItem(CORE_STORAGE_KEY, 'true');
     setCoreCompleted(true);
   }, []);
 
   // ✅ 篩選提示
   const markFilterTipSeen = useCallback(() => {
-    console.log('[Onboarding] Filter tip marked as seen');
     localStorage.setItem(FILTER_TIP_KEY, 'true');
     setFilterTipShown(true);
   }, []);
 
   // ✅ 個人資料提示
   const markProfileTipSeen = useCallback(() => {
-    console.log('[Onboarding] Profile tip marked as seen');
     localStorage.setItem(PROFILE_TIP_KEY, 'true');
     setProfileTipShown(true);
   }, []);
 
   // ✅ 群組提示
   const markGroupTipSeen = useCallback(() => {
-    console.log('[Onboarding] Group tip marked as seen');
     localStorage.setItem(GROUP_TIP_KEY, 'true');
     setGroupTipShown(true);
   }, []);
 
   // ✅ 收藏提示
   const markFavoriteTipSeen = useCallback(() => {
-    console.log('[Onboarding] Favorite tip marked as seen');
     localStorage.setItem(FAVORITE_TIP_KEY, 'true');
     setFavoriteTipShown(true);
   }, []);
 
   // ✅ 分類提示
   const markCategoryTipSeen = useCallback(() => {
-    console.log('[Onboarding] Category tip marked as seen');
     localStorage.setItem(CATEGORY_TIP_KEY, 'true');
     setCategoryTipShown(true);
   }, []);
 
   // ✅ 重置所有教學狀態
   const resetOnboarding = useCallback(() => {
-    console.log('[Onboarding] Resetting all onboarding states');
     localStorage.removeItem(CORE_STORAGE_KEY);
     localStorage.removeItem(FILTER_TIP_KEY);
     localStorage.removeItem(PROFILE_TIP_KEY);

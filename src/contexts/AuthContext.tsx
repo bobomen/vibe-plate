@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -66,11 +65,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Sign up error:', error);
-      } else {
-        console.log('Sign up successful, confirmation email sent to:', email);
+        return { error };
       }
       
-      return { error };
+      return { error: null };
     } catch (error) {
       console.error('Sign up processing error:', error);
       return { error };
@@ -96,11 +94,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } 
           };
         }
-      } else {
-        console.log('Sign in successful for:', email);
+        return { error };
       }
       
-      return { error };
+      return { error: null };
     } catch (error) {
       console.error('Sign in processing error:', error);
       return { error };
@@ -112,8 +109,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
-      } else {
-        console.log('Sign out successful');
       }
     } catch (error) {
       console.error('Sign out processing error:', error);
@@ -130,8 +125,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Reset password error:', error);
-      } else {
-        console.log('Reset password email sent to:', email);
       }
       
       return { error };
@@ -150,16 +143,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) {
         console.error('Update password error:', error);
         return { error };
-      } else {
-        console.log('Password updated successfully');
-        
-        // After successful password update, sign out the user
-        setTimeout(async () => {
-          await signOut();
-        }, 200);
-        
-        return { error: null };
       }
+      
+      // After successful password update, sign out the user
+      setTimeout(async () => {
+        await signOut();
+      }, 200);
+      
+      return { error: null };
     } catch (error) {
       console.error('Update password processing error:', error);
       return { error };

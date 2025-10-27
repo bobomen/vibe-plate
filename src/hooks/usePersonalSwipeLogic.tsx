@@ -59,20 +59,7 @@ export const usePersonalSwipeLogic = () => {
       );
     }
     
-    console.log('[PersonalSwipe] Recording personal swipe:', {
-      userId: user.id,
-      restaurantId: restaurant.id,
-      restaurantName: restaurant.name,
-      liked,
-      swipeDistance: distance,
-      swipeDuration: context?.swipeDuration,
-      hasFilters: context?.filters ? (
-        context.filters.cuisineTypes.length > 0 || 
-        context.filters.priceRange[0] > 0 || 
-        context.filters.priceRange[1] < 10 ||
-        context.filters.distanceRange < 999
-      ) : false
-    });
+    // Swipe tracking for analytics (removed verbose logging)
     
     setSwipeDirection(liked ? 'right' : 'left');
     
@@ -108,8 +95,6 @@ export const usePersonalSwipeLogic = () => {
         swipe_duration_ms: context?.swipeDuration || null
       };
       
-      console.log('[PersonalSwipe] Inserting personal swipe data:', swipeData);
-      
       // Try insert first, if conflict then update
       const { data: insertData, error: insertError } = await supabase
         .from('user_swipes')
@@ -119,8 +104,6 @@ export const usePersonalSwipeLogic = () => {
       if (insertError) {
         // If it's a duplicate error, try update instead
         if (insertError.code === '23505') {
-          console.log('[PersonalSwipe] Duplicate found, updating existing record');
-          
           const { data: updateData, error: updateError } = await supabase
             .from('user_swipes')
             .update({ liked })
@@ -130,12 +113,9 @@ export const usePersonalSwipeLogic = () => {
             .select();
             
           if (updateError) throw updateError;
-          console.log('[PersonalSwipe] Personal swipe updated successfully:', updateData);
         } else {
           throw insertError;
         }
-      } else {
-        console.log('[PersonalSwipe] Personal swipe recorded successfully:', insertData);
       }
 
       // Add to favorites if liked (personal swipes always add to favorites)
