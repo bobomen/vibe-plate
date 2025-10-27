@@ -30,9 +30,24 @@ interface UseSwipeLogicOptions {
   mode: 'personal' | 'group';
   groupId?: string;
   onSwipeComplete?: (liked: boolean) => void;
+  
+  // 🎯 AI 優化：追蹤演算法效果
+  currentRestaurant?: {
+    id: string;
+    [key: string]: any;
+  };
+  scoreRestaurant?: (restaurant: any) => number;
+  cardPosition?: number; // 第幾張卡
 }
 
-export const useSwipeLogic = ({ mode, groupId, onSwipeComplete }: UseSwipeLogicOptions) => {
+export const useSwipeLogic = ({ 
+  mode, 
+  groupId, 
+  onSwipeComplete,
+  currentRestaurant,
+  scoreRestaurant,
+  cardPosition = 0
+}: UseSwipeLogicOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -99,6 +114,28 @@ export const useSwipeLogic = ({ mode, groupId, onSwipeComplete }: UseSwipeLogicO
         if (membershipError || !membership) {
           throw new Error('您不是此群組的成員，無法投票');
         }
+      }
+
+      // 🎯 AI 優化：追蹤演算法評分（僅個人模式）
+      if (mode === 'personal' && currentRestaurant && scoreRestaurant) {
+        const algorithmScore = scoreRestaurant(currentRestaurant);
+        
+        // 非同步追蹤，不阻塞滑卡流程
+        supabase
+          .from('algorithm_scores')
+          .insert({
+            user_id: user.id,
+            restaurant_id: currentRestaurant.id,
+            group_id: null,
+            algorithm_score: algorithmScore,
+            user_action: liked ? 'like' : 'dislike',
+            card_position: cardPosition
+          })
+          .then(({ error }) => {
+            if (error) {
+              console.error('Failed to track algorithm score:', error);
+            }
+          });
       }
 
       // 構建數據負載

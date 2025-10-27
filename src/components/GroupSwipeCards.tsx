@@ -81,7 +81,12 @@ export const GroupSwipeCards = React.memo(() => {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd
-  } = useSwipeLogic({ mode: 'group', groupId: groupId || '' });
+  } = useSwipeLogic({ 
+    mode: 'group', 
+    groupId: groupId || '',
+    currentRestaurant, // 🎯 傳遞當前餐廳（群組模式不追蹤分數）
+    cardPosition: currentIndex, // 🎯 傳遞卡片位置
+  });
 
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();

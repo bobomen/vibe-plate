@@ -14,6 +14,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      algorithm_scores: {
+        Row: {
+          algorithm_score: number
+          card_position: number
+          created_at: string
+          group_id: string | null
+          id: string
+          restaurant_id: string
+          user_action: string | null
+          user_id: string
+        }
+        Insert: {
+          algorithm_score: number
+          card_position: number
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          restaurant_id: string
+          user_action?: string | null
+          user_id: string
+        }
+        Update: {
+          algorithm_score?: number
+          card_position?: number
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          restaurant_id?: string
+          user_action?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "algorithm_scores_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "algorithm_scores_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "algorithm_scores_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorite_categories: {
         Row: {
           color: string | null
@@ -103,6 +158,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "favorites_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "favorites_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -341,6 +403,76 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_views: {
+        Row: {
+          created_at: string | null
+          did_favorite: boolean | null
+          did_share: boolean | null
+          distance_km: number | null
+          filter_context: Json | null
+          group_id: string | null
+          id: string
+          restaurant_id: string
+          user_id: string
+          user_lat: number | null
+          user_lng: number | null
+          view_duration_ms: number | null
+          view_source: string
+        }
+        Insert: {
+          created_at?: string | null
+          did_favorite?: boolean | null
+          did_share?: boolean | null
+          distance_km?: number | null
+          filter_context?: Json | null
+          group_id?: string | null
+          id?: string
+          restaurant_id: string
+          user_id: string
+          user_lat?: number | null
+          user_lng?: number | null
+          view_duration_ms?: number | null
+          view_source: string
+        }
+        Update: {
+          created_at?: string | null
+          did_favorite?: boolean | null
+          did_share?: boolean | null
+          distance_km?: number | null
+          filter_context?: Json | null
+          group_id?: string | null
+          id?: string
+          restaurant_id?: string
+          user_id?: string
+          user_lat?: number | null
+          user_lng?: number | null
+          view_duration_ms?: number | null
+          view_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_views_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_views_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_views_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           address: string | null
@@ -353,17 +485,23 @@ export type Database = {
           cuisine_type: string | null
           dietary_options: Json | null
           district: string | null
+          google_maps_url: string | null
           google_rating: number | null
           google_reviews_count: number | null
           has_500_dishes: boolean | null
           id: string
           klook_url: string | null
+          last_viewed_at: string | null
           lat: number
           lng: number
+          menu_url: string | null
           michelin_stars: number | null
           name: string
+          phone: string | null
           photos: string[] | null
           price_range: number | null
+          view_count: number | null
+          website: string | null
         }
         Insert: {
           address?: string | null
@@ -376,17 +514,23 @@ export type Database = {
           cuisine_type?: string | null
           dietary_options?: Json | null
           district?: string | null
+          google_maps_url?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
           id?: string
           klook_url?: string | null
+          last_viewed_at?: string | null
           lat: number
           lng: number
+          menu_url?: string | null
           michelin_stars?: number | null
           name: string
+          phone?: string | null
           photos?: string[] | null
           price_range?: number | null
+          view_count?: number | null
+          website?: string | null
         }
         Update: {
           address?: string | null
@@ -399,17 +543,23 @@ export type Database = {
           cuisine_type?: string | null
           dietary_options?: Json | null
           district?: string | null
+          google_maps_url?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
           id?: string
           klook_url?: string | null
+          last_viewed_at?: string | null
           lat?: number
           lng?: number
+          menu_url?: string | null
           michelin_stars?: number | null
           name?: string
+          phone?: string | null
           photos?: string[] | null
           price_range?: number | null
+          view_count?: number | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -525,6 +675,13 @@ export type Database = {
             foreignKeyName: "user_swipes_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_swipes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
@@ -532,17 +689,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      popular_restaurants_7d: {
+        Row: {
+          cuisine_type: string | null
+          district: string | null
+          favorite_rate: number | null
+          id: string | null
+          last_viewed_at: string | null
+          name: string | null
+          price_range: number | null
+          total_views: number | null
+          unique_viewers: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       create_default_categories: {
         Args: { target_user_id: string }
         Returns: undefined
       }
-      generate_group_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_group_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -550,10 +717,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      update_nag_seen: {
-        Args: { user_uuid: string }
+      increment_restaurant_view_count: {
+        Args: { target_restaurant_id: string }
         Returns: undefined
       }
+      update_nag_seen: { Args: { user_uuid: string }; Returns: undefined }
       user_is_in_group: {
         Args: { target_group_id: string; target_user_id: string }
         Returns: boolean

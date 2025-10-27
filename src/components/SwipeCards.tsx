@@ -48,6 +48,8 @@ export const SwipeCards = React.memo(() => {
     applyFilters,
     addToSwipeHistory,
     goBackToPrevious,
+    scoreRestaurant, // 🎯 AI 優化：獲取評分函數
+    hasEnoughDataForAI, // 🎯 AI 優化：是否有足夠數據
   } = useSwipeState({ 
     groupId: undefined, // INVARIANT: Personal swipes have no groupId
   });
@@ -82,7 +84,12 @@ export const SwipeCards = React.memo(() => {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd
-  } = useSwipeLogic({ mode: 'personal' });
+  } = useSwipeLogic({ 
+    mode: 'personal',
+    currentRestaurant, // 🎯 傳遞當前餐廳
+    scoreRestaurant,   // 🎯 傳遞評分函數
+    cardPosition: currentIndex, // 🎯 傳遞卡片位置
+  });
 
   // Restaurant view tracking hook
   const { trackRestaurantView } = useRestaurantView();

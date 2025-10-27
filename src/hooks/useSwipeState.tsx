@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FilterOptions } from '@/components/SearchAndFilter';
 import { Restaurant } from '@/types/restaurant';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 /**
  * INVARIANTS - 關鍵不變式 (永遠要成立的事)：
@@ -22,6 +23,9 @@ interface UseSwipeStateOptions {
 export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = false }: UseSwipeStateOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // 🎯 AI 優化：整合用戶偏好分析
+  const { preferences, scoreRestaurant } = useUserPreferences();
   
   // Core state
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -410,6 +414,37 @@ export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = fa
       }
     }
 
+    // 🎯 智能排序：根據用戶偏好排序（僅個人模式 + 有足夠數據時）
+    // 群組模式保持隨機，避免影響群組共識
+    if (!groupId && preferences && preferences.totalSwipes >= 10) {
+      // 給每個餐廳評分
+      const scored = filtered.map(restaurant => ({
+        restaurant,
+        score: scoreRestaurant(restaurant)
+      }));
+
+      // 排序：高分在前
+      scored.sort((a, b) => b.score - a.score);
+
+      // 🎲 保留隨機性：前 20% 打散，避免太可預測
+      const topPercentage = Math.ceil(scored.length * 0.2);
+      const topRestaurants = scored.slice(0, topPercentage);
+      const restRestaurants = scored.slice(topPercentage);
+
+      // Fisher-Yates 洗牌演算法
+      const shuffleArray = <T,>(array: T[]): T[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
+      const shuffledTop = shuffleArray(topRestaurants);
+      filtered = [...shuffledTop, ...restRestaurants].map(item => item.restaurant);
+    }
+
     setRestaurants(filtered);
     setCurrentIndex(0);
   }, [allRestaurants, userSwipes, filters, userLocation, calculateDistance, profilePreferences, groupId, showCoreOnboarding]);
@@ -675,10 +710,12 @@ export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = fa
     // Helpers
     calculateDistance,
     withRetry,
+    scoreRestaurant, // 🎯 導出評分函數，供 useSwipeLogic 使用
     
     // Computed
     isPersonalMode: !groupId,
     isGroupMode: !!groupId,
     canGoBack,
+    hasEnoughDataForAI: preferences ? preferences.totalSwipes >= 10 : false, // 🎯 標記是否啟用 AI
   };
 };
