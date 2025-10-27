@@ -138,7 +138,7 @@ export default function RestaurantDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8">
         <h2 className="text-2xl font-bold mb-4">找不到餐廳</h2>
-        <Button onClick={() => navigate('/app')}>返回主頁</Button>
+        <Button onClick={() => navigate(-1)}>返回上頁</Button>
       </div>
     );
   }
@@ -154,7 +154,7 @@ export default function RestaurantDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/app')}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
