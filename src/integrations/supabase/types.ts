@@ -629,6 +629,7 @@ export type Database = {
           filter_context: Json | null
           group_id: string | null
           id: string
+          interaction_metadata: Json | null
           liked: boolean
           restaurant_id: string
           swipe_distance_km: number | null
@@ -642,6 +643,7 @@ export type Database = {
           filter_context?: Json | null
           group_id?: string | null
           id?: string
+          interaction_metadata?: Json | null
           liked: boolean
           restaurant_id: string
           swipe_distance_km?: number | null
@@ -655,6 +657,7 @@ export type Database = {
           filter_context?: Json | null
           group_id?: string | null
           id?: string
+          interaction_metadata?: Json | null
           liked?: boolean
           restaurant_id?: string
           swipe_distance_km?: number | null
@@ -705,6 +708,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_old_interaction_data: { Args: never; Returns: undefined }
       create_default_categories: {
         Args: { target_user_id: string }
         Returns: undefined

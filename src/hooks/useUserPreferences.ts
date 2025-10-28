@@ -16,6 +16,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ALGORITHM_WEIGHTS, calculateEngagementScore } from '@/config/algorithmConfig';
 
 export interface UserPreferenceData {
   // 基本統計
@@ -78,6 +79,7 @@ export const useUserPreferences = () => {
           created_at,
           swipe_duration_ms,
           filter_context,
+          interaction_metadata,
           restaurants (
             id,
             name,
@@ -240,44 +242,54 @@ export const useUserPreferences = () => {
     michelin_stars?: number;
     has_500_dishes?: boolean;
     bib_gourmand?: boolean;
+    interaction_metadata?: any;
   }): number => {
     if (!preferences) return 0;
 
     let score = 0;
+    const weights = ALGORITHM_WEIGHTS;
 
-    // 菜系匹配 (40%)
+    // 菜系匹配 (使用配置的權重)
     const cuisineMatch = preferences.favoriteCuisines.find(
       c => c.cuisineType === restaurant.cuisine_type
     );
     if (cuisineMatch) {
-      score += 40 * cuisineMatch.likeRate;
+      score += weights.cuisine_match * cuisineMatch.likeRate;
     }
 
-    // 價格匹配 (20%)
+    // 價格匹配
     if (restaurant.price_range) {
       const [minPrice, maxPrice] = preferences.preferredPriceRange;
       if (restaurant.price_range >= minPrice && restaurant.price_range <= maxPrice) {
-        score += 20;
+        score += weights.price_match;
       }
     }
 
-    // 地區匹配 (15%)
+    // 地區匹配
     const districtMatch = preferences.preferredDistricts.find(
       d => d.district === restaurant.district
     );
     if (districtMatch) {
-      score += 15 * (districtMatch.count / preferences.totalLikes);
+      score += weights.district_preference * (districtMatch.count / preferences.totalLikes);
     }
 
-    // 評分匹配 (15%)
+    // 評分匹配
     if (restaurant.google_rating && restaurant.google_rating >= preferences.minPreferredRating) {
-      score += 15;
+      score += weights.rating_preference;
     }
 
-    // 特殊偏好 (10%)
-    if (restaurant.michelin_stars && preferences.prefersMichelin) score += 3.3;
-    if (restaurant.has_500_dishes && preferences.prefers500Dishes) score += 3.3;
-    if (restaurant.bib_gourmand && preferences.prefersBibGourmand) score += 3.3;
+    // Phase 1: 互動深度評分
+    if (restaurant.interaction_metadata) {
+      const engagementScore = calculateEngagementScore(restaurant.interaction_metadata);
+      score += weights.card_engagement * engagementScore;
+    }
+
+    // 特殊偏好
+    let specialScore = 0;
+    if (restaurant.michelin_stars && preferences.prefersMichelin) specialScore += 33.3;
+    if (restaurant.has_500_dishes && preferences.prefers500Dishes) specialScore += 33.3;
+    if (restaurant.bib_gourmand && preferences.prefersBibGourmand) specialScore += 33.3;
+    score += (weights.special_features / 100) * specialScore;
 
     return Math.min(100, score);
   }, [preferences]);

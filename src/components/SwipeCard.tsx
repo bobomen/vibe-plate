@@ -37,6 +37,7 @@ interface SwipeCardProps {
   onTouchEnd: () => void;
   isOnboarding?: boolean;
   onboardingStep?: 1 | 2;
+  onPhotoView?: (photoIndex: number) => void; // Phase 1: Track photo views
 }
 
 export const SwipeCard = memo(({
@@ -54,19 +55,24 @@ export const SwipeCard = memo(({
   onTouchMove,
   onTouchEnd,
   isOnboarding,
-  onboardingStep
+  onboardingStep,
+  onPhotoView
 }: SwipeCardProps) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   
   const photos = restaurant.photos?.slice(0, 3) || ['/placeholder.svg'];
 
   const nextPhoto = useCallback(() => {
-    setCurrentPhotoIndex(prev => (prev + 1) % photos.length);
-  }, [photos.length]);
+    const newIndex = (currentPhotoIndex + 1) % photos.length;
+    setCurrentPhotoIndex(newIndex);
+    onPhotoView?.(newIndex); // Phase 1: Track photo view
+  }, [photos.length, currentPhotoIndex, onPhotoView]);
 
   const prevPhoto = useCallback(() => {
-    setCurrentPhotoIndex(prev => (prev - 1 + photos.length) % photos.length);
-  }, [photos.length]);
+    const newIndex = (currentPhotoIndex - 1 + photos.length) % photos.length;
+    setCurrentPhotoIndex(newIndex);
+    onPhotoView?.(newIndex); // Phase 1: Track photo view
+  }, [photos.length, currentPhotoIndex, onPhotoView]);
 
   const handleLikeClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();

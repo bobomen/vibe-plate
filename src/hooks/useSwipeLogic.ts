@@ -25,6 +25,7 @@ import {
   formatSwipeLog,
   SwipeContext 
 } from '@/utils/swipeHelpers';
+import { InteractionMetadata, sanitizeInteractionMetadata } from './useInteractionTracking';
 
 interface UseSwipeLogicOptions {
   mode: 'personal' | 'group';
@@ -38,6 +39,9 @@ interface UseSwipeLogicOptions {
   };
   scoreRestaurant?: (restaurant: any) => number;
   cardPosition?: number; // 第幾張卡
+  
+  // Phase 1: 互動追蹤
+  getInteractionMetadata?: () => InteractionMetadata;
 }
 
 export const useSwipeLogic = ({ 
@@ -46,7 +50,8 @@ export const useSwipeLogic = ({
   onSwipeComplete,
   currentRestaurant,
   scoreRestaurant,
-  cardPosition = 0
+  cardPosition = 0,
+  getInteractionMetadata
 }: UseSwipeLogicOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -138,6 +143,13 @@ export const useSwipeLogic = ({
           });
       }
 
+      // Phase 1: 獲取互動元數據
+      let interactionMetadata: InteractionMetadata | undefined;
+      if (getInteractionMetadata) {
+        const rawMetadata = getInteractionMetadata();
+        interactionMetadata = sanitizeInteractionMetadata(rawMetadata);
+      }
+
       // 構建數據負載
       const swipeData = buildSwipePayload(
         user!.id,
@@ -145,7 +157,8 @@ export const useSwipeLogic = ({
         liked,
         mode === 'group' ? groupId || null : null,
         distance,
-        context
+        context,
+        interactionMetadata
       );
       
       // 嘗試插入，如果衝突則更新

@@ -20,6 +20,7 @@ import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { ContextualTip } from './Onboarding/ContextualTip';
+import { useInteractionTracking } from '@/hooks/useInteractionTracking';
 
 export const SwipeCards = React.memo(() => {
   const { user } = useAuth();
@@ -54,13 +55,13 @@ export const SwipeCards = React.memo(() => {
     groupId: undefined, // INVARIANT: Personal swipes have no groupId
   });
 
-  // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
-  const [cardDisplayTime, setCardDisplayTime] = useState<number>(Date.now());
+  // Phase 1: 互動追蹤
+  const tracking = useInteractionTracking();
 
-  // 當卡片切換時重置顯示時間
+  // 當卡片切換時開始追蹤
   useEffect(() => {
-    setCardDisplayTime(Date.now());
-  }, [currentIndex]);
+    tracking.startCardView();
+  }, [currentIndex, tracking.startCardView]);
 
   // ✅ 首次訪問時顯示教學訊息
   useEffect(() => {
@@ -89,6 +90,7 @@ export const SwipeCards = React.memo(() => {
     currentRestaurant, // 🎯 傳遞當前餐廳
     scoreRestaurant,   // 🎯 傳遞評分函數
     cardPosition: currentIndex, // 🎯 傳遞卡片位置
+    getInteractionMetadata: tracking.endCardView, // Phase 1: 獲取互動數據
   });
 
   // Restaurant view tracking hook
@@ -98,8 +100,6 @@ export const SwipeCards = React.memo(() => {
   const handleCardSwipe = useCallback(async (liked: boolean) => {
     if (!currentRestaurant) return;
     
-    const swipeDuration = Date.now() - cardDisplayTime;
-    
     try {
       addToSwipeHistory(currentRestaurant, liked);
       
@@ -108,12 +108,11 @@ export const SwipeCards = React.memo(() => {
       }, {
         filters,
         userLocation,
-        swipeDuration
       });
     } catch (error) {
       console.error('Error handling swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -205,6 +204,7 @@ export const SwipeCards = React.memo(() => {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEndWithParams}
+                onPhotoView={tracking.trackPhotoView} // Phase 1: Track photo views
               />
             </div>
 

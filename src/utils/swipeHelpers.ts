@@ -9,7 +9,6 @@ import { hasActiveFilters } from './calculations';
 export interface SwipeContext {
   filters: FilterOptions;
   userLocation: { lat: number; lng: number } | null;
-  swipeDuration: number;
 }
 
 export interface SwipeDataPayload {
@@ -22,6 +21,7 @@ export interface SwipeDataPayload {
   swipe_distance_km: number | null;
   filter_context: Record<string, any>;
   swipe_duration_ms: number | null;
+  interaction_metadata: Record<string, any>;
 }
 
 /**
@@ -34,7 +34,8 @@ export const buildSwipePayload = (
   liked: boolean,
   groupId: string | null,
   distance: number | null,
-  context?: SwipeContext
+  context?: SwipeContext,
+  interactionMetadata?: Record<string, any>
 ): SwipeDataPayload => {
   return {
     user_id: userId,
@@ -61,7 +62,8 @@ export const buildSwipePayload = (
       }),
       searchTerm: context.filters.searchTerm
     } : {},
-    swipe_duration_ms: context?.swipeDuration || null
+    swipe_duration_ms: interactionMetadata?.card_view_duration_ms || null,
+    interaction_metadata: interactionMetadata || {}
   };
 };
 
@@ -102,7 +104,6 @@ export const formatSwipeLog = (
     liked,
     groupId: groupId || 'personal',
     swipeDistance: distance,
-    swipeDuration: context?.swipeDuration,
     hasFilters: context?.filters ? hasActiveFilters({
       cuisineTypes: context.filters.cuisineTypes,
       priceRange: context.filters.priceRange as [number, number],
