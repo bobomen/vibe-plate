@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, Upload, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AnalyticsDashboard } from '@/components/Analytics/AnalyticsDashboard';
 
 interface ClassificationStats {
   total: number;
@@ -265,9 +267,21 @@ export default function Admin() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">餐廳管理後台</h1>
+        <h1 className="text-3xl font-bold">管理後台</h1>
         <Button onClick={() => navigate('/app/')}>返回首頁</Button>
       </div>
+
+      <Tabs defaultValue="analytics" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="analytics">產品分析</TabsTrigger>
+          <TabsTrigger value="restaurants">餐廳管理</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="analytics" className="mt-6">
+          <AnalyticsDashboard />
+        </TabsContent>
+
+        <TabsContent value="restaurants" className="space-y-6 mt-6">
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -416,6 +430,8 @@ export default function Admin() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

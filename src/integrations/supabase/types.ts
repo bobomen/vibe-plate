@@ -174,6 +174,50 @@ export type Database = {
           },
         ]
       }
+      group_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          group_id: string
+          id: string
+          invite_code: string
+          invite_link: string | null
+          invited_user_id: string | null
+          inviter_id: string
+          status: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          group_id: string
+          id?: string
+          invite_code: string
+          invite_link?: string | null
+          invited_user_id?: string | null
+          inviter_id: string
+          status?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          group_id?: string
+          id?: string
+          invite_code?: string
+          invite_link?: string | null
+          invited_user_id?: string | null
+          inviter_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invites_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string
@@ -230,6 +274,42 @@ export type Database = {
           id?: string
           name?: string | null
           target_regions?: Json | null
+        }
+        Relationships: []
+      }
+      hypothesis_tracking: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          hypothesis_id: string
+          hypothesis_name: string
+          id: string
+          status: string | null
+          target_metric: string
+          target_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          hypothesis_id: string
+          hypothesis_name: string
+          id?: string
+          status?: string | null
+          target_metric: string
+          target_value: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          hypothesis_id?: string
+          hypothesis_name?: string
+          id?: string
+          status?: string | null
+          target_metric?: string
+          target_value?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -356,6 +436,7 @@ export type Database = {
           preferred_price_max: number | null
           preferred_price_min: number | null
           should_nag: boolean | null
+          successful_invites: number | null
           updated_at: string
           user_id: string
         }
@@ -377,6 +458,7 @@ export type Database = {
           preferred_price_max?: number | null
           preferred_price_min?: number | null
           should_nag?: boolean | null
+          successful_invites?: number | null
           updated_at?: string
           user_id: string
         }
@@ -398,6 +480,7 @@ export type Database = {
           preferred_price_max?: number | null
           preferred_price_min?: number | null
           should_nag?: boolean | null
+          successful_invites?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -692,6 +775,25 @@ export type Database = {
       }
     }
     Views: {
+      daily_active_users: {
+        Row: {
+          activity_date: string | null
+          dau: number | null
+        }
+        Relationships: []
+      }
+      funnel_stats: {
+        Row: {
+          favorite_conversion_rate: number | null
+          group_adoption_rate: number | null
+          review_creation_rate: number | null
+          total_swipers: number | null
+          users_in_groups: number | null
+          users_with_favorites: number | null
+          users_with_reviews: number | null
+        }
+        Relationships: []
+      }
       popular_restaurants_7d: {
         Row: {
           cuisine_type: string | null
@@ -703,6 +805,17 @@ export type Database = {
           price_range: number | null
           total_views: number | null
           unique_viewers: number | null
+        }
+        Relationships: []
+      }
+      retention_cohorts: {
+        Row: {
+          cohort_date: string | null
+          d7_retention_rate: number | null
+          day_0_users: number | null
+          day_1_users: number | null
+          day_30_users: number | null
+          day_7_users: number | null
         }
         Relationships: []
       }
@@ -723,6 +836,10 @@ export type Database = {
       }
       increment_restaurant_view_count: {
         Args: { target_restaurant_id: string }
+        Returns: undefined
+      }
+      update_hypothesis_value: {
+        Args: { hypothesis_id_param: string; new_value: number }
         Returns: undefined
       }
       update_nag_seen: { Args: { user_uuid: string }; Returns: undefined }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Copy, UserPlus, X } from 'lucide-react';
+import { Users, Plus, Copy, UserPlus, X, Gift, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -287,6 +287,40 @@ const Groups = () => {
     });
   };
 
+  const generateInviteLink = async (groupId: string, groupCode: string) => {
+    if (!user?.id) return;
+
+    try {
+      const inviteLink = `${window.location.origin}/auth?invite=${groupCode}`;
+      
+      // Track invite in database
+      await supabase.from('group_invites').insert({
+        group_id: groupId,
+        inviter_id: user.id,
+        invite_code: groupCode,
+        invite_link: inviteLink,
+        status: 'pending'
+      });
+
+      // Copy to clipboard with promotional message
+      const inviteMessage = `🎉 邀請你加入我的美食群組！\n\n透過我的邀請連結註冊，你將獲得 7 天 Premium 免費試用！\n\n${inviteLink}\n\n群組代碼：${groupCode}\n\n一起探索美食吧！`;
+      
+      navigator.clipboard.writeText(inviteMessage);
+      
+      toast({
+        title: "邀請連結已複製！",
+        description: "分享給朋友即可獲得 7 天 Premium 試用"
+      });
+    } catch (error) {
+      console.error('Error generating invite link:', error);
+      toast({
+        title: "生成失敗",
+        description: "無法生成邀請連結",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -515,6 +549,14 @@ const Groups = () => {
                         onClick={() => navigate(`/app/groups/${group.id}/consensus`)}
                       >
                         查看共識
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => generateInviteLink(group.id, group.code)}
+                        title="邀請朋友獲得 Premium 試用"
+                      >
+                        <Gift className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
