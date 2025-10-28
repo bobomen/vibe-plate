@@ -19,6 +19,7 @@ import { SwipeCard } from './SwipeCard';
 import { useSwipeLogic } from '@/hooks/useSwipeLogic';
 import { useSwipeState } from '@/hooks/useSwipeState';
 import { useRestaurantView } from '@/hooks/useRestaurantView';
+import { useInteractionTracking } from '@/hooks/useInteractionTracking';
 
 interface GroupInfo {
   id: string;
@@ -61,12 +62,12 @@ export const GroupSwipeCards = React.memo(() => {
     groupId,
   }); // INVARIANT: Group swipes have groupId
 
-  // Phase 1: 記錄卡片顯示時間（用於計算停留時長）
-  const [cardDisplayTime, setCardDisplayTime] = useState<number>(Date.now());
+  // Phase 1: 整合互動追蹤系統（統一架構）
+  const tracking = useInteractionTracking();
 
-  // 當卡片切換時重置顯示時間
+  // 當卡片切換時開始新的追蹤
   useEffect(() => {
-    setCardDisplayTime(Date.now());
+    tracking.startCardView();
   }, [currentIndex]);
 
   // Group swipe logic hook (unified)
@@ -86,6 +87,7 @@ export const GroupSwipeCards = React.memo(() => {
     groupId: groupId || '',
     currentRestaurant, // 🎯 傳遞當前餐廳（群組模式不追蹤分數）
     cardPosition: currentIndex, // 🎯 傳遞卡片位置
+    getInteractionMetadata: tracking.endCardView, // Phase 1: 傳遞互動元數據
   });
 
   // Restaurant view tracking hook
@@ -167,25 +169,21 @@ export const GroupSwipeCards = React.memo(() => {
   const handleCardSwipe = useCallback(async (liked: boolean) => {
     if (!currentRestaurant) return;
     
-    // 計算停留時長
-    const swipeDuration = Date.now() - cardDisplayTime;
-    
     try {
       // Add to history before swiping
       addToSwipeHistory(currentRestaurant, liked);
       
-      // Phase 1: 傳遞上下文數據（filters, userLocation, swipeDuration）
+      // Phase 1: 傳遞上下文數據（filters, userLocation）
       await handleSwipe(currentRestaurant, liked, () => {
         setCurrentIndex(prev => prev + 1);
       }, {
         filters,
         userLocation,
-        swipeDuration
       });
     } catch (error) {
       console.error('Error handling group swipe:', error);
     }
-  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation, cardDisplayTime]);
+  }, [handleSwipe, setCurrentIndex, currentRestaurant, addToSwipeHistory, filters, userLocation]);
 
   const handleCardClick = useCallback(() => {
     if (currentRestaurant) {
@@ -420,6 +418,7 @@ export const GroupSwipeCards = React.memo(() => {
                 dragOffset={dragOffset}
                 onSwipe={handleCardSwipe}
                 onCardClick={handleCardClick}
+                onPhotoView={tracking.trackPhotoView}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUpWithParams}
