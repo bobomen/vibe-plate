@@ -173,12 +173,12 @@ export const GroupSwipeCards = React.memo(() => {
       // Add to history before swiping
       addToSwipeHistory(currentRestaurant, liked);
       
-      // Phase 1: 傳遞上下文數據（filters, userLocation）
+      // Phase 1: Pass context data (filters, userLocation)
       await handleSwipe(currentRestaurant, liked, () => {
         setCurrentIndex(prev => prev + 1);
       }, {
         filters,
-        userLocation,
+        userLocation
       });
     } catch (error) {
       console.error('Error handling group swipe:', error);
