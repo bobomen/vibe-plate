@@ -45,10 +45,6 @@ const Index = () => {
             美食滑卡
           </h1>
           
-          <p className="text-2xl md:text-3xl font-semibold text-foreground mb-4">
-            台灣首個 Tinder 式餐廳推薦 App
-          </p>
-          
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
             滑出你的美食品味，找到完美餐廳<br/>
             與朋友一起選擇，不再為「吃什麼」煩惱
@@ -98,39 +94,19 @@ const Index = () => {
           </div>
 
           {/* CTA Button */}
-          <Link to="/auth">
-            <Button size="lg" className="w-full md:w-auto px-12 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all">
-              立即開始探索美食
-              <Heart className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-
-          {/* Social Proof */}
-          <div className="mt-8 pt-8 border-t border-border/50">
-            <p className="text-sm text-muted-foreground mb-4">
-              🎉 <span className="font-semibold">限時優惠</span>：透過朋友邀請註冊，獲得 7 天 Premium 免費試用！
-            </p>
-            <div className="flex items-center justify-center gap-8 text-sm">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-primary">1000+</p>
-                <p className="text-muted-foreground">精選餐廳</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-primary">0元</p>
-                <p className="text-muted-foreground">完全免費</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-primary">30秒</p>
-                <p className="text-muted-foreground">快速註冊</p>
-              </div>
-            </div>
+          <div className="flex justify-center">
+            <Link to="/auth">
+              <Button size="lg" className="px-12 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all">
+                開始使用
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Footer */}
       <div className="py-6 text-center text-sm text-muted-foreground border-t border-border/50">
-        <p>© 2025 美食滑卡 | 台灣第一個 Tinder 式餐廳推薦平台</p>
+        <p>© 2025 美食滑卡</p>
       </div>
     </div>
   );
