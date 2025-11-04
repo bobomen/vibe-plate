@@ -486,8 +486,48 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_owners: {
+        Row: {
+          created_at: string
+          id: string
+          restaurant_id: string
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          restaurant_id: string
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          restaurant_id?: string
+          user_id?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_owners_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_owners_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_views: {
         Row: {
+          click_type: string | null
           created_at: string | null
           did_favorite: boolean | null
           did_share: boolean | null
@@ -503,6 +543,7 @@ export type Database = {
           view_source: string
         }
         Insert: {
+          click_type?: string | null
           created_at?: string | null
           did_favorite?: boolean | null
           did_share?: boolean | null
@@ -518,6 +559,7 @@ export type Database = {
           view_source: string
         }
         Update: {
+          click_type?: string | null
           created_at?: string | null
           did_favorite?: boolean | null
           did_share?: boolean | null
@@ -827,6 +869,19 @@ export type Database = {
         Returns: undefined
       }
       generate_group_code: { Args: never; Returns: string }
+      get_restaurant_stats: {
+        Args: { days_back?: number; target_restaurant_id: string }
+        Returns: Json
+      }
+      get_restaurant_trend: {
+        Args: { days_back?: number; target_restaurant_id: string }
+        Returns: {
+          date: string
+          detail_views: number
+          favorites: number
+          impressions: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -849,7 +904,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "restaurant_owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -977,7 +1032,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "restaurant_owner"],
     },
   },
 } as const

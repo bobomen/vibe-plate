@@ -125,6 +125,21 @@ export default function RestaurantDetail() {
     }
   };
 
+  const trackExternalClick = async (clickType: 'phone' | 'map' | 'menu' | 'website') => {
+    if (!user?.id || !restaurant) return;
+
+    try {
+      await supabase.from('restaurant_views').insert({
+        user_id: user.id,
+        restaurant_id: restaurant.id,
+        view_source: 'detail',
+        click_type: clickType,
+      });
+    } catch (error) {
+      console.error('Error tracking external click:', error);
+    }
+  };
+
   const calculateDistance = (lat: number, lng: number) => {
     // Mock distance calculation
     return Math.random() * 1000;
@@ -259,6 +274,7 @@ export default function RestaurantDetail() {
                 <a 
                   href={`tel:${restaurant.phone}`}
                   className="text-primary hover:underline"
+                  onClick={() => trackExternalClick('phone')}
                 >
                   {restaurant.phone}
                 </a>
@@ -271,7 +287,12 @@ export default function RestaurantDetail() {
         {restaurant.menu_url && (
           <Card className="p-4">
             <Button asChild variant="outline" className="w-full">
-              <a href={restaurant.menu_url} target="_blank" rel="noopener noreferrer">
+              <a 
+                href={restaurant.menu_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => trackExternalClick('menu')}
+              >
                 <BookOpen className="h-4 w-4 mr-2" />
                 查看線上菜單
               </a>
@@ -283,7 +304,12 @@ export default function RestaurantDetail() {
         {restaurant.website && (
           <Card className="p-4">
             <Button asChild variant="outline" className="w-full">
-              <a href={restaurant.website} target="_blank" rel="noopener noreferrer">
+              <a 
+                href={restaurant.website} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => trackExternalClick('website')}
+              >
                 <Globe className="h-4 w-4 mr-2" />
                 官方網站
               </a>
@@ -295,7 +321,12 @@ export default function RestaurantDetail() {
         {restaurant.google_maps_url && (
           <Card className="p-4">
             <Button asChild variant="outline" className="w-full">
-              <a href={restaurant.google_maps_url} target="_blank" rel="noopener noreferrer">
+              <a 
+                href={restaurant.google_maps_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => trackExternalClick('map')}
+              >
                 <MapPin className="h-4 w-4 mr-2" />
                 在 Google 地圖中查看
               </a>

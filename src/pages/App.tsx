@@ -17,6 +17,7 @@ import RestaurantDetail from './RestaurantDetail';
 import CategoryDetail from './CategoryDetail';
 import Admin from './Admin';
 import MonthlyReview from './MonthlyReview';
+import RestaurantOwnerDashboard from './RestaurantOwnerDashboard';
 
 const App = memo(() => {
   const { user, loading } = useAuth();
@@ -76,6 +77,7 @@ const App = memo(() => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/monthly-review" element={<MonthlyReview />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/restaurant-owner" element={<RestaurantOwnerDashboard />} />
         </Routes>
       </main>
       {!location.pathname.includes('/restaurant/') && <BottomNavigation />}

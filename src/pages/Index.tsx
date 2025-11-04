@@ -107,6 +107,9 @@ const Index = () => {
       {/* Footer */}
       <div className="py-6 text-center text-sm text-muted-foreground border-t border-border/50">
         <p>© 2025 美食滑卡</p>
+        <Link to="/app/restaurant-owner" className="text-xs hover:text-primary transition-colors mt-2 inline-block">
+          餐廳業者專區
+        </Link>
       </div>
     </div>
   );
