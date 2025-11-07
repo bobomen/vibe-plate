@@ -18,6 +18,11 @@ import CategoryDetail from './CategoryDetail';
 import Admin from './Admin';
 import MonthlyReview from './MonthlyReview';
 import RestaurantOwnerDashboard from './RestaurantOwnerDashboard';
+import RestaurantOwnerLayout from './RestaurantOwner/Layout';
+import RestaurantOwnerOverview from './RestaurantOwner/Overview';
+import RestaurantOwnerPromotions from './RestaurantOwner/Promotions';
+import RestaurantOwnerData from './RestaurantOwner/RestaurantData';
+import RestaurantOwnerSettings from './RestaurantOwner/Settings';
 
 const App = memo(() => {
   const { user, loading } = useAuth();
@@ -78,6 +83,13 @@ const App = memo(() => {
           <Route path="/monthly-review" element={<MonthlyReview />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/restaurant-owner" element={<RestaurantOwnerDashboard />} />
+          <Route path="/restaurant-owner-v2" element={<RestaurantOwnerLayout />}>
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<RestaurantOwnerOverview />} />
+            <Route path="promotions" element={<RestaurantOwnerPromotions />} />
+            <Route path="data" element={<RestaurantOwnerData />} />
+            <Route path="settings" element={<RestaurantOwnerSettings />} />
+          </Route>
         </Routes>
       </main>
       {!location.pathname.includes('/restaurant/') && <BottomNavigation />}

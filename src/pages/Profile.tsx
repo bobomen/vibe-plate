@@ -63,10 +63,13 @@ const Profile = () => {
   
   // ✅ 教學訊息控制
   const [showTip, setShowTip] = useState(false);
+  const [hasOwnerRole, setHasOwnerRole] = useState(false);
+  const [ownedRestaurantsCount, setOwnedRestaurantsCount] = useState(0);
 
   useEffect(() => {
     if (user) {
       fetchProfile();
+      checkOwnerRole();
     }
   }, [user]);
 
@@ -79,6 +82,31 @@ const Profile = () => {
       return () => clearTimeout(timer);
     }
   }, [loading, showProfileTip]);
+
+  const checkOwnerRole = async () => {
+    if (!user?.id) return;
+
+    try {
+      // 檢查是否有 restaurant_owner 角色
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'restaurant_owner')
+        .maybeSingle();
+      
+      // 檢查是否擁有餐廳
+      const { data: restaurantsData, count } = await supabase
+        .from('restaurant_owners')
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id);
+
+      setHasOwnerRole(!!roleData);
+      setOwnedRestaurantsCount(count || 0);
+    } catch (error) {
+      console.error('Error checking owner role:', error);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -366,6 +394,36 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+          {/* Restaurant Owner Entry */}
+          {(hasOwnerRole || ownedRestaurantsCount > 0) && (
+            <Card className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-orange-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-orange-500/10 rounded-full flex items-center justify-center">
+                      <span className="text-lg">🏪</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm">餐廳業者後台</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {ownedRestaurantsCount > 0 
+                          ? `管理您的 ${ownedRestaurantsCount} 間餐廳` 
+                          : '查看餐廳數據分析'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm"
+                    onClick={() => navigate('/app/restaurant-owner-v2')}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600"
+                  >
+                    進入後台
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Premium Banner - Only show if not premium - Move to top */}
           {!isPremium && (
             <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">

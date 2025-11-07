@@ -69,6 +69,75 @@ export type Database = {
           },
         ]
       }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string | null
+          current_uses: number | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_spend: number | null
+          restaurant_id: string
+          title: string
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_spend?: number | null
+          restaurant_id: string
+          title: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_spend?: number | null
+          restaurant_id?: string
+          title?: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupons_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorite_categories: {
         Row: {
           color: string | null
@@ -525,6 +594,75 @@ export type Database = {
           },
         ]
       }
+      restaurant_trust_score: {
+        Row: {
+          created_at: string | null
+          data_completeness_score: number | null
+          id: string
+          last_data_update_at: string | null
+          last_login_at: string | null
+          login_frequency_score: number | null
+          menu_last_updated_at: string | null
+          photo_count: number | null
+          photo_quality_score: number | null
+          restaurant_id: string
+          total_logins: number | null
+          trust_score: number | null
+          update_recency_score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_completeness_score?: number | null
+          id?: string
+          last_data_update_at?: string | null
+          last_login_at?: string | null
+          login_frequency_score?: number | null
+          menu_last_updated_at?: string | null
+          photo_count?: number | null
+          photo_quality_score?: number | null
+          restaurant_id: string
+          total_logins?: number | null
+          trust_score?: number | null
+          update_recency_score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_completeness_score?: number | null
+          id?: string
+          last_data_update_at?: string | null
+          last_login_at?: string | null
+          login_frequency_score?: number | null
+          menu_last_updated_at?: string | null
+          photo_count?: number | null
+          photo_quality_score?: number | null
+          restaurant_id?: string
+          total_logins?: number | null
+          trust_score?: number | null
+          update_recency_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_trust_score_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_trust_score_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_views: {
         Row: {
           click_type: string | null
@@ -610,12 +748,14 @@ export type Database = {
           cuisine_type: string | null
           dietary_options: Json | null
           district: string | null
+          exposure_multiplier: number | null
           google_maps_url: string | null
           google_rating: number | null
           google_reviews_count: number | null
           has_500_dishes: boolean | null
           id: string
           klook_url: string | null
+          last_owner_login_at: string | null
           last_viewed_at: string | null
           lat: number
           lng: number
@@ -625,6 +765,9 @@ export type Database = {
           phone: string | null
           photos: string[] | null
           price_range: number | null
+          subscription_tier: string | null
+          trust_score: number | null
+          verified_at: string | null
           view_count: number | null
           website: string | null
         }
@@ -639,12 +782,14 @@ export type Database = {
           cuisine_type?: string | null
           dietary_options?: Json | null
           district?: string | null
+          exposure_multiplier?: number | null
           google_maps_url?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
           id?: string
           klook_url?: string | null
+          last_owner_login_at?: string | null
           last_viewed_at?: string | null
           lat: number
           lng: number
@@ -654,6 +799,9 @@ export type Database = {
           phone?: string | null
           photos?: string[] | null
           price_range?: number | null
+          subscription_tier?: string | null
+          trust_score?: number | null
+          verified_at?: string | null
           view_count?: number | null
           website?: string | null
         }
@@ -668,12 +816,14 @@ export type Database = {
           cuisine_type?: string | null
           dietary_options?: Json | null
           district?: string | null
+          exposure_multiplier?: number | null
           google_maps_url?: string | null
           google_rating?: number | null
           google_reviews_count?: number | null
           has_500_dishes?: boolean | null
           id?: string
           klook_url?: string | null
+          last_owner_login_at?: string | null
           last_viewed_at?: string | null
           lat?: number
           lng?: number
@@ -683,6 +833,9 @@ export type Database = {
           phone?: string | null
           photos?: string[] | null
           price_range?: number | null
+          subscription_tier?: string | null
+          trust_score?: number | null
+          verified_at?: string | null
           view_count?: number | null
           website?: string | null
         }
@@ -726,6 +879,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_coupons: {
+        Row: {
+          claimed_at: string | null
+          coupon_id: string
+          created_at: string | null
+          id: string
+          status: string | null
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          coupon_id: string
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          coupon_id?: string
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_coupons_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -808,6 +999,75 @@ export type Database = {
           },
           {
             foreignKeyName: "user_swipes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verification_attempts: {
+        Row: {
+          code_expires_at: string | null
+          created_at: string | null
+          email_code: string | null
+          email_sent_to: string | null
+          failed_reason: string | null
+          google_match_score: number | null
+          id: string
+          restaurant_id: string
+          status: string | null
+          submitted_address: string | null
+          submitted_phone: string | null
+          updated_at: string | null
+          user_id: string
+          verification_method: string
+          verified_at: string | null
+        }
+        Insert: {
+          code_expires_at?: string | null
+          created_at?: string | null
+          email_code?: string | null
+          email_sent_to?: string | null
+          failed_reason?: string | null
+          google_match_score?: number | null
+          id?: string
+          restaurant_id: string
+          status?: string | null
+          submitted_address?: string | null
+          submitted_phone?: string | null
+          updated_at?: string | null
+          user_id: string
+          verification_method: string
+          verified_at?: string | null
+        }
+        Update: {
+          code_expires_at?: string | null
+          created_at?: string | null
+          email_code?: string | null
+          email_sent_to?: string | null
+          failed_reason?: string | null
+          google_match_score?: number | null
+          id?: string
+          restaurant_id?: string
+          status?: string | null
+          submitted_address?: string | null
+          submitted_phone?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verification_method?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_attempts_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_attempts_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
