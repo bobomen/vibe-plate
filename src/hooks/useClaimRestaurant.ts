@@ -193,7 +193,7 @@ export function useClaimRestaurant() {
   }, [state.selectedRestaurant, setError]);
 
   const goToDashboard = useCallback(() => {
-    navigate('/restaurant-owner-v2');
+    navigate('/app/restaurant-owner-v2/overview');
   }, [navigate]);
 
   const reset = useCallback(() => {
