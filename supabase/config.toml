@@ -11,3 +11,12 @@ verify_jwt = false
 
 [functions.monthly-review-reminder]
 verify_jwt = false
+
+[functions.send-verification-code]
+verify_jwt = true
+
+[functions.verify-restaurant-claim]
+verify_jwt = true
+
+[functions.create-new-restaurant]
+verify_jwt = true

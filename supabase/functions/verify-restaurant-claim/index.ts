@@ -1,0 +1,171 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface VerifyClaimRequest {
+  restaurant_id?: string;
+  verification_code: string;
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Authentication error:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { restaurant_id, verification_code }: VerifyClaimRequest = await req.json();
+
+    console.log('Verifying claim:', { restaurant_id, code: verification_code, user_id: user.id });
+
+    // 查找验证码记录
+    const { data: codeRecord, error: codeError } = await supabaseClient
+      .from('restaurant_verification_codes')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('code', verification_code)
+      .eq('used', false)
+      .maybeSingle();
+
+    if (codeError) {
+      console.error('Error fetching verification code:', codeError);
+      return new Response(
+        JSON.stringify({ error: 'Database error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!codeRecord) {
+      console.log('Verification code not found or already used');
+      return new Response(
+        JSON.stringify({ error: 'Invalid verification code' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 检查验证码是否匹配餐厅ID（对于现有餐厅）
+    if (restaurant_id && codeRecord.restaurant_id !== restaurant_id) {
+      console.log('Restaurant ID mismatch');
+      return new Response(
+        JSON.stringify({ error: 'Verification code does not match this restaurant' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 检查验证码是否过期
+    const expiresAt = new Date(codeRecord.expires_at);
+    const now = new Date();
+    
+    if (now > expiresAt) {
+      console.log('Verification code expired:', { expires_at: expiresAt, now });
+      return new Response(
+        JSON.stringify({ error: 'Verification code has expired' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 标记验证码为已使用
+    const { error: updateCodeError } = await supabaseClient
+      .from('restaurant_verification_codes')
+      .update({ used: true })
+      .eq('id', codeRecord.id);
+
+    if (updateCodeError) {
+      console.error('Error updating verification code:', updateCodeError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to mark code as used' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 查找对应的认领记录
+    let claimQuery = supabaseClient
+      .from('restaurant_claims')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'pending');
+
+    if (restaurant_id) {
+      claimQuery = claimQuery.eq('restaurant_id', restaurant_id);
+    } else {
+      claimQuery = claimQuery.is('restaurant_id', null);
+    }
+
+    const { data: claimRecord, error: claimError } = await claimQuery.maybeSingle();
+
+    if (claimError) {
+      console.error('Error fetching claim record:', claimError);
+      return new Response(
+        JSON.stringify({ error: 'Database error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!claimRecord) {
+      console.log('No pending claim found for this user');
+      return new Response(
+        JSON.stringify({ error: 'No pending claim found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 更新认领记录状态为 verified
+    const { error: updateClaimError } = await supabaseClient
+      .from('restaurant_claims')
+      .update({ 
+        status: 'verified',
+        verified_at: new Date().toISOString()
+      })
+      .eq('id', claimRecord.id);
+
+    if (updateClaimError) {
+      console.error('Error updating claim status:', updateClaimError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to update claim status' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Claim verified successfully:', { claim_id: claimRecord.id });
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Verification successful',
+        claim_id: claimRecord.id,
+        status: 'verified'
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in verify-restaurant-claim function:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
