@@ -23,6 +23,7 @@ import RestaurantOwnerOverview from './RestaurantOwner/Overview';
 import RestaurantOwnerPromotions from './RestaurantOwner/Promotions';
 import RestaurantOwnerData from './RestaurantOwner/RestaurantData';
 import RestaurantOwnerSettings from './RestaurantOwner/Settings';
+import ClaimRestaurant from './ClaimRestaurant';
 
 const App = memo(() => {
   const { user, loading } = useAuth();
@@ -82,6 +83,7 @@ const App = memo(() => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/monthly-review" element={<MonthlyReview />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/claim-restaurant" element={<ClaimRestaurant />} />
           <Route path="/restaurant-owner" element={<RestaurantOwnerDashboard />} />
           <Route path="/restaurant-owner-v2" element={<RestaurantOwnerLayout />}>
             <Route index element={<Navigate to="overview" replace />} />
