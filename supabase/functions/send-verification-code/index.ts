@@ -36,14 +36,19 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     console.log('Token extracted, length:', token.length);
 
-    // Create a Supabase client with service role for database operations
-    const supabaseAdmin = createClient(
+    // Create a client with ANON_KEY to verify the user's token
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
     );
 
     // Verify the user's JWT token
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !user) {
       console.error('User verification failed:', userError?.message || 'No user found');
@@ -54,6 +59,12 @@ serve(async (req) => {
     }
 
     console.log('User authenticated successfully:', user.id);
+
+    // Create admin client for database operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     const { restaurant_id, claim_type, contact_email, restaurant_name }: SendVerificationRequest = await req.json();
 
