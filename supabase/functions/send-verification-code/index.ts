@@ -20,14 +20,10 @@ serve(async (req) => {
   }
 
   try {
-    // Create client with service role for database operations
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Get user from the authorization header
+    // Get the authorization header
     const authHeader = req.headers.get('Authorization');
+    console.log('Authorization header present:', !!authHeader);
+    
     if (!authHeader) {
       console.error('Missing authorization header');
       return new Response(
@@ -36,19 +32,28 @@ serve(async (req) => {
       );
     }
 
-    // Verify the JWT token to get user info
+    // Extract the JWT token (remove 'Bearer ' prefix)
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    console.log('Token extracted, length:', token.length);
+
+    // Create a Supabase client with service role for database operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Verify the user's JWT token
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
-      console.error('Authentication error:', userError);
+      console.error('User verification failed:', userError?.message || 'No user found');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized', details: userError?.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated successfully:', user.id);
 
     const { restaurant_id, claim_type, contact_email, restaurant_name }: SendVerificationRequest = await req.json();
 
@@ -62,7 +67,7 @@ serve(async (req) => {
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
     // 存储验证码到数据库
-    const { error: insertError } = await supabaseClient
+    const { error: insertError } = await supabaseAdmin
       .from('restaurant_verification_codes')
       .insert({
         restaurant_id: restaurant_id || null,
