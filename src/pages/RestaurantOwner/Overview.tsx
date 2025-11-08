@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { ArrowLeftRight, TrendingUp, Eye, Heart, MousePointerClick, Award, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
+import { ClaimPrompt } from '@/components/RestaurantOwner/ClaimPrompt';
 
 interface RestaurantStats {
   total_impressions: number;
@@ -24,47 +26,28 @@ interface RestaurantStats {
 export default function RestaurantOwnerOverview() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isOwner, ownerData } = useRestaurantOwner();
   const [loading, setLoading] = useState(true);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [restaurantName, setRestaurantName] = useState<string>('');
   const [stats, setStats] = useState<RestaurantStats | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && ownerData) {
       fetchRestaurantData();
+    } else {
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, ownerData]);
 
   const fetchRestaurantData = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !ownerData?.restaurantId) return;
+
+    setLoading(true);
 
     try {
-      // 獲取用戶擁有的餐廳
-      const { data: ownerData, error: ownerError } = await supabase
-        .from('restaurant_owners')
-        .select('restaurant_id, restaurants(name)')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (ownerError) throw ownerError;
-
-      if (!ownerData) {
-        toast({
-          title: '找不到餐廳',
-          description: '您還沒有關聯任何餐廳',
-          variant: 'destructive',
-        });
-        setLoading(false);
-        return;
-      }
-
-      setRestaurantId(ownerData.restaurant_id);
-      setRestaurantName((ownerData.restaurants as any)?.name || '未知餐廳');
-
       // 獲取餐廳統計數據
       const { data: statsData, error: statsError } = await supabase
         .rpc('get_restaurant_stats', {
-          target_restaurant_id: ownerData.restaurant_id,
+          target_restaurant_id: ownerData.restaurantId,
           days_back: 30
         });
 
@@ -98,13 +81,17 @@ export default function RestaurantOwnerOverview() {
     );
   }
 
+  if (!isOwner || !ownerData) {
+    return <ClaimPrompt />;
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {/* 頂部工具欄 */}
       <div className="max-w-7xl mx-auto mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">成效總覽</h1>
-          <p className="text-sm text-muted-foreground mt-1">{restaurantName}</p>
+          <p className="text-sm text-muted-foreground mt-1">{ownerData.restaurantName}</p>
         </div>
         <Button
           variant="outline"

@@ -149,13 +149,74 @@ serve(async (req) => {
       );
     }
 
-    console.log('Claim verified successfully:', { claim_id: claimRecord.id });
+    // 获取要认领的餐厅ID（可能来自参数或claim记录）
+    const targetRestaurantId = restaurant_id || codeRecord.restaurant_id;
+
+    if (!targetRestaurantId) {
+      console.error('No restaurant ID found for claim');
+      return new Response(
+        JSON.stringify({ error: 'No restaurant ID associated with this claim' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 创建 restaurant_owners 记录
+    const { data: existingOwner, error: ownerCheckError } = await supabaseClient
+      .from('restaurant_owners')
+      .select('id')
+      .eq('restaurant_id', targetRestaurantId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (ownerCheckError) {
+      console.error('Error checking existing owner:', ownerCheckError);
+      // 不阻断流程，只记录错误
+    }
+
+    // 如果不存在，创建新记录
+    if (!existingOwner) {
+      const { error: createOwnerError } = await supabaseClient
+        .from('restaurant_owners')
+        .insert({
+          user_id: user.id,
+          restaurant_id: targetRestaurantId,
+          verified: true,
+        });
+
+      if (createOwnerError) {
+        console.error('Error creating restaurant owner:', createOwnerError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create restaurant owner record' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Restaurant owner created:', { user_id: user.id, restaurant_id: targetRestaurantId });
+    } else {
+      console.log('Restaurant owner already exists:', { user_id: user.id, restaurant_id: targetRestaurantId });
+    }
+
+    // 更新餐厅的 verified_at 时间戳
+    const { error: updateRestaurantError } = await supabaseClient
+      .from('restaurants')
+      .update({ 
+        verified_at: new Date().toISOString()
+      })
+      .eq('id', targetRestaurantId);
+
+    if (updateRestaurantError) {
+      console.error('Error updating restaurant verified_at:', updateRestaurantError);
+      // 不阻断流程，只记录错误
+    }
+
+    console.log('Claim verified successfully:', { claim_id: claimRecord.id, restaurant_id: targetRestaurantId });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Verification successful',
         claim_id: claimRecord.id,
+        restaurant_id: targetRestaurantId,
         status: 'verified'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

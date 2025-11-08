@@ -2,6 +2,8 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeftRight, Home, Megaphone, Building2, Settings as SettingsIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { OwnerGuard } from '@/components/RestaurantOwner/OwnerGuard';
+import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 
 interface NavItem {
   path: string;
@@ -13,6 +15,7 @@ interface NavItem {
 
 export default function RestaurantOwnerLayout() {
   const navigate = useNavigate();
+  const { ownerData } = useRestaurantOwner();
 
   const navigationItems: NavItem[] = [
     { path: 'overview', label: '成效總覽', icon: Home, enabled: true },
@@ -26,11 +29,17 @@ export default function RestaurantOwnerLayout() {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
-      {/* 側邊欄 */}
-      <aside className="w-64 bg-card border-r flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="font-bold text-lg mb-4">業者後台</h2>
+    <OwnerGuard>
+      <div className="min-h-screen flex w-full bg-background">
+        {/* 側邊欄 */}
+        <aside className="w-64 bg-card border-r flex flex-col">
+          <div className="p-4 border-b">
+            <h2 className="font-bold text-lg mb-2">業者後台</h2>
+            {ownerData && (
+              <p className="text-xs text-muted-foreground truncate" title={ownerData.restaurantName}>
+                {ownerData.restaurantName}
+              </p>
+            )}
           
           {/* 快速切換按鈕 */}
           <Button
@@ -76,10 +85,11 @@ export default function RestaurantOwnerLayout() {
         </div>
       </aside>
 
-      {/* 主內容區 */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
+        {/* 主內容區 */}
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
+    </OwnerGuard>
   );
 }
