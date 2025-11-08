@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -555,6 +555,82 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_claims: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_reason: string | null
+          claim_type: string
+          created_at: string
+          data_completeness_score: number | null
+          id: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          restaurant_id: string | null
+          status: string
+          submitted_data: Json | null
+          updated_at: string
+          user_id: string
+          verification_attempt_id: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          claim_type: string
+          created_at?: string
+          data_completeness_score?: number | null
+          id?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          restaurant_id?: string | null
+          status?: string
+          submitted_data?: Json | null
+          updated_at?: string
+          user_id: string
+          verification_attempt_id?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          claim_type?: string
+          created_at?: string
+          data_completeness_score?: number | null
+          id?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          restaurant_id?: string | null
+          status?: string
+          submitted_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          verification_attempt_id?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_claims_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_claims_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_claims_verification_attempt_id_fkey"
+            columns: ["verification_attempt_id"]
+            isOneToOne: false
+            referencedRelation: "verification_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_owners: {
         Row: {
           created_at: string
@@ -746,6 +822,7 @@ export type Database = {
           city: string | null
           created_at: string
           cuisine_type: string | null
+          deleted_at: string | null
           dietary_options: Json | null
           district: string | null
           exposure_multiplier: number | null
@@ -765,6 +842,7 @@ export type Database = {
           phone: string | null
           photos: string[] | null
           price_range: number | null
+          status: string | null
           subscription_tier: string | null
           trust_score: number | null
           verified_at: string | null
@@ -780,6 +858,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           cuisine_type?: string | null
+          deleted_at?: string | null
           dietary_options?: Json | null
           district?: string | null
           exposure_multiplier?: number | null
@@ -799,6 +878,7 @@ export type Database = {
           phone?: string | null
           photos?: string[] | null
           price_range?: number | null
+          status?: string | null
           subscription_tier?: string | null
           trust_score?: number | null
           verified_at?: string | null
@@ -814,6 +894,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           cuisine_type?: string | null
+          deleted_at?: string | null
           dietary_options?: Json | null
           district?: string | null
           exposure_multiplier?: number | null
@@ -833,6 +914,7 @@ export type Database = {
           phone?: string | null
           photos?: string[] | null
           price_range?: number | null
+          status?: string | null
           subscription_tier?: string | null
           trust_score?: number | null
           verified_at?: string | null
@@ -1123,6 +1205,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_restaurant_data_completeness: {
+        Args: { p_restaurant_id: string }
+        Returns: number
+      }
       cleanup_old_interaction_data: { Args: never; Returns: undefined }
       create_default_categories: {
         Args: { target_user_id: string }
@@ -1158,6 +1244,10 @@ export type Database = {
         Returns: undefined
       }
       update_nag_seen: { Args: { user_uuid: string }; Returns: undefined }
+      update_restaurant_exposure_multiplier: {
+        Args: { p_restaurant_id: string }
+        Returns: undefined
+      }
       user_is_in_group: {
         Args: { target_group_id: string; target_user_id: string }
         Returns: boolean
