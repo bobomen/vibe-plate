@@ -394,35 +394,35 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
-          {/* Restaurant Owner Entry - Always visible */}
-          <Card className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-orange-500/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-orange-500/10 rounded-full flex items-center justify-center">
-                    <span className="text-lg">🏪</span>
+          {/* Restaurant Owner Entry - Compact version */}
+          <Card className="border-muted">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-base">🏪</span>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">餐廳業者專區</h3>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm truncate">餐廳業者專區</h3>
+                    <p className="text-xs text-muted-foreground truncate">
                       {ownedRestaurantsCount > 0 
-                        ? `管理您的 ${ownedRestaurantsCount} 間餐廳` 
-                        : '認領餐廳，開始管理您的線上形象'}
+                        ? `${ownedRestaurantsCount} 間餐廳` 
+                        : '業者功能'}
                     </p>
                   </div>
                 </div>
                 <Button 
                   size="sm"
+                  variant="outline"
                   onClick={() => {
                     if (ownedRestaurantsCount > 0) {
                       navigate('/app/restaurant-owner-v2');
                     } else {
-                      navigate('/claim-restaurant');
+                      navigate('/app/claim-restaurant');
                     }
                   }}
-                  className="bg-gradient-to-r from-orange-500 to-orange-600"
                 >
-                  {ownedRestaurantsCount > 0 ? '進入後台' : '開始認領'}
+                  {ownedRestaurantsCount > 0 ? '管理' : '進入'}
                 </Button>
               </div>
             </CardContent>

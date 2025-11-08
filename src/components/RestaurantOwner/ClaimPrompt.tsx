@@ -85,7 +85,7 @@ export function ClaimPrompt() {
           {/* CTA 按鈕 */}
           <div className="pt-4 space-y-3">
             <Button 
-              onClick={() => navigate('/claim-restaurant')}
+              onClick={() => navigate('/app/claim-restaurant')}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700" 
               size="lg"
             >
