@@ -1,63 +1,99 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, CheckCircle } from 'lucide-react';
+import { Building2, CheckCircle, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function ClaimPrompt() {
+  const navigate = useNavigate();
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <Card className="border-primary/20">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Building2 className="w-8 h-8 text-primary" />
+      <Card className="border-orange-500/20 shadow-lg">
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-orange-500/20 to-orange-500/10 rounded-full flex items-center justify-center">
+            <Building2 className="w-10 h-10 text-orange-500" />
           </div>
-          <CardTitle className="text-2xl">欢迎使用餐厅管理后台</CardTitle>
-          <CardDescription>
-            认领您的餐厅，开始管理和优化您的线上形象
-          </CardDescription>
+          <div>
+            <CardTitle className="text-2xl mb-2">您還沒有認領餐廳</CardTitle>
+            <CardDescription className="text-base">
+              立即開始認領流程，解鎖餐廳管理功能
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center">
-              认领餐厅后，您将能够：
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          {/* 步驟說明 */}
+          <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <span className="text-orange-500">📝</span>
+              認領流程（約 5 分鐘）
+            </h3>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="text-orange-500 font-medium">1.</span>
+                <span>搜尋並選擇您的餐廳</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-orange-500 font-medium">2.</span>
+                <span>填寫聯絡資訊</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-orange-500 font-medium">3.</span>
+                <span>接收並驗證簡訊驗證碼</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-orange-500 font-medium">4.</span>
+                <span>完成！開始管理您的餐廳</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 功能說明 */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-sm">認領後您可以：</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/10">
+                <CheckCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">更新餐厅信息</p>
-                  <p className="text-xs text-muted-foreground">完善餐厅资料和照片</p>
+                  <p className="font-medium text-sm">查看數據分析</p>
+                  <p className="text-xs text-muted-foreground">瀏覽量、收藏數、用戶互動</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/10">
+                <CheckCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">查看数据分析</p>
-                  <p className="text-xs text-muted-foreground">了解餐厅表现和用户行为</p>
+                  <p className="font-medium text-sm">更新餐廳資訊</p>
+                  <p className="text-xs text-muted-foreground">菜單、營業時間、照片</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/10">
+                <CheckCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">设置优惠活动</p>
-                  <p className="text-xs text-muted-foreground">创建优惠券吸引顾客</p>
+                  <p className="font-medium text-sm">發布優惠活動</p>
+                  <p className="text-xs text-muted-foreground">吸引更多顧客上門</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/10">
+                <CheckCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">提升曝光度</p>
-                  <p className="text-xs text-muted-foreground">增加餐厅在平台的展示</p>
+                  <p className="text-xs text-muted-foreground">增加平台推薦機會</p>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* CTA 按鈕 */}
           <div className="pt-4 space-y-3">
-            <Button asChild className="w-full" size="lg">
-              <a href="/claim-restaurant">开始认领餐厅</a>
+            <Button 
+              onClick={() => navigate('/claim-restaurant')}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700" 
+              size="lg"
+            >
+              開始認領餐廳
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              认领流程简单快速，仅需几分钟即可完成
+              免費認領，完成後立即可使用所有管理功能
             </p>
           </div>
         </CardContent>

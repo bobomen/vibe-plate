@@ -394,35 +394,39 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
-          {/* Restaurant Owner Entry */}
-          {(hasOwnerRole || ownedRestaurantsCount > 0) && (
-            <Card className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-orange-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-orange-500/10 rounded-full flex items-center justify-center">
-                      <span className="text-lg">🏪</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm">餐廳業者後台</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {ownedRestaurantsCount > 0 
-                          ? `管理您的 ${ownedRestaurantsCount} 間餐廳` 
-                          : '查看餐廳數據分析'}
-                      </p>
-                    </div>
+          {/* Restaurant Owner Entry - Always visible */}
+          <Card className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-orange-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500/20 to-orange-500/10 rounded-full flex items-center justify-center">
+                    <span className="text-lg">🏪</span>
                   </div>
-                  <Button 
-                    size="sm"
-                    onClick={() => navigate('/app/restaurant-owner-v2')}
-                    className="bg-gradient-to-r from-orange-500 to-orange-600"
-                  >
-                    進入後台
-                  </Button>
+                  <div>
+                    <h3 className="font-semibold text-sm">餐廳業者專區</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {ownedRestaurantsCount > 0 
+                        ? `管理您的 ${ownedRestaurantsCount} 間餐廳` 
+                        : '認領餐廳，開始管理您的線上形象'}
+                    </p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    if (ownedRestaurantsCount > 0) {
+                      navigate('/app/restaurant-owner-v2');
+                    } else {
+                      navigate('/claim-restaurant');
+                    }
+                  }}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600"
+                >
+                  {ownedRestaurantsCount > 0 ? '進入後台' : '開始認領'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Premium Banner - Only show if not premium - Move to top */}
           {!isPremium && (
