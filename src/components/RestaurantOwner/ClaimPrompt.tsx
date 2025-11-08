@@ -55,7 +55,7 @@ export function ClaimPrompt() {
                 <CheckCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">查看數據分析</p>
-                  <p className="text-xs text-muted-foreground">瀏覽量、收藏數、用戶互動</p>
+                  <p className="text-xs text-muted-foreground">瀏覽量、收藏數、使用者互動</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-orange-500/5 to-transparent border border-orange-500/10">

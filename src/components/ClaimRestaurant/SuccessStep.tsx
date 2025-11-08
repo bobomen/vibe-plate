@@ -17,25 +17,25 @@ export function SuccessStep({ restaurantName, onGoToDashboard }: SuccessStepProp
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">认领成功！</h2>
+            <h2 className="text-2xl font-bold text-foreground">認領成功！</h2>
             <p className="text-muted-foreground">
-              恭喜您成功认领 <span className="font-semibold text-foreground">{restaurantName}</span>
+              恭喜您成功認領 <span className="font-semibold text-foreground">{restaurantName}</span>
             </p>
           </div>
 
           <div className="pt-4 space-y-3">
             <Button onClick={onGoToDashboard} className="w-full" size="lg">
-              前往餐厅管理后台
+              前往餐廳管理後台
             </Button>
           </div>
 
           <div className="pt-4 space-y-2 text-sm text-muted-foreground">
-            <p>现在您可以：</p>
+            <p>現在您可以：</p>
             <ul className="space-y-1 text-left max-w-sm mx-auto">
-              <li>• 更新餐厅信息和照片</li>
-              <li>• 设置优惠券和促销活动</li>
-              <li>• 查看餐厅数据分析</li>
-              <li>• 提升餐厅曝光度</li>
+              <li>• 更新餐廳資訊和照片</li>
+              <li>• 設置優惠券和促銷活動</li>
+              <li>• 查看餐廳數據分析</li>
+              <li>• 提升餐廳曝光度</li>
             </ul>
           </div>
         </CardContent>

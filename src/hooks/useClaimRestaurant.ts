@@ -49,7 +49,7 @@ export function useClaimRestaurant() {
 
   const submitContactInfo = useCallback(async (data: ContactInfoForm) => {
     if (!state.selectedRestaurant) {
-      setError('未选择餐厅');
+      setError('未選擇餐廳');
       return false;
     }
 
@@ -76,14 +76,14 @@ export function useClaimRestaurant() {
       }));
 
       toast({
-        title: '验证码已发送',
-        description: `验证码已发送至 ${data.email}`,
+        title: '驗證碼已發送',
+        description: `驗證碼已發送至 ${data.email}`,
       });
 
       return true;
     } catch (error) {
       console.error('Error sending verification code:', error);
-      setError(error instanceof Error ? error.message : '发送验证码失败');
+      setError(error instanceof Error ? error.message : '發送驗證碼失敗');
       setState(prev => ({ ...prev, isSubmitting: false }));
       return false;
     }
@@ -110,7 +110,7 @@ export function useClaimRestaurant() {
       if (response.error) throw response.error;
 
       const newRestaurant = response.data?.restaurant;
-      if (!newRestaurant) throw new Error('创建餐厅失败');
+      if (!newRestaurant) throw new Error('創建餐廳失敗');
 
       // Send verification code
       const verifyResponse = await supabase.functions.invoke('send-verification-code', {
@@ -141,14 +141,14 @@ export function useClaimRestaurant() {
       }));
 
       toast({
-        title: '餐厅创建成功',
-        description: `验证码已发送至 ${data.email}`,
+        title: '餐廳創建成功',
+        description: `驗證碼已發送至 ${data.email}`,
       });
 
       return true;
     } catch (error) {
       console.error('Error creating restaurant:', error);
-      setError(error instanceof Error ? error.message : '创建餐厅失败');
+      setError(error instanceof Error ? error.message : '創建餐廳失敗');
       setState(prev => ({ ...prev, isSubmitting: false }));
       return false;
     }
@@ -156,7 +156,7 @@ export function useClaimRestaurant() {
 
   const submitVerificationCode = useCallback(async (code: string) => {
     if (!state.selectedRestaurant) {
-      setError('未找到餐厅信息');
+      setError('未找到餐廳資訊');
       return false;
     }
 
@@ -179,14 +179,14 @@ export function useClaimRestaurant() {
       }));
 
       toast({
-        title: '验证成功',
-        description: '餐厅认领已完成',
+        title: '驗證成功',
+        description: '餐廳認領已完成',
       });
 
       return true;
     } catch (error) {
       console.error('Error verifying code:', error);
-      setError(error instanceof Error ? error.message : '验证码错误');
+      setError(error instanceof Error ? error.message : '驗證碼錯誤');
       setState(prev => ({ ...prev, isSubmitting: false }));
       return false;
     }

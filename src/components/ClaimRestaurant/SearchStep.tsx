@@ -50,9 +50,9 @@ export function SearchStep({ onSelectRestaurant, onCreateNew }: SearchStepProps)
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">搜索您的餐厅</h2>
+        <h2 className="text-2xl font-bold text-foreground">搜尋您的餐廳</h2>
         <p className="text-muted-foreground">
-          请输入餐厅名称或地址进行搜索
+          請輸入餐廳名稱或地址進行搜尋
         </p>
       </div>
 
@@ -61,7 +61,7 @@ export function SearchStep({ onSelectRestaurant, onCreateNew }: SearchStepProps)
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="餐厅名称或地址..."
+            placeholder="餐廳名稱或地址..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -69,7 +69,7 @@ export function SearchStep({ onSelectRestaurant, onCreateNew }: SearchStepProps)
           />
         </div>
         <Button onClick={handleSearch} disabled={isSearching || !searchQuery.trim()}>
-          {isSearching ? '搜索中...' : '搜索'}
+          {isSearching ? '搜尋中...' : '搜尋'}
         </Button>
       </div>
 
@@ -78,7 +78,7 @@ export function SearchStep({ onSelectRestaurant, onCreateNew }: SearchStepProps)
           {searchResults.length > 0 ? (
             <>
               <p className="text-sm text-muted-foreground">
-                找到 {searchResults.length} 个结果
+                找到 {searchResults.length} 個結果
               </p>
               <div className="space-y-2">
                 {searchResults.map((restaurant) => (
@@ -111,14 +111,14 @@ export function SearchStep({ onSelectRestaurant, onCreateNew }: SearchStepProps)
             <Card className="bg-muted/50">
               <CardContent className="p-6 text-center space-y-4">
                 <div className="space-y-2">
-                  <p className="text-foreground font-medium">找不到您的餐厅？</p>
+                  <p className="text-foreground font-medium">找不到您的餐廳？</p>
                   <p className="text-sm text-muted-foreground">
-                    如果搜索结果中没有您的餐厅，您可以创建一个新的餐厅资料
+                    如果搜尋結果中沒有您的餐廳，您可以創建一個新的餐廳資料
                   </p>
                 </div>
                 <Button onClick={onCreateNew} variant="outline" className="gap-2">
                   <Plus className="w-4 h-4" />
-                  创建新餐厅
+                  創建新餐廳
                 </Button>
               </CardContent>
             </Card>
@@ -131,7 +131,7 @@ export function SearchStep({ onSelectRestaurant, onCreateNew }: SearchStepProps)
           <CardContent className="p-8 text-center">
             <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              输入餐厅名称或地址开始搜索
+              輸入餐廳名稱或地址開始搜尋
             </p>
           </CardContent>
         </Card>

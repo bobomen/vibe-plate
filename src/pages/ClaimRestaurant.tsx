@@ -51,9 +51,9 @@ export default function ClaimRestaurant() {
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto py-8 px-4">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">餐厅认领</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">餐廳認領</h1>
           <p className="text-muted-foreground">
-            认领您的餐厅，开始管理和优化您的线上形象
+            認領您的餐廳，開始管理和優化您的線上形象
           </p>
         </div>
 

@@ -99,7 +99,7 @@ export default function RestaurantOwnerOverview() {
           onClick={() => navigate('/app')}
         >
           <ArrowLeftRight className="mr-2 h-4 w-4" />
-          切換到用戶模式
+          切換到使用者模式
         </Button>
       </div>
 
@@ -156,7 +156,7 @@ export default function RestaurantOwnerOverview() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>用戶互動</CardTitle>
+            <CardTitle>使用者互動</CardTitle>
             <CardDescription>過去 30 天的互動數據</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -182,7 +182,7 @@ export default function RestaurantOwnerOverview() {
         <Card>
           <CardHeader>
             <CardTitle>品質指標</CardTitle>
-            <CardDescription>用戶行為分析</CardDescription>
+            <CardDescription>使用者行為分析</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center">

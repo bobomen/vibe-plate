@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { VerificationForm } from '@/types/claimRestaurant';
 
 const verificationSchema = z.object({
-  code: z.string().length(6, { message: '验证码必须是6位数字' }).regex(/^\d+$/, { message: '验证码必须是数字' }),
+  code: z.string().length(6, { message: '驗證碼必須是6位數字' }).regex(/^\d+$/, { message: '驗證碼必須是數字' }),
 });
 
 interface VerificationStepProps {
@@ -40,7 +40,7 @@ export function VerificationStep({ onSubmit, isSubmitting, email }: Verification
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <Shield className="w-6 h-6 text-primary" />
           </div>
-          <CardTitle className="text-foreground">输入验证码</CardTitle>
+          <CardTitle className="text-foreground">輸入驗證碼</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -50,7 +50,7 @@ export function VerificationStep({ onSubmit, isSubmitting, email }: Verification
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>6位验证码</FormLabel>
+                    <FormLabel>6位驗證碼</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -62,7 +62,7 @@ export function VerificationStep({ onSubmit, isSubmitting, email }: Verification
                       />
                     </FormControl>
                     <FormDescription>
-                      验证码已发送至 {email}
+                      驗證碼已發送至 {email}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -70,14 +70,14 @@ export function VerificationStep({ onSubmit, isSubmitting, email }: Verification
               />
 
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? '验证中...' : '验证'}
+                {isSubmitting ? '驗證中...' : '驗證'}
               </Button>
             </form>
           </Form>
 
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">
-              没有收到验证码？请检查垃圾邮件文件夹
+              沒有收到驗證碼？請檢查垃圾郵件資料夾
             </p>
           </div>
         </CardContent>

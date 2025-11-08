@@ -16,21 +16,21 @@ interface Step {
 export function StepIndicator({ currentStep, claimType }: StepIndicatorProps) {
   const getSteps = (): Step[] => {
     const baseSteps: Step[] = [
-      { id: 'search', label: '搜索餐厅', order: 1 },
+      { id: 'search', label: '搜尋餐廳', order: 1 },
     ];
 
     if (claimType === 'existing') {
       return [
         ...baseSteps,
-        { id: 'contact-info', label: '联系信息', order: 2 },
-        { id: 'verification', label: '验证', order: 3 },
+        { id: 'contact-info', label: '聯繫資訊', order: 2 },
+        { id: 'verification', label: '驗證', order: 3 },
         { id: 'success', label: '完成', order: 4 },
       ];
     } else if (claimType === 'new') {
       return [
         ...baseSteps,
-        { id: 'create-info', label: '餐厅信息', order: 2 },
-        { id: 'verification', label: '验证', order: 3 },
+        { id: 'create-info', label: '餐廳資訊', order: 2 },
+        { id: 'verification', label: '驗證', order: 3 },
         { id: 'success', label: '完成', order: 4 },
       ];
     }

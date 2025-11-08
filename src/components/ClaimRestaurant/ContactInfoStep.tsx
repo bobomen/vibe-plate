@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { SearchedRestaurant, ContactInfoForm } from '@/types/claimRestaurant';
 
 const contactInfoSchema = z.object({
-  email: z.string().email({ message: '请输入有效的电子邮箱' }),
-  phone: z.string().min(10, { message: '请输入有效的电话号码' }),
+  email: z.string().email({ message: '請輸入有效的電子郵箱' }),
+  phone: z.string().min(10, { message: '請輸入有效的電話號碼' }),
 });
 
 interface ContactInfoStepProps {
@@ -45,7 +45,7 @@ export function ContactInfoStep({ restaurant, onSubmit, onBack, isSubmitting }: 
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-foreground">认领餐厅</CardTitle>
+          <CardTitle className="text-foreground">認領餐廳</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="p-4 bg-muted rounded-lg">
@@ -60,7 +60,7 @@ export function ContactInfoStep({ restaurant, onSubmit, onBack, isSubmitting }: 
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>电子邮箱</FormLabel>
+                    <FormLabel>電子郵箱</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -77,7 +77,7 @@ export function ContactInfoStep({ restaurant, onSubmit, onBack, isSubmitting }: 
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>电话号码</FormLabel>
+                    <FormLabel>電話號碼</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -91,7 +91,7 @@ export function ContactInfoStep({ restaurant, onSubmit, onBack, isSubmitting }: 
 
               <div className="pt-4">
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? '发送中...' : '发送验证码'}
+                  {isSubmitting ? '發送中...' : '發送驗證碼'}
                 </Button>
               </div>
             </form>

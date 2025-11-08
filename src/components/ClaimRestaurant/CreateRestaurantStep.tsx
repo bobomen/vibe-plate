@@ -9,15 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import type { CreateRestaurantForm } from '@/types/claimRestaurant';
 
 const createRestaurantSchema = z.object({
-  name: z.string().min(2, { message: '餐厅名称至少需要2个字符' }).max(100),
-  address: z.string().min(5, { message: '地址至少需要5个字符' }).max(200),
-  phone: z.string().min(10, { message: '请输入有效的电话号码' }),
-  email: z.string().email({ message: '请输入有效的电子邮箱' }),
+  name: z.string().min(2, { message: '餐廳名稱至少需要2個字符' }).max(100),
+  address: z.string().min(5, { message: '地址至少需要5個字符' }).max(200),
+  phone: z.string().min(10, { message: '請輸入有效的電話號碼' }),
+  email: z.string().email({ message: '請輸入有效的電子郵箱' }),
   city: z.string().optional(),
   district: z.string().optional(),
   cuisine_type: z.string().optional(),
-  website: z.string().url({ message: '请输入有效的网址' }).optional().or(z.literal('')),
-  menu_url: z.string().url({ message: '请输入有效的网址' }).optional().or(z.literal('')),
+  website: z.string().url({ message: '請輸入有效的網址' }).optional().or(z.literal('')),
+  menu_url: z.string().url({ message: '請輸入有效的網址' }).optional().or(z.literal('')),
 });
 
 interface CreateRestaurantStepProps {
@@ -58,8 +58,8 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-foreground">创建新餐厅</CardTitle>
-          <CardDescription>请填写您的餐厅信息</CardDescription>
+          <CardTitle className="text-foreground">創建新餐廳</CardTitle>
+          <CardDescription>請填寫您的餐廳資訊</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -69,11 +69,11 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>餐厅名称 *</FormLabel>
+                    <FormLabel>餐廳名稱 *</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input {...field} placeholder="餐厅名称" className="pl-10" />
+                        <Input {...field} placeholder="餐廳名稱" className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -118,9 +118,9 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                   name="district"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>区域</FormLabel>
+                      <FormLabel>區域</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="例：信义区" />
+                        <Input {...field} placeholder="例：信義區" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -135,7 +135,7 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                   <FormItem>
                     <FormLabel>菜系</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="例：意大利菜、日本料理" />
+                      <Input {...field} placeholder="例：義大利菜、日本料理" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -147,7 +147,7 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>电话号码 *</FormLabel>
+                    <FormLabel>電話號碼 *</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -164,14 +164,14 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>电子邮箱 *</FormLabel>
+                    <FormLabel>電子郵箱 *</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input {...field} type="email" placeholder="your@email.com" className="pl-10" />
                       </div>
                     </FormControl>
-                    <FormDescription>验证码将发送到此邮箱</FormDescription>
+                    <FormDescription>驗證碼將發送到此郵箱</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -182,7 +182,7 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                 name="website"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>网站</FormLabel>
+                    <FormLabel>網站</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -199,7 +199,7 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                 name="menu_url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>菜单链接</FormLabel>
+                    <FormLabel>菜單連結</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Menu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -213,7 +213,7 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
 
               <div className="pt-4">
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? '创建中...' : '创建并发送验证码'}
+                  {isSubmitting ? '創建中...' : '創建並發送驗證碼'}
                 </Button>
               </div>
             </form>
