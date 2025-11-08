@@ -29,6 +29,7 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     
+    // Create anon client for auth
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -49,12 +50,18 @@ serve(async (req) => {
       );
     }
 
+    // Create admin client for database operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const { restaurant_id, verification_code }: VerifyClaimRequest = await req.json();
 
     console.log('Verifying claim:', { restaurant_id, code: verification_code, user_id: user.id });
 
-    // 查找验证码记录
-    const { data: codeRecord, error: codeError } = await supabaseClient
+    // 查找验证码记录 - use admin client
+    const { data: codeRecord, error: codeError } = await supabaseAdmin
       .from('restaurant_verification_codes')
       .select('*')
       .eq('user_id', user.id)
@@ -100,7 +107,7 @@ serve(async (req) => {
     }
 
     // 标记验证码为已使用
-    const { error: updateCodeError } = await supabaseClient
+    const { error: updateCodeError } = await supabaseAdmin
       .from('restaurant_verification_codes')
       .update({ used: true })
       .eq('id', codeRecord.id);
@@ -114,7 +121,7 @@ serve(async (req) => {
     }
 
     // 查找对应的认领记录
-    let claimQuery = supabaseClient
+    let claimQuery = supabaseAdmin
       .from('restaurant_claims')
       .select('*')
       .eq('user_id', user.id)
@@ -145,7 +152,7 @@ serve(async (req) => {
     }
 
     // 更新认领记录状态为 verified
-    const { error: updateClaimError } = await supabaseClient
+    const { error: updateClaimError } = await supabaseAdmin
       .from('restaurant_claims')
       .update({ 
         status: 'verified',
@@ -173,7 +180,7 @@ serve(async (req) => {
     }
 
     // 创建 restaurant_owners 记录
-    const { data: existingOwner, error: ownerCheckError } = await supabaseClient
+    const { data: existingOwner, error: ownerCheckError } = await supabaseAdmin
       .from('restaurant_owners')
       .select('id')
       .eq('restaurant_id', targetRestaurantId)
@@ -187,7 +194,7 @@ serve(async (req) => {
 
     // 如果不存在，创建新记录
     if (!existingOwner) {
-      const { error: createOwnerError } = await supabaseClient
+      const { error: createOwnerError } = await supabaseAdmin
         .from('restaurant_owners')
         .insert({
           user_id: user.id,
@@ -209,7 +216,7 @@ serve(async (req) => {
     }
 
     // 更新餐厅的 verified_at 时间戳
-    const { error: updateRestaurantError } = await supabaseClient
+    const { error: updateRestaurantError } = await supabaseAdmin
       .from('restaurants')
       .update({ 
         verified_at: new Date().toISOString()
