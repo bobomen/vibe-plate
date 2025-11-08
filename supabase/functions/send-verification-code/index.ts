@@ -70,6 +70,34 @@ serve(async (req) => {
 
     console.log('Sending verification code for:', { restaurant_id, claim_type, contact_email, user_id: user.id });
 
+    // 创建或更新 restaurant_claims 记录
+    const claimData: any = {
+      user_id: user.id,
+      claim_type,
+      status: 'pending',
+      contact_email,
+    };
+
+    if (claim_type === 'existing' && restaurant_id) {
+      claimData.restaurant_id = restaurant_id;
+    }
+
+    const { data: claim, error: claimError } = await supabaseAdmin
+      .from('restaurant_claims')
+      .upsert(claimData, { 
+        onConflict: 'user_id,restaurant_id',
+        ignoreDuplicates: false 
+      })
+      .select()
+      .single();
+
+    if (claimError) {
+      console.error('Error creating/updating claim:', claimError);
+      // 继续发送验证码，即使 claim 创建失败
+    } else {
+      console.log('Claim created/updated:', claim.id);
+    }
+
     // 生成6位验证码
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     

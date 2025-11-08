@@ -73,9 +73,6 @@ serve(async (req) => {
         cuisine_type: restaurantData.cuisine_type,
         price_range: restaurantData.price_range,
         website: restaurantData.website,
-        description: restaurantData.description,
-        // 新创建的餐厅设置为待验证状态
-        is_verified: false,
         view_count: 0,
       })
       .select()
@@ -97,7 +94,7 @@ serve(async (req) => {
       .select('*')
       .eq('user_id', user.id)
       .is('restaurant_id', null)
-      .eq('status', 'verified')
+      .eq('status', 'pending')
       .maybeSingle();
 
     // 如果存在已验证的新餐厅认领，将其关联到新创建的餐厅

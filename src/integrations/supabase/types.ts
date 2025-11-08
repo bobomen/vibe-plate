@@ -560,6 +560,8 @@ export type Database = {
           cancelled_at: string | null
           cancelled_reason: string | null
           claim_type: string
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
           data_completeness_score: number | null
           id: string
@@ -577,6 +579,8 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_reason?: string | null
           claim_type: string
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           data_completeness_score?: number | null
           id?: string
@@ -594,6 +598,8 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_reason?: string | null
           claim_type?: string
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           data_completeness_score?: number | null
           id?: string
@@ -734,6 +740,51 @@ export type Database = {
             foreignKeyName: "restaurant_trust_score_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_verification_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          restaurant_id: string | null
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          restaurant_id?: string | null
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          restaurant_id?: string | null
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_verification_codes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_verification_codes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
