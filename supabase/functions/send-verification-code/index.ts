@@ -70,32 +70,65 @@ serve(async (req) => {
 
     console.log('Sending verification code for:', { restaurant_id, claim_type, contact_email, user_id: user.id });
 
-    // 创建或更新 restaurant_claims 记录
-    const claimData: any = {
-      user_id: user.id,
-      claim_type,
-      status: 'pending',
-      contact_email,
-    };
+    // Check for existing pending claim
+    let existingClaimQuery = supabaseAdmin
+      .from('restaurant_claims')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'pending');
 
-    if (claim_type === 'existing' && restaurant_id) {
-      claimData.restaurant_id = restaurant_id;
+    if (restaurant_id) {
+      existingClaimQuery = existingClaimQuery.eq('restaurant_id', restaurant_id);
+    } else {
+      existingClaimQuery = existingClaimQuery.is('restaurant_id', null);
     }
 
-    const { data: claim, error: claimError } = await supabaseAdmin
-      .from('restaurant_claims')
-      .upsert(claimData, { 
-        onConflict: 'user_id,restaurant_id',
-        ignoreDuplicates: false 
-      })
-      .select()
-      .single();
+    const { data: existingClaim } = await existingClaimQuery.maybeSingle();
 
-    if (claimError) {
-      console.error('Error creating/updating claim:', claimError);
-      // 继续发送验证码，即使 claim 创建失败
+    let claim;
+    if (existingClaim) {
+      // Update existing claim
+      const { data: updatedClaim, error: updateError } = await supabaseAdmin
+        .from('restaurant_claims')
+        .update({ 
+          contact_email,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingClaim.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating claim:', updateError);
+      } else {
+        console.log('Claim updated:', updatedClaim.id);
+        claim = updatedClaim;
+      }
     } else {
-      console.log('Claim created/updated:', claim.id);
+      // Create new claim
+      const claimData: any = {
+        user_id: user.id,
+        claim_type,
+        status: 'pending',
+        contact_email,
+      };
+
+      if (restaurant_id) {
+        claimData.restaurant_id = restaurant_id;
+      }
+
+      const { data: newClaim, error: insertError } = await supabaseAdmin
+        .from('restaurant_claims')
+        .insert(claimData)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating claim:', insertError);
+      } else {
+        console.log('Claim created:', newClaim.id);
+        claim = newClaim;
+      }
     }
 
     // 生成6位验证码
