@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import type { TrendDataPoint, TimeRange } from '@/types/restaurantOwner';
 import { TrendingUp, Percent } from 'lucide-react';
 import { useState } from 'react';
@@ -63,91 +62,109 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
 
           {/* 數量趨勢圖 */}
           <TabsContent value="quantity" className="h-[350px]">
-            <ChartContainer config={quantityChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
-                    className="text-xs"
-                  />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="impressions" 
-                    stroke="var(--color-impressions)" 
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    name="曝光量"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="detail_views" 
-                    stroke="var(--color-detail_views)" 
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    name="詳情頁瀏覽"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="favorites" 
-                    stroke="var(--color-favorites)" 
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    name="收藏數"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.2} />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  stroke="hsl(var(--border))"
+                />
+                <YAxis 
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  stroke="hsl(var(--border))"
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--popover-foreground))'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="impressions" 
+                  stroke="hsl(199, 89%, 65%)"
+                  strokeWidth={3}
+                  dot={false}
+                  activeDot={{ r: 6, fill: 'hsl(199, 89%, 65%)', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  name="曝光量"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="detail_views" 
+                  stroke="hsl(142, 76%, 58%)"
+                  strokeWidth={3}
+                  dot={false}
+                  activeDot={{ r: 6, fill: 'hsl(142, 76%, 58%)', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  name="詳情頁瀏覽"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="favorites" 
+                  stroke="hsl(340, 82%, 65%)"
+                  strokeWidth={3}
+                  dot={false}
+                  activeDot={{ r: 6, fill: 'hsl(340, 82%, 65%)', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  name="收藏數"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </TabsContent>
 
           {/* 轉化率趨勢圖 */}
           <TabsContent value="conversion" className="h-[350px]">
-            <ChartContainer config={conversionChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
-                    className="text-xs"
-                  />
-                  <YAxis 
-                    className="text-xs"
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <ChartTooltip 
-                    content={<ChartTooltipContent />}
-                    formatter={(value: any) => `${value}%`}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="ctr" 
-                    stroke="var(--color-ctr)" 
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    name="點擊率"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="save_rate" 
-                    stroke="var(--color-save_rate)" 
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    name="收藏率"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.2} />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  stroke="hsl(var(--border))"
+                />
+                <YAxis 
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  stroke="hsl(var(--border))"
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--popover-foreground))'
+                  }}
+                  formatter={(value: any) => `${value}%`}
+                />
+                <Legend 
+                  wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="ctr" 
+                  stroke="hsl(47, 96%, 60%)"
+                  strokeWidth={3}
+                  dot={false}
+                  activeDot={{ r: 6, fill: 'hsl(47, 96%, 60%)', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  name="點擊率"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="save_rate" 
+                  stroke="hsl(280, 75%, 65%)"
+                  strokeWidth={3}
+                  dot={false}
+                  activeDot={{ r: 6, fill: 'hsl(280, 75%, 65%)', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                  name="收藏率"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </TabsContent>
         </Tabs>
       </CardContent>

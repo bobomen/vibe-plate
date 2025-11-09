@@ -198,7 +198,7 @@ export default function RestaurantOwnerOverview() {
       {/* Phase 1: 趨勢圖表 */}
       <div className="max-w-7xl mx-auto mb-6">
         {trendLoading ? (
-          <div className="h-[400px] bg-muted animate-pulse rounded-lg" />
+          <div className="h-[500px] bg-muted animate-pulse rounded-lg" />
         ) : trendError ? (
           <ErrorFallback 
             title="趨勢數據載入失敗"
@@ -236,7 +236,7 @@ export default function RestaurantOwnerOverview() {
       </div>
 
       {/* 互動統計 */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardHeader>
             <CardTitle>使用者互動</CardTitle>
