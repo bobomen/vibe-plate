@@ -22,17 +22,12 @@ export function CompetitivenessCard({ data, district, cuisineType }: Competitive
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
-              競爭力指數
-            </CardTitle>
-            <CardDescription>在區域和菜系中的排名表現</CardDescription>
-          </div>
+        <div className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+          <CardTitle className="text-lg">競爭力指數</CardTitle>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-7 w-7">
                 <Info className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DialogTrigger>
@@ -97,6 +92,7 @@ export function CompetitivenessCard({ data, district, cuisineType }: Competitive
             </DialogContent>
           </Dialog>
         </div>
+        <CardDescription>在區域和菜系中的排名表現</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* 區域排名 */}
