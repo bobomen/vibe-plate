@@ -8,6 +8,13 @@ import { TrendingUp, Eye, Heart, MousePointerClick, Award, Star } from 'lucide-r
 import { toast } from '@/hooks/use-toast';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { ClaimPrompt } from '@/components/RestaurantOwner/ClaimPrompt';
+import { CompetitivenessCard } from '@/components/RestaurantOwner/CompetitivenessCard';
+import { EfficiencyScoreCard } from '@/components/RestaurantOwner/EfficiencyScoreCard';
+import { TrendCharts } from '@/components/RestaurantOwner/TrendCharts';
+import { ErrorFallback } from '@/components/RestaurantOwner/ErrorFallback';
+import { useRestaurantExposureMetrics } from '@/hooks/useRestaurantExposureMetrics';
+import { useRestaurantTrend } from '@/hooks/useRestaurantTrend';
+import type { TimeRange } from '@/types/restaurantOwner';
 
 interface RestaurantStats {
   total_impressions: number;
@@ -29,6 +36,20 @@ export default function RestaurantOwnerOverview() {
   const { isOwner, ownerData } = useRestaurantOwner();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<RestaurantStats | null>(null);
+  const [timeRange, setTimeRange] = useState<TimeRange>(30);
+
+  // Phase 1: 獲取曝光指標數據
+  const { data: exposureMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = useRestaurantExposureMetrics({
+    restaurantId: ownerData?.restaurantId || '',
+    daysBack: timeRange,
+    enabled: !!ownerData?.restaurantId,
+  });
+
+  const { data: trendData, isLoading: trendLoading, refetch: refetchTrend } = useRestaurantTrend({
+    restaurantId: ownerData?.restaurantId || '',
+    daysBack: timeRange,
+    enabled: !!ownerData?.restaurantId,
+  });
 
   useEffect(() => {
     if (user && ownerData) {
@@ -140,6 +161,56 @@ export default function RestaurantOwnerOverview() {
             <p className="text-xs text-muted-foreground">區域內排名</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Phase 1: 競爭力指數 & 曝光效率評分 */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {metricsLoading ? (
+          <>
+            <div className="h-[300px] bg-muted animate-pulse rounded-lg" />
+            <div className="h-[300px] bg-muted animate-pulse rounded-lg" />
+          </>
+        ) : exposureMetrics ? (
+          <>
+            <CompetitivenessCard 
+              data={exposureMetrics.competitiveness}
+              district={exposureMetrics.district}
+              cuisineType={exposureMetrics.cuisine_type}
+            />
+            <EfficiencyScoreCard 
+              data={exposureMetrics.efficiency_score}
+            />
+          </>
+        ) : (
+          <>
+            <ErrorFallback 
+              title="曝光指標載入失敗"
+              onRetry={() => refetchMetrics()}
+            />
+            <ErrorFallback 
+              title="效率評分載入失敗"
+              onRetry={() => refetchMetrics()}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Phase 1: 趨勢圖表 */}
+      <div className="max-w-7xl mx-auto mb-6">
+        {trendLoading ? (
+          <div className="h-[400px] bg-muted animate-pulse rounded-lg" />
+        ) : trendData && trendData.length > 0 ? (
+          <TrendCharts 
+            data={trendData}
+            onTimeRangeChange={setTimeRange}
+          />
+        ) : (
+          <ErrorFallback 
+            title="趨勢數據載入失敗"
+            message="暫無趨勢數據，請確保餐廳有足夠的歷史數據"
+            onRetry={() => refetchTrend()}
+          />
+        )}
       </div>
 
       {/* 互動統計 */}

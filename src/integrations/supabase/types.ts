@@ -1266,6 +1266,10 @@ export type Database = {
         Returns: undefined
       }
       generate_group_code: { Args: never; Returns: string }
+      get_restaurant_exposure_metrics: {
+        Args: { days_back?: number; target_restaurant_id: string }
+        Returns: Json
+      }
       get_restaurant_stats: {
         Args: { days_back?: number; target_restaurant_id: string }
         Returns: Json
