@@ -79,24 +79,27 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
                     type="monotone" 
                     dataKey="impressions" 
                     stroke="var(--color-impressions)" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
+                    strokeWidth={3}
+                    dot={{ r: 5, fill: 'var(--color-impressions)', strokeWidth: 2 }}
+                    activeDot={{ r: 7 }}
                     name="曝光量"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="detail_views" 
                     stroke="var(--color-detail_views)" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
+                    strokeWidth={3}
+                    dot={{ r: 5, fill: 'var(--color-detail_views)', strokeWidth: 2 }}
+                    activeDot={{ r: 7 }}
                     name="詳情頁瀏覽"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="favorites" 
                     stroke="var(--color-favorites)" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
+                    strokeWidth={3}
+                    dot={{ r: 5, fill: 'var(--color-favorites)', strokeWidth: 2 }}
+                    activeDot={{ r: 7 }}
                     name="收藏數"
                   />
                 </LineChart>
@@ -128,16 +131,18 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
                     type="monotone" 
                     dataKey="ctr" 
                     stroke="var(--color-ctr)" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
+                    strokeWidth={3}
+                    dot={{ r: 5, fill: 'var(--color-ctr)', strokeWidth: 2 }}
+                    activeDot={{ r: 7 }}
                     name="點擊率"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="save_rate" 
                     stroke="var(--color-save_rate)" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
+                    strokeWidth={3}
+                    dot={{ r: 5, fill: 'var(--color-save_rate)', strokeWidth: 2 }}
+                    activeDot={{ r: 7 }}
                     name="收藏率"
                   />
                 </LineChart>
