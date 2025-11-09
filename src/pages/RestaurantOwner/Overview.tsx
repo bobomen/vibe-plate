@@ -196,9 +196,23 @@ export default function RestaurantOwnerOverview() {
       </div>
 
       {/* Phase 1: 趨勢圖表 */}
-      <div className="max-w-7xl mx-auto mb-6">
+      <div 
+        className="max-w-7xl mx-auto mb-6"
+        style={{ 
+          minHeight: '500px',
+          position: 'relative',
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateZ(0)',
+        }}
+      >
         {trendLoading ? (
-          <div className="h-[500px] bg-muted animate-pulse rounded-lg" />
+          <div 
+            className="h-[500px] bg-muted animate-pulse rounded-lg"
+            style={{ 
+              WebkitTransform: 'translateZ(0)',
+              transform: 'translateZ(0)',
+            }}
+          />
         ) : trendError ? (
           <ErrorFallback 
             title="趨勢數據載入失敗"
@@ -219,7 +233,10 @@ export default function RestaurantOwnerOverview() {
           ) : (
             <TrendCharts 
               data={trendData}
-              onTimeRangeChange={setTimeRange}
+              onTimeRangeChange={(range) => {
+                setTimeRange(range);
+                refetchTrend();
+              }}
             />
           )
         ) : (

@@ -116,3 +116,34 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* WebView 图表优化 - 针对 iPad 和原生 App */
+.recharts-responsive-container {
+  /* 强制硬件加速 */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+  
+  /* 优化渲染性能 */
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.recharts-surface {
+  /* SVG 渲染优化 */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  shape-rendering: optimizeSpeed;
+}
+
+/* iPad 和 WebView 特定优化 */
+@supports (-webkit-touch-callout: none) {
+  .recharts-responsive-container {
+    /* iOS 特定优化 */
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+}
