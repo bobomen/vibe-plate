@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight, TrendingUp, Eye, Heart, MousePointerClick, Award, Star } from 'lucide-react';
+import { TrendingUp, Eye, Heart, MousePointerClick, Award, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { ClaimPrompt } from '@/components/RestaurantOwner/ClaimPrompt';
@@ -88,19 +88,9 @@ export default function RestaurantOwnerOverview() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {/* 頂部工具欄 */}
-      <div className="max-w-7xl mx-auto mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">成效總覽</h1>
-          <p className="text-sm text-muted-foreground mt-1">{ownerData.restaurantName}</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/app')}
-        >
-          <ArrowLeftRight className="mr-2 h-4 w-4" />
-          切換到使用者模式
-        </Button>
+      <div className="max-w-7xl mx-auto mb-6">
+        <h1 className="text-2xl font-bold">成效總覽</h1>
+        <p className="text-sm text-muted-foreground mt-1">{ownerData.restaurantName}</p>
       </div>
 
       {/* 統計卡片 */}
