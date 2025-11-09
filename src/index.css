@@ -97,6 +97,13 @@ All colors MUST be HSL.
     --success-foreground: 210 40% 98%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+    
+    /* Chart colors - 亮色系适合黑色背景 */
+    --chart-1: 199 89% 65%;  /* 亮蓝色 - 曝光量 */
+    --chart-2: 142 76% 58%;  /* 亮绿色 - 详情页浏览 */
+    --chart-3: 340 82% 65%;  /* 亮粉色 - 收藏数 */
+    --chart-4: 47 96% 60%;   /* 亮黄色 - 点击率 */
+    --chart-5: 280 75% 65%;  /* 亮紫色 - 收藏率 */
   }
 }
 

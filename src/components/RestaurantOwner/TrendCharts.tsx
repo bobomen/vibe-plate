@@ -27,7 +27,7 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
   };
 
   return (
-    <Card className="col-span-full">
+    <Card>
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -62,11 +62,11 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
           </TabsList>
 
           {/* 數量趨勢圖 */}
-          <TabsContent value="quantity" className="h-[300px]">
+          <TabsContent value="quantity" className="h-[350px]">
             <ChartContainer config={quantityChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" />
                   <XAxis 
                     dataKey="date" 
                     tickFormatter={(value) => new Date(value).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
@@ -80,8 +80,8 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
                     dataKey="impressions" 
                     stroke="var(--color-impressions)" 
                     strokeWidth={3}
-                    dot={{ r: 5, fill: 'var(--color-impressions)', strokeWidth: 2 }}
-                    activeDot={{ r: 7 }}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                     name="曝光量"
                   />
                   <Line 
@@ -89,8 +89,8 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
                     dataKey="detail_views" 
                     stroke="var(--color-detail_views)" 
                     strokeWidth={3}
-                    dot={{ r: 5, fill: 'var(--color-detail_views)', strokeWidth: 2 }}
-                    activeDot={{ r: 7 }}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                     name="詳情頁瀏覽"
                   />
                   <Line 
@@ -98,8 +98,8 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
                     dataKey="favorites" 
                     stroke="var(--color-favorites)" 
                     strokeWidth={3}
-                    dot={{ r: 5, fill: 'var(--color-favorites)', strokeWidth: 2 }}
-                    activeDot={{ r: 7 }}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                     name="收藏數"
                   />
                 </LineChart>
@@ -108,11 +108,11 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
           </TabsContent>
 
           {/* 轉化率趨勢圖 */}
-          <TabsContent value="conversion" className="h-[300px]">
+          <TabsContent value="conversion" className="h-[350px]">
             <ChartContainer config={conversionChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" />
                   <XAxis 
                     dataKey="date" 
                     tickFormatter={(value) => new Date(value).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
@@ -132,8 +132,8 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
                     dataKey="ctr" 
                     stroke="var(--color-ctr)" 
                     strokeWidth={3}
-                    dot={{ r: 5, fill: 'var(--color-ctr)', strokeWidth: 2 }}
-                    activeDot={{ r: 7 }}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                     name="點擊率"
                   />
                   <Line 
@@ -141,8 +141,8 @@ export function TrendCharts({ data, onTimeRangeChange }: TrendChartsProps) {
                     dataKey="save_rate" 
                     stroke="var(--color-save_rate)" 
                     strokeWidth={3}
-                    dot={{ r: 5, fill: 'var(--color-save_rate)', strokeWidth: 2 }}
-                    activeDot={{ r: 7 }}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                     name="收藏率"
                   />
                 </LineChart>
