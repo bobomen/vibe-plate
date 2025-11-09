@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, Clock, Heart, ExternalLink, Phone, Globe, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,10 @@ export default function RestaurantDetail() {
   const [loading, setLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(0);
+  
+  // Track view duration
+  const viewStartTime = useRef<number | null>(null);
+  const viewRecordId = useRef<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -45,6 +49,59 @@ export default function RestaurantDetail() {
       checkIfFavorited();
     }
   }, [id]);
+
+  // Track detail page view and duration
+  useEffect(() => {
+    if (!user?.id || !restaurant?.id) return;
+
+    let isMounted = true;
+    viewStartTime.current = Date.now();
+
+    const trackDetailView = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('restaurant_views')
+          .insert({
+            user_id: user.id,
+            restaurant_id: restaurant.id,
+            view_source: 'detail',
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        if (isMounted && data) {
+          viewRecordId.current = data.id;
+        }
+      } catch (error) {
+        console.error('Error tracking detail view:', error);
+      }
+    };
+
+    trackDetailView();
+
+    // Update view duration on unmount
+    return () => {
+      isMounted = false;
+      
+      if (viewRecordId.current && viewStartTime.current) {
+        const duration = Date.now() - viewStartTime.current;
+        
+        // Fire and forget - update view duration
+        (async () => {
+          try {
+            await supabase
+              .from('restaurant_views')
+              .update({ view_duration_ms: duration })
+              .eq('id', viewRecordId.current!);
+            console.log('View duration tracked:', duration, 'ms');
+          } catch (error) {
+            console.error('Error updating view duration:', error);
+          }
+        })();
+      }
+    };
+  }, [user?.id, restaurant?.id]);
 
   const fetchRestaurant = async () => {
     try {
