@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "npm:resend@2.0.0";
+import { checkRateLimit, createRateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,6 +60,25 @@ serve(async (req) => {
     }
 
     console.log('User authenticated successfully:', user.id);
+
+    // 🔒 速率限制：防止邮件轰炸攻击
+    // 限制：每个用户 15 分钟内最多发送 5 次验证码
+    const rateLimitResult = checkRateLimit({
+      windowMs: 15 * 60 * 1000,  // 15分钟
+      maxRequests: 5,             // 最多5次
+      identifier: `send-code:${user.id}`
+    });
+
+    if (!rateLimitResult.allowed) {
+      console.log(`[Rate Limit] User ${user.id} exceeded send-verification-code limit`);
+      return createRateLimitResponse(
+        `請求過於頻繁，請在 ${rateLimitResult.retryAfter} 秒後重試`,
+        rateLimitResult.retryAfter!,
+        corsHeaders
+      );
+    }
+
+    console.log(`[Rate Limit] User ${user.id} - Remaining: ${rateLimitResult.remaining}/5`);
 
     // Create admin client for database operations
     const supabaseAdmin = createClient(

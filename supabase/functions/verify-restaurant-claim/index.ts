@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { checkRateLimit, createRateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,6 +50,25 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // 🔒 速率限制：防止验证码暴力破解
+    // 限制：每个用户 15 分钟内最多尝试 10 次
+    const rateLimitResult = checkRateLimit({
+      windowMs: 15 * 60 * 1000,  // 15分钟
+      maxRequests: 10,            // 最多10次
+      identifier: `verify-claim:${user.id}`
+    });
+
+    if (!rateLimitResult.allowed) {
+      console.log(`[Rate Limit] User ${user.id} exceeded verify-claim limit`);
+      return createRateLimitResponse(
+        `驗證嘗試次數過多，請在 ${rateLimitResult.retryAfter} 秒後重試`,
+        rateLimitResult.retryAfter!,
+        corsHeaders
+      );
+    }
+
+    console.log(`[Rate Limit] User ${user.id} - Remaining: ${rateLimitResult.remaining}/10`);
 
     // Create admin client for database operations
     const supabaseAdmin = createClient(
