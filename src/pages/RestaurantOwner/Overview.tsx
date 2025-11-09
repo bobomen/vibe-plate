@@ -45,7 +45,7 @@ export default function RestaurantOwnerOverview() {
     enabled: !!ownerData?.restaurantId,
   });
 
-  const { data: trendData, isLoading: trendLoading, refetch: refetchTrend } = useRestaurantTrend({
+  const { data: trendData, isLoading: trendLoading, error: trendError, refetch: refetchTrend } = useRestaurantTrend({
     restaurantId: ownerData?.restaurantId || '',
     daysBack: timeRange,
     enabled: !!ownerData?.restaurantId,
@@ -199,17 +199,39 @@ export default function RestaurantOwnerOverview() {
       <div className="max-w-7xl mx-auto mb-6">
         {trendLoading ? (
           <div className="h-[400px] bg-muted animate-pulse rounded-lg" />
-        ) : trendData && trendData.length > 0 ? (
-          <TrendCharts 
-            data={trendData}
-            onTimeRangeChange={setTimeRange}
-          />
-        ) : (
+        ) : trendError ? (
           <ErrorFallback 
             title="趨勢數據載入失敗"
-            message="暫無趨勢數據，請確保餐廳有足夠的歷史數據"
+            message={trendError.message}
             onRetry={() => refetchTrend()}
           />
+        ) : trendData && trendData.length > 0 ? (
+          trendData.length < 3 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 space-y-2">
+                <TrendingUp className="h-12 w-12 text-muted-foreground/50" />
+                <p className="text-sm font-medium text-foreground">數據量不足</p>
+                <p className="text-xs text-muted-foreground text-center max-w-md">
+                  至少需要 3 天的數據才能顯示趨勢圖。當前數據: {trendData.length} 天
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <TrendCharts 
+              data={trendData}
+              onTimeRangeChange={setTimeRange}
+            />
+          )
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 space-y-2">
+              <TrendingUp className="h-12 w-12 text-muted-foreground/50" />
+              <p className="text-sm font-medium text-foreground">暫無趨勢數據</p>
+              <p className="text-xs text-muted-foreground text-center max-w-md">
+                開始使用後，數據將自動累積並顯示在此處
+              </p>
+            </CardContent>
+          </Card>
         )}
       </div>
 
