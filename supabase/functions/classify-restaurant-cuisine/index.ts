@@ -95,12 +95,35 @@ Google Places 類型：${googleTypes || '無'}
 
 注意：統一使用「台」而非「臺」，例如「台北市」而非「臺北市」
 
-任務 3：飲食選項判斷
-請根據餐廳名稱判斷是否提供以下飲食選項（如果名稱中包含相關關鍵字則為 true，否則為 false）：
-- vegetarian（素食）：名稱包含「素」、「蔬」等
-- vegan（純素）：名稱包含「純素」、「全素」等
-- halal（清真）：名稱包含「清真」、「回教」等
-- gluten_free（無麩質）：名稱包含「無麩質」等
+任務 3：飲食選項判斷（多維度分析）
+請綜合以下信息判斷餐廳是否提供特定飲食選項：
+
+**1. 餐廳名稱分析**
+- vegetarian（素食）：包含「素」、「蔬」、「齋」、"vegetarian"、"veggie"
+- vegan（純素）：包含「純素」、「全素」、「蔬食」、"vegan"、"plant-based"
+- halal（清真）：包含「清真」、「回教」、"halal"、"muslim"
+- gluten_free（無麩質）：包含「無麩質」、"gluten free"、"GF"
+
+**2. Google Places Types 分析**
+${googleTypes ? `Google 標記：${googleTypes}` : '無 Google 標記'}
+- 如果包含 "vegetarian_restaurant" → vegetarian: true
+- 如果包含 "vegan_restaurant" → vegan: true  
+- 如果包含 "halal_restaurant" → halal: true
+
+**3. 菜系類型推斷**
+根據菜系判斷可能提供的飲食選項：
+- 印度料理（indian）→ 通常提供素食選項（vegetarian）
+- 中東料理（mediterranean）→ 可能提供清真選項（halal）
+- 日式料理（japanese）→ 可能提供素食選項，但較少純素
+- 台式/中式素食專門店 → vegetarian 和 vegan
+- 泰式料理（thai）→ 可能提供素食選項
+
+**4. 保守判斷原則**
+- 如果沒有明確證據，請設為 false（避免誤導有特殊需求的用戶）
+- 只有在以下情況才設為 true：
+  * 餐廳名稱明確包含相關關鍵字，或
+  * Google Places Types 明確標記，或
+  * 菜系類型強烈暗示（例如：名為"XX素食館"的台式餐廳）
 
 請以 JSON 格式回應，包含：
 {
@@ -114,7 +137,8 @@ Google Places 類型：${googleTypes || '無'}
     "vegan": true/false,
     "halal": true/false,
     "gluten_free": true/false
-  }
+  },
+  "dietary_reasoning": "說明飲食選項判斷依據（中文，50字內）"
 }
 
 如果無法從地址中提取 city 或 district，請設為 null。
