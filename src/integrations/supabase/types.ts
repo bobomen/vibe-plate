@@ -14,6 +14,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_performance_stats: {
+        Row: {
+          avg_traffic_multiplier: number | null
+          click_through_rate: number | null
+          coupons_claimed: number
+          coupons_redeemed: number
+          created_at: string
+          id: string
+          new_favorites: number
+          redemption_rate: number | null
+          restaurant_id: string
+          stats_date: string
+          subscription_id: string
+          total_clicks: number
+          total_impressions: number
+          unique_viewers: number
+        }
+        Insert: {
+          avg_traffic_multiplier?: number | null
+          click_through_rate?: number | null
+          coupons_claimed?: number
+          coupons_redeemed?: number
+          created_at?: string
+          id?: string
+          new_favorites?: number
+          redemption_rate?: number | null
+          restaurant_id: string
+          stats_date: string
+          subscription_id: string
+          total_clicks?: number
+          total_impressions?: number
+          unique_viewers?: number
+        }
+        Update: {
+          avg_traffic_multiplier?: number | null
+          click_through_rate?: number | null
+          coupons_claimed?: number
+          coupons_redeemed?: number
+          created_at?: string
+          id?: string
+          new_favorites?: number
+          redemption_rate?: number | null
+          restaurant_id?: string
+          stats_date?: string
+          subscription_id?: string
+          total_clicks?: number
+          total_impressions?: number
+          unique_viewers?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_performance_stats_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_performance_stats_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_performance_stats_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_ad_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       algorithm_scores: {
         Row: {
           algorithm_score: number
@@ -555,6 +628,169 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_ad_coupons: {
+        Row: {
+          claimed_at: string | null
+          code_expires_at: string | null
+          code_generated_at: string | null
+          created_at: string
+          discount_applied: number | null
+          discount_type: string
+          discount_value: number
+          expires_at: string
+          id: string
+          max_discount: number | null
+          min_spend: number | null
+          radius_km: number | null
+          redeemed_amount: number | null
+          redeemed_at: string | null
+          restaurant_id: string
+          status: string
+          subscription_id: string
+          user_id: string | null
+          verification_code: string | null
+        }
+        Insert: {
+          claimed_at?: string | null
+          code_expires_at?: string | null
+          code_generated_at?: string | null
+          created_at?: string
+          discount_applied?: number | null
+          discount_type: string
+          discount_value: number
+          expires_at: string
+          id?: string
+          max_discount?: number | null
+          min_spend?: number | null
+          radius_km?: number | null
+          redeemed_amount?: number | null
+          redeemed_at?: string | null
+          restaurant_id: string
+          status?: string
+          subscription_id: string
+          user_id?: string | null
+          verification_code?: string | null
+        }
+        Update: {
+          claimed_at?: string | null
+          code_expires_at?: string | null
+          code_generated_at?: string | null
+          created_at?: string
+          discount_applied?: number | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string
+          id?: string
+          max_discount?: number | null
+          min_spend?: number | null
+          radius_km?: number | null
+          redeemed_amount?: number | null
+          redeemed_at?: string | null
+          restaurant_id?: string
+          status?: string
+          subscription_id?: string
+          user_id?: string | null
+          verification_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_ad_coupons_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_ad_coupons_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_ad_coupons_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_ad_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_ad_subscriptions: {
+        Row: {
+          cancelled_at: string | null
+          cash_paid: number
+          coupon_budget: number
+          coupon_ratio: number
+          created_at: string
+          expires_at: string
+          id: string
+          plan_amount: number
+          restaurant_id: string
+          started_at: string
+          status: string
+          stripe_payment_id: string | null
+          stripe_subscription_id: string | null
+          subscription_type: string
+          total_redeemed_amount: number
+          traffic_multiplier: number
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cash_paid: number
+          coupon_budget: number
+          coupon_ratio: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          plan_amount: number
+          restaurant_id: string
+          started_at?: string
+          status?: string
+          stripe_payment_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_type?: string
+          total_redeemed_amount?: number
+          traffic_multiplier?: number
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          cash_paid?: number
+          coupon_budget?: number
+          coupon_ratio?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan_amount?: number
+          restaurant_id?: string
+          started_at?: string
+          status?: string
+          stripe_payment_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_type?: string
+          total_redeemed_amount?: number
+          traffic_multiplier?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_ad_subscriptions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_ad_subscriptions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_claims: {
         Row: {
           cancelled_at: string | null
@@ -1013,6 +1249,44 @@ export type Database = {
         }
         Relationships: []
       }
+      traffic_multiplier_history: {
+        Row: {
+          calculated_at: string
+          id: string
+          new_multiplier: number
+          previous_multiplier: number
+          redeemed_amount_at_change: number
+          subscription_id: string
+          trigger_reason: string | null
+        }
+        Insert: {
+          calculated_at?: string
+          id?: string
+          new_multiplier: number
+          previous_multiplier: number
+          redeemed_amount_at_change: number
+          subscription_id: string
+          trigger_reason?: string | null
+        }
+        Update: {
+          calculated_at?: string
+          id?: string
+          new_multiplier?: number
+          previous_multiplier?: number
+          redeemed_amount_at_change?: number
+          subscription_id?: string
+          trigger_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traffic_multiplier_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_ad_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_coupons: {
         Row: {
           claimed_at: string | null
@@ -1260,6 +1534,10 @@ export type Database = {
         Args: { p_restaurant_id: string }
         Returns: number
       }
+      calculate_traffic_multiplier: {
+        Args: { p_subscription_id: string }
+        Returns: number
+      }
       cleanup_old_interaction_data: { Args: never; Returns: undefined }
       create_default_categories: {
         Args: { target_user_id: string }
@@ -1301,6 +1579,10 @@ export type Database = {
       update_nag_seen: { Args: { user_uuid: string }; Returns: undefined }
       update_restaurant_exposure_multiplier: {
         Args: { p_restaurant_id: string }
+        Returns: undefined
+      }
+      update_traffic_multiplier: {
+        Args: { p_subscription_id: string; p_trigger_reason?: string }
         Returns: undefined
       }
       user_is_in_group: {
