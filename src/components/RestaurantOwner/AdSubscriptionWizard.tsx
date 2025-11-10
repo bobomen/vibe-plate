@@ -48,10 +48,10 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
         coupon_budget: couponBudget,
         expires_at: expiresAt,
       });
-      toast.success('广告订阅创建成功！');
+      toast.success('廣告訂閱創建成功！');
     } catch (error) {
       console.error('Error creating subscription:', error);
-      toast.error('创建失败，请重试');
+      toast.error('創建失敗，請重試');
     } finally {
       setLoading(false);
     }
@@ -83,21 +83,21 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
             </Button>
           </div>
           <CardTitle>
-            {step === 1 && '选择广告方案'}
-            {step === 2 && '配置优惠券预算'}
-            {step === 3 && '确认订单'}
+            {step === 1 && '選擇廣告方案'}
+            {step === 2 && '配置優惠券預算'}
+            {step === 3 && '確認訂單'}
           </CardTitle>
           <CardDescription>
-            {step === 1 && '设定您的广告投放预算'}
-            {step === 2 && '分配现金和优惠券比例'}
-            {step === 3 && '确认您的广告投放设置'}
+            {step === 1 && '設定您的廣告投放預算'}
+            {step === 2 && '分配現金和優惠券比例'}
+            {step === 3 && '確認您的廣告投放設置'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {step === 1 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label>方案金额</Label>
+                <Label>方案金額</Label>
                 <div className="flex items-center gap-4">
                   <Input
                     type="number"
@@ -121,7 +121,7 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
                   >
                     <Sparkles className="w-5 h-5" />
                     <span className="text-lg font-bold">¥{amount}</span>
-                    <span className="text-xs opacity-80">推荐方案</span>
+                    <span className="text-xs opacity-80">推薦方案</span>
                   </Button>
                 ))}
               </div>
@@ -131,7 +131,7 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
           {step === 2 && (
             <div className="space-y-6">
               <div className="space-y-4">
-                <Label>优惠券预算占比：{couponRatio}%</Label>
+                <Label>優惠券預算佔比：{couponRatio}%</Label>
                 <Slider
                   value={[couponRatio]}
                   onValueChange={(value) => setCouponRatio(value[0])}
@@ -145,24 +145,24 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
                 <Card>
                   <CardHeader>
                     <CreditCard className="w-8 h-8 text-primary mb-2" />
-                    <CardTitle className="text-lg">现金支付</CardTitle>
+                    <CardTitle className="text-lg">現金支付</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold">¥{cashPaid}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {Math.round((1 - couponRatio / 100) * 100)}% 方案金额
+                      {Math.round((1 - couponRatio / 100) * 100)}% 方案金額
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader>
                     <Ticket className="w-8 h-8 text-primary mb-2" />
-                    <CardTitle className="text-lg">优惠券预算</CardTitle>
+                    <CardTitle className="text-lg">優惠券預算</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-2xl font-bold">¥{couponBudget}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {couponRatio}% 方案金额
+                      {couponRatio}% 方案金額
                     </p>
                   </CardContent>
                 </Card>
@@ -174,15 +174,15 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
             <div className="space-y-4">
               <div className="p-4 bg-muted rounded-lg space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">方案金额</span>
+                  <span className="text-muted-foreground">方案金額</span>
                   <span className="font-semibold">¥{planAmount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">现金支付</span>
+                  <span className="text-muted-foreground">現金支付</span>
                   <span className="font-semibold">¥{cashPaid}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">优惠券预算</span>
+                  <span className="text-muted-foreground">優惠券預算</span>
                   <span className="font-semibold">¥{couponBudget}</span>
                 </div>
                 <div className="flex justify-between pt-3 border-t">
@@ -193,8 +193,8 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
               <div className="p-4 bg-primary/5 rounded-lg">
                 <p className="text-sm text-muted-foreground">
                   <strong className="text-foreground">提示：</strong>
-                  订阅后将立即生效，您的餐厅曝光率将提升至80%基础流量。
-                  每当用户核销¥500优惠券，流量提升5%，最高可达100%。
+                  訂閱後將立即生效，您的餐廳曝光率將提升至80%基礎流量。
+                  每當用戶核銷¥500優惠券，流量提升5%，最高可達100%。
                 </p>
               </div>
             </div>
@@ -216,7 +216,7 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
               </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={loading}>
-                {loading ? '创建中...' : '确认订阅'}
+                {loading ? '創建中...' : '確認訂閱'}
               </Button>
             )}
           </div>
