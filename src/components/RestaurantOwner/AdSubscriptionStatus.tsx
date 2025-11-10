@@ -49,14 +49,14 @@ export function AdSubscriptionStatus({
               <DollarSign className="w-4 h-4" />
               方案金額
             </div>
-            <p className="text-2xl font-bold">¥{subscription.plan_amount}</p>
+            <p className="text-2xl font-bold">{subscription.plan_amount} 元</p>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Ticket className="w-4 h-4" />
               優惠券預算
             </div>
-            <p className="text-2xl font-bold">¥{subscription.coupon_budget}</p>
+            <p className="text-2xl font-bold">{subscription.coupon_budget} 元</p>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -80,7 +80,7 @@ export function AdSubscriptionStatus({
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">優惠券核銷進度</span>
             <span className="font-medium">
-              ¥{subscription.total_redeemed_amount} / ¥{subscription.coupon_budget}
+              {subscription.total_redeemed_amount} / {subscription.coupon_budget} 元
             </span>
           </div>
           <Progress value={redemptionProgress} className="h-2" />
@@ -98,7 +98,7 @@ export function AdSubscriptionStatus({
           </div>
           <Progress value={trafficProgress} className="h-2" />
           <p className="text-xs text-muted-foreground">
-            每核銷¥500優惠券，流量+5%，最高100%
+            每核銷 500 元優惠券，流量 +5%，最高 100%
           </p>
         </div>
 
