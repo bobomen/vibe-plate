@@ -24,7 +24,7 @@ export default function RestaurantOwnerLayout() {
 
   const navigationItems: NavItem[] = [
     { path: 'overview', label: '成效總覽', icon: Home, enabled: true },
-    { path: 'promotions', label: '廣告投放', icon: Megaphone, enabled: false, comingSoon: true },
+    { path: 'promotions', label: '廣告投放', icon: Megaphone, enabled: true },
     { path: 'data', label: '商家資料', icon: Building2, enabled: false, comingSoon: true },
     { path: 'settings', label: '個人設定', icon: SettingsIcon, enabled: false, comingSoon: true },
   ];
