@@ -16,7 +16,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ALGORITHM_WEIGHTS, calculateEngagementScore } from '@/config/algorithmConfig';
+import { ALGORITHM_WEIGHTS, calculateEngagementScore, calculatePromotionScore } from '@/config/algorithmConfig';
 
 export interface UserPreferenceData {
   // 基本統計
@@ -243,6 +243,8 @@ export const useUserPreferences = () => {
     has_500_dishes?: boolean;
     bib_gourmand?: boolean;
     interaction_metadata?: any;
+    subscription_tier?: string;
+    exposure_multiplier?: number;
   }): number => {
     if (!preferences) return 0;
 
@@ -283,6 +285,13 @@ export const useUserPreferences = () => {
       const engagementScore = calculateEngagementScore(restaurant.interaction_metadata);
       score += weights.card_engagement * engagementScore;
     }
+
+    // Phase 2: 付費推廣評分
+    const promotionScore = calculatePromotionScore(
+      restaurant.subscription_tier,
+      restaurant.exposure_multiplier
+    );
+    score += (weights.paid_promotion / 100) * promotionScore;
 
     // 特殊偏好
     let specialScore = 0;

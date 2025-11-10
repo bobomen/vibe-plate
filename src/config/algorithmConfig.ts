@@ -8,7 +8,7 @@
  */
 
 export interface AlgorithmWeights {
-  // Core preference matching (70%)
+  // Core preference matching (67%)
   cuisine_match: number;        // Match with user's favorite cuisines
   price_match: number;          // Match with user's preferred price range
   district_preference: number;  // User's preferred districts
@@ -17,32 +17,40 @@ export interface AlgorithmWeights {
   // Interaction depth (5% - Phase 1)
   card_engagement: number;      // How deeply user engages with cards
   
-  // Special features (25%)
+  // Paid promotion (7% - Phase 2)
+  paid_promotion: number;       // Premium subscription tier boost
+  
+  // Special features (21%)
   special_features: number;     // Michelin stars, bib gourmand, etc.
   
   // Reserved for future phases
   detail_engagement?: number;   // Phase 2: Detail page interaction
   time_context?: number;        // Phase 3: Time-based preferences
-  social_signals?: number;      // Phase 4: Friend preferences
+  social_signals?: number;      // Phase 4: Friend preferences (comments, reviews)
 }
 
 /**
- * Current algorithm weights (Phase 1)
+ * Current algorithm weights (Phase 2)
  * 
- * Phase 1 introduces card_engagement (5%) by reducing cuisine_match from 40% to 35%
+ * Phase 2 introduces paid_promotion (7%) by adjusting:
+ * - cuisine_match: 35% → 32% (-3%)
+ * - special_features: 25% → 21% (-4%)
  */
 export const ALGORITHM_WEIGHTS: AlgorithmWeights = {
-  // Core preferences (70%)
-  cuisine_match: 35,      // Reduced from 40% to make room for engagement
+  // Core preferences (67%)
+  cuisine_match: 32,      // Reduced from 35% to make room for paid promotion
   price_match: 15,
   district_preference: 10,
   rating_preference: 10,
   
   // Interaction depth (5%)
-  card_engagement: 5,     // NEW: Rewards restaurants user engages with deeply
+  card_engagement: 5,     // Rewards restaurants user engages with deeply
   
-  // Special features (25%)
-  special_features: 25,
+  // Paid promotion (7%)
+  paid_promotion: 7,      // NEW: Premium restaurants get exposure boost
+  
+  // Special features (21%)
+  special_features: 21,   // Reduced from 25%
 };
 
 /**
@@ -71,6 +79,29 @@ export const INTERACTION_THRESHOLDS = {
     high: 2,        // 2+ hesitations
   },
 };
+
+/**
+ * Paid promotion tier scores
+ * Base scores for different subscription tiers (0-100)
+ */
+export const PROMOTION_TIER_SCORES = {
+  free: 0,
+  basic: 30,
+  premium: 60,
+  enterprise: 100,
+} as const;
+
+/**
+ * Calculate paid promotion score
+ * Returns a score between 0-100 based on subscription tier and exposure multiplier
+ */
+export function calculatePromotionScore(
+  subscriptionTier: string = 'free',
+  exposureMultiplier: number = 1.0
+): number {
+  const baseScore = PROMOTION_TIER_SCORES[subscriptionTier as keyof typeof PROMOTION_TIER_SCORES] || 0;
+  return Math.min(100, baseScore * exposureMultiplier);
+}
 
 /**
  * Calculate engagement score from interaction metadata
