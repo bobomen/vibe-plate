@@ -111,8 +111,8 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
+      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               {[1, 2, paymentType === 'hybrid' ? 3 : null, 4].filter(i => i !== null).map((i) => {
@@ -151,7 +151,7 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
             {step === 4 && '確認您的廣告投放設置'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="flex-1 overflow-y-auto space-y-6">
           {step === 1 && (
             <div className="space-y-6">
               <div className="space-y-2">
@@ -250,41 +250,41 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
           )}
 
           {step === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* 预算分析 */}
-              <div className="p-4 bg-primary/5 rounded-lg space-y-3">
+              <div className="p-3 bg-primary/5 rounded-lg space-y-2">
                 <p className="text-sm font-medium">📊 預算分析</p>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground">優惠券預算：</span>
-                    <span className="font-semibold ml-2">{budgetAnalysis.coupon_budget} 元</span>
+                    <span className="font-semibold ml-1">{budgetAnalysis.coupon_budget} 元</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">可發放面值：</span>
-                    <span className="font-semibold ml-2">{budgetAnalysis.issuable_face_value} 元</span>
+                    <span className="font-semibold ml-1">{budgetAnalysis.issuable_face_value} 元</span>
                   </div>
                   <div className="col-span-2">
                     <span className="text-muted-foreground">實際支出上限：</span>
-                    <span className="font-semibold ml-2">{budgetAnalysis.redemption_cap} 元</span>
-                    <span className="text-xs text-muted-foreground ml-2">（先到先得，用完即止）</span>
+                    <span className="font-semibold ml-1">{budgetAnalysis.redemption_cap} 元</span>
+                    <span className="text-xs text-muted-foreground ml-1">（先到先得，用完即止）</span>
                   </div>
                 </div>
               </div>
 
               {/* 参考方案 */}
-              <div className="space-y-3">
-                <Label>參考方案（點擊快速套用）</Label>
-                <div className="grid gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm">參考方案（點擊快速套用）</Label>
+                <div className="grid gap-2">
                   {referencePlans.map((plan) => (
                     <Card
                       key={plan.id}
                       className="cursor-pointer transition-all hover:border-primary/50"
                       onClick={() => setCouponConfig(plan.config)}
                     >
-                      <CardHeader className="pb-3">
+                      <CardHeader className="pb-2 pt-3 px-3">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <CardTitle className="text-base flex items-center gap-2">
+                            <CardTitle className="text-sm flex items-center gap-2">
                               {plan.name}
                               <Badge variant="outline" className="text-xs">
                                 {plan.config.coupon_count} 張 × {plan.config.single_coupon_face_value} 元
@@ -296,8 +296,8 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <CardContent className="pt-0 px-3 pb-3">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                           <div className="flex items-center gap-1">
                             <Users className="w-3 h-3" />
                             <span>觸達 ~{plan.estimated_reach} 人</span>
@@ -318,11 +318,11 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
               </div>
 
               {/* 自定义配置 */}
-              <div className="space-y-4 p-4 border rounded-lg">
-                <Label className="text-base">自定義配置</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm">優惠券數量</Label>
+              <div className="space-y-3 p-3 border rounded-lg">
+                <Label className="text-sm font-medium">自定義配置</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">優惠券數量</Label>
                     <Input
                       type="number"
                       value={couponConfig.coupon_count}
@@ -334,13 +334,14 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
                       }
                       min={1}
                       max={1000}
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">
                       單張面值
-                      <span className="text-xs text-muted-foreground ml-2">
-                        (自動計算: {Math.round(budgetAnalysis.issuable_face_value / couponConfig.coupon_count)} 元)
+                      <span className="text-xs text-muted-foreground ml-1">
+                        ({Math.round(budgetAnalysis.issuable_face_value / couponConfig.coupon_count)} 元)
                       </span>
                     </Label>
                     <Input
@@ -354,10 +355,11 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
                       }
                       min={10}
                       max={500}
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">最低消費</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">最低消費</Label>
                     <Input
                       type="number"
                       value={couponConfig.min_spend}
@@ -369,10 +371,11 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
                       }
                       min={couponConfig.single_coupon_face_value}
                       max={5000}
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">最高折扣（可選）</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">最高折扣（可選）</Label>
                     <Input
                       type="number"
                       value={couponConfig.max_discount || ''}
@@ -385,10 +388,11 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
                       placeholder="不限制"
                       min={10}
                       max={couponConfig.single_coupon_face_value}
+                      className="h-9"
                     />
                   </div>
                 </div>
-                <div className="p-3 bg-muted rounded text-xs text-muted-foreground">
+                <div className="p-2 bg-muted rounded text-xs text-muted-foreground">
                   <p>
                     <strong>總面值：</strong>
                     {couponConfig.coupon_count * couponConfig.single_coupon_face_value} 元
@@ -407,27 +411,27 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
           {step === 4 && (
             <div className="space-y-4">
               <div className="p-4 bg-muted rounded-lg space-y-3">
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">方案金額</span>
                   <span className="font-semibold">{planAmount} 元</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">支付方式</span>
                   <span className="font-semibold">
                     {paymentType === 'cash' ? '純現金支付' : '現金 + 優惠券支付'}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">現金支付</span>
                   <span className="font-semibold">{cashPaid} 元</span>
                 </div>
                 {paymentType === 'hybrid' && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">優惠券預算</span>
                     <span className="font-semibold">{couponBudget} 元</span>
                   </div>
                 )}
-                <div className="flex justify-between pt-3 border-t">
+                <div className="flex justify-between pt-3 border-t text-sm">
                   <span className="text-muted-foreground">有效期</span>
                   <span className="font-semibold">30 天</span>
                 </div>
@@ -442,22 +446,23 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
             </div>
           )}
 
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-between pt-4 flex-shrink-0 border-t mt-4">
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={step === 1 || loading}
+              size="sm"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               上一步
             </Button>
             {step < 4 ? (
-              <Button onClick={handleNext}>
+              <Button onClick={handleNext} size="sm">
                 下一步
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={loading}>
+              <Button onClick={handleSubmit} disabled={loading} size="sm">
                 {loading ? '創建中...' : '確認訂閱'}
               </Button>
             )}
