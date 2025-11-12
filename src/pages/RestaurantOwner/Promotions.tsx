@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Megaphone, Lock, Sparkles, TrendingUp } from 'lucide-react';
+import { Megaphone, Lock, Sparkles, TrendingUp, Gauge, BarChart3 } from 'lucide-react';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { useAdSubscription } from '@/hooks/useAdSubscription';
 import { AdSubscriptionWizard } from '@/components/RestaurantOwner/AdSubscriptionWizard';
 import { AdSubscriptionStatus } from '@/components/RestaurantOwner/AdSubscriptionStatus';
+import { TrafficDashboard } from '@/components/RestaurantOwner/TrafficDashboard';
+import { AdPerformanceAnalytics } from '@/components/RestaurantOwner/AdPerformanceAnalytics';
 import { toast } from 'sonner';
 
 export default function RestaurantOwnerPromotions() {
@@ -187,48 +190,41 @@ export default function RestaurantOwnerPromotions() {
         </div>
       </div>
 
-      {/* 訂閱狀態卡片 */}
-      <AdSubscriptionStatus
-        subscription={subscription}
-        onCancelSubscription={handleCancelSubscription}
-      />
+      {/* Tabs 分頁 */}
+      <Tabs defaultValue="subscription" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsTrigger value="subscription" className="gap-2">
+            <Megaphone className="w-4 h-4" />
+            訂閱管理
+          </TabsTrigger>
+          <TabsTrigger value="traffic" className="gap-2">
+            <Gauge className="w-4 h-4" />
+            流量儀表板
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <BarChart3 className="w-4 h-4" />
+            成效分析
+          </TabsTrigger>
+        </TabsList>
 
-      {/* 數據儀表板 - 佔位符 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">優惠券使用統計</CardTitle>
-            <CardDescription>即將推出</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              優惠券領取率、核銷率等詳細數據統計
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">流量儀表板</CardTitle>
-            <CardDescription>即將推出</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              曝光次數、點擊率、流量變化趨勢圖表
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">廣告成效分析</CardTitle>
-            <CardDescription>即將推出</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              ROI分析、轉化率、用戶互動等深度數據
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Tab 1: 訂閱管理 */}
+        <TabsContent value="subscription" className="space-y-6">
+          <AdSubscriptionStatus
+            subscription={subscription}
+            onCancelSubscription={handleCancelSubscription}
+          />
+        </TabsContent>
+
+        {/* Tab 2: 流量儀表板 */}
+        <TabsContent value="traffic">
+          <TrafficDashboard restaurantId={ownerData?.restaurantId} />
+        </TabsContent>
+
+        {/* Tab 3: 成效分析 */}
+        <TabsContent value="analytics">
+          <AdPerformanceAnalytics restaurantId={ownerData?.restaurantId} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
