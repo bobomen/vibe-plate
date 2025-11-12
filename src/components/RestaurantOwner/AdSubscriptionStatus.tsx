@@ -6,6 +6,7 @@ import { Calendar, TrendingUp, Ticket, DollarSign, AlertCircle, AlertTriangle } 
 import { AdSubscription } from '@/hooks/useAdSubscription';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { SubscriptionManagementActions } from './SubscriptionManagementActions';
 
 interface AdSubscriptionStatusProps {
   subscription: AdSubscription;
@@ -14,12 +15,14 @@ interface AdSubscriptionStatusProps {
     total_redeemed: number;
   };
   onCancelSubscription: () => void;
+  onRefresh: () => void;
 }
 
 export function AdSubscriptionStatus({
   subscription,
   stats,
   onCancelSubscription,
+  onRefresh,
 }: AdSubscriptionStatusProps) {
   const daysRemaining = Math.ceil(
     (new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
@@ -204,6 +207,16 @@ export function AdSubscriptionStatus({
                 到期
               </p>
             </div>
+          </div>
+        )}
+
+        {/* 訂閱管理操作區域 */}
+        {subscription.status === 'active' && (
+          <div className="pt-4 border-t mt-6">
+            <SubscriptionManagementActions 
+              subscription={subscription}
+              onRefresh={onRefresh}
+            />
           </div>
         )}
       </CardContent>

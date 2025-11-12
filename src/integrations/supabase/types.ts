@@ -721,10 +721,13 @@ export type Database = {
           cancelled_at: string | null
           cash_paid: number
           coupon_budget: number
+          coupon_config: Json | null
           coupon_ratio: number
           created_at: string
           expires_at: string
           id: string
+          last_modified_at: string | null
+          modification_count: number | null
           plan_amount: number
           restaurant_id: string
           started_at: string
@@ -740,10 +743,13 @@ export type Database = {
           cancelled_at?: string | null
           cash_paid: number
           coupon_budget: number
+          coupon_config?: Json | null
           coupon_ratio: number
           created_at?: string
           expires_at: string
           id?: string
+          last_modified_at?: string | null
+          modification_count?: number | null
           plan_amount: number
           restaurant_id: string
           started_at?: string
@@ -759,10 +765,13 @@ export type Database = {
           cancelled_at?: string | null
           cash_paid?: number
           coupon_budget?: number
+          coupon_config?: Json | null
           coupon_ratio?: number
           created_at?: string
           expires_at?: string
           id?: string
+          last_modified_at?: string | null
+          modification_count?: number | null
           plan_amount?: number
           restaurant_id?: string
           started_at?: string
@@ -1209,6 +1218,50 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      subscription_change_history: {
+        Row: {
+          change_type: string
+          changed_by: string
+          created_at: string | null
+          id: string
+          new_values: Json
+          notes: string | null
+          payment_amount: number | null
+          previous_values: Json
+          subscription_id: string
+        }
+        Insert: {
+          change_type: string
+          changed_by: string
+          created_at?: string | null
+          id?: string
+          new_values: Json
+          notes?: string | null
+          payment_amount?: number | null
+          previous_values: Json
+          subscription_id: string
+        }
+        Update: {
+          change_type?: string
+          changed_by?: string
+          created_at?: string | null
+          id?: string
+          new_values?: Json
+          notes?: string | null
+          payment_amount?: number | null
+          previous_values?: Json
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_change_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_ad_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {

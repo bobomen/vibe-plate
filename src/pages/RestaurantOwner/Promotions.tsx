@@ -212,6 +212,7 @@ export default function RestaurantOwnerPromotions() {
           <AdSubscriptionStatus
             subscription={subscription}
             onCancelSubscription={handleCancelSubscription}
+            onRefresh={refetch}
           />
         </TabsContent>
 
