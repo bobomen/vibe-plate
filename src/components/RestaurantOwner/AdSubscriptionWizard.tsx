@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { ChevronLeft, ChevronRight, Sparkles, Ticket, CreditCard, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, ChevronRight, Sparkles, Ticket, CreditCard, Check, TrendingUp, Users, Target } from 'lucide-react';
 import { toast } from 'sonner';
+import { getReferencePlans, calculateBudgetAnalysis, validateCouponConfig } from '@/config/adCouponPlans';
+import { CouponConfig } from '@/types/adCoupon';
 
 interface WizardProps {
   onComplete: (data: {
@@ -13,6 +16,7 @@ interface WizardProps {
     cash_paid: number;
     coupon_budget: number;
     expires_at: string;
+    coupon_config?: CouponConfig; // 优惠券配置（可选）
   }) => void;
   onCancel: () => void;
 }
@@ -24,11 +28,31 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
   const [couponRatio, setCouponRatio] = useState(20);
   const [loading, setLoading] = useState(false);
 
+  // Step 3: 优惠券配置
+  const [couponConfig, setCouponConfig] = useState<CouponConfig>({
+    coupon_count: 24,
+    single_coupon_face_value: 100,
+    min_spend: 300,
+    max_discount: 100,
+  });
+
   const cashPaid = paymentType === 'cash' 
     ? planAmount 
     : Math.round(planAmount * (1 - couponRatio / 100));
   const couponBudget = paymentType === 'cash' ? 0 : planAmount - cashPaid;
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  // 计算预算分析
+  const budgetAnalysis = useMemo(
+    () => calculateBudgetAnalysis(planAmount, cashPaid),
+    [planAmount, cashPaid]
+  );
+
+  // 获取参考方案
+  const referencePlans = useMemo(
+    () => getReferencePlans(budgetAnalysis.coupon_budget),
+    [budgetAnalysis.coupon_budget]
+  );
 
   const handleNext = () => {
     if (step === 1) {
@@ -55,6 +79,18 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
   };
 
   const handleSubmit = async () => {
+    // 验证优惠券配置（如果是混合支付）
+    if (paymentType === 'hybrid') {
+      const validation = validateCouponConfig(
+        couponConfig,
+        budgetAnalysis.issuable_face_value
+      );
+      if (!validation.valid) {
+        toast.error(validation.error);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       await onComplete({
@@ -62,6 +98,7 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
         cash_paid: cashPaid,
         coupon_budget: couponBudget,
         expires_at: expiresAt,
+        coupon_config: paymentType === 'hybrid' ? couponConfig : undefined,
       });
       toast.success('廣告訂閱創建成功！');
     } catch (error) {
@@ -214,62 +251,155 @@ export function AdSubscriptionWizard({ onComplete, onCancel }: WizardProps) {
 
           {step === 3 && (
             <div className="space-y-6">
-              <div className="p-4 bg-primary/5 rounded-lg space-y-2">
-                <p className="text-sm font-medium">💡 什麼是優惠券預算？</p>
-                <p className="text-sm text-muted-foreground">
-                  您可以用一部分方案金額發放優惠券給顧客。顧客看到優惠券後更容易上門消費，而您只需在顧客實際使用優惠券時才支付成本。這樣可以用更少的現金獲得更多曝光！
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>優惠券預算佔比：{couponRatio}%</Label>
-                  <span className="text-sm text-muted-foreground">
-                    現金佔比：{100 - couponRatio}%
-                  </span>
+              {/* 预算分析 */}
+              <div className="p-4 bg-primary/5 rounded-lg space-y-3">
+                <p className="text-sm font-medium">📊 預算分析</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">優惠券預算：</span>
+                    <span className="font-semibold ml-2">{budgetAnalysis.coupon_budget} 元</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">可發放面值：</span>
+                    <span className="font-semibold ml-2">{budgetAnalysis.issuable_face_value} 元</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">實際支出上限：</span>
+                    <span className="font-semibold ml-2">{budgetAnalysis.redemption_cap} 元</span>
+                    <span className="text-xs text-muted-foreground ml-2">（先到先得，用完即止）</span>
+                  </div>
                 </div>
-                <Slider
-                  value={[couponRatio]}
-                  onValueChange={(value) => setCouponRatio(value[0])}
-                  min={0}
-                  max={40}
-                  step={5}
-                  className="w-full"
-                />
-                <p className="text-xs text-muted-foreground text-center">
-                  拖動滑桿調整優惠券與現金的比例（優惠券最多 40%）
-                </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader>
-                    <CreditCard className="w-8 h-8 text-primary mb-2" />
-                    <CardTitle className="text-lg">現金支付</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{cashPaid}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {Math.round((1 - couponRatio / 100) * 100)}% 方案金額
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      立即支付的金額
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <Ticket className="w-8 h-8 text-primary mb-2" />
-                    <CardTitle className="text-lg">優惠券預算</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{couponBudget}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {couponRatio}% 方案金額
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      顧客使用時才支付
-                    </p>
-                  </CardContent>
-                </Card>
+
+              {/* 参考方案 */}
+              <div className="space-y-3">
+                <Label>參考方案（點擊快速套用）</Label>
+                <div className="grid gap-3">
+                  {referencePlans.map((plan) => (
+                    <Card
+                      key={plan.id}
+                      className="cursor-pointer transition-all hover:border-primary/50"
+                      onClick={() => setCouponConfig(plan.config)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              {plan.name}
+                              <Badge variant="outline" className="text-xs">
+                                {plan.config.coupon_count} 張 × {plan.config.single_coupon_face_value} 元
+                              </Badge>
+                            </CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                              {plan.description}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>觸達 ~{plan.estimated_reach} 人</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Target className="w-3 h-3" />
+                            <span>預計核銷 {plan.estimated_redemption_rate}%</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            <span>最低消費 {plan.config.min_spend} 元</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* 自定义配置 */}
+              <div className="space-y-4 p-4 border rounded-lg">
+                <Label className="text-base">自定義配置</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm">優惠券數量</Label>
+                    <Input
+                      type="number"
+                      value={couponConfig.coupon_count}
+                      onChange={(e) =>
+                        setCouponConfig({
+                          ...couponConfig,
+                          coupon_count: Number(e.target.value),
+                        })
+                      }
+                      min={1}
+                      max={1000}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">
+                      單張面值
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (自動計算: {Math.round(budgetAnalysis.issuable_face_value / couponConfig.coupon_count)} 元)
+                      </span>
+                    </Label>
+                    <Input
+                      type="number"
+                      value={couponConfig.single_coupon_face_value}
+                      onChange={(e) =>
+                        setCouponConfig({
+                          ...couponConfig,
+                          single_coupon_face_value: Number(e.target.value),
+                        })
+                      }
+                      min={10}
+                      max={500}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">最低消費</Label>
+                    <Input
+                      type="number"
+                      value={couponConfig.min_spend}
+                      onChange={(e) =>
+                        setCouponConfig({
+                          ...couponConfig,
+                          min_spend: Number(e.target.value),
+                        })
+                      }
+                      min={couponConfig.single_coupon_face_value}
+                      max={5000}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">最高折扣（可選）</Label>
+                    <Input
+                      type="number"
+                      value={couponConfig.max_discount || ''}
+                      onChange={(e) =>
+                        setCouponConfig({
+                          ...couponConfig,
+                          max_discount: e.target.value ? Number(e.target.value) : undefined,
+                        })
+                      }
+                      placeholder="不限制"
+                      min={10}
+                      max={couponConfig.single_coupon_face_value}
+                    />
+                  </div>
+                </div>
+                <div className="p-3 bg-muted rounded text-xs text-muted-foreground">
+                  <p>
+                    <strong>總面值：</strong>
+                    {couponConfig.coupon_count * couponConfig.single_coupon_face_value} 元
+                    {couponConfig.coupon_count * couponConfig.single_coupon_face_value >
+                      budgetAnalysis.issuable_face_value && (
+                      <span className="text-destructive ml-2">
+                        （超過可發放額度 {budgetAnalysis.issuable_face_value} 元）
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           )}

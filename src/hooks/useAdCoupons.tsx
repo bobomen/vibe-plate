@@ -35,6 +35,13 @@ export interface CouponStats {
   total_redeemed_amount: number;
 }
 
+export interface RedemptionCheckResult {
+  can_redeem: boolean;
+  reason?: 'budget_exhausted' | 'coupon_expired' | 'coupon_used' | 'invalid';
+  remaining_budget: number;
+  budget_usage_percent: number;
+}
+
 export function useAdCoupons(subscriptionId?: string) {
   const { user } = useAuth();
   const [coupons, setCoupons] = useState<AdCoupon[]>([]);
@@ -132,12 +139,114 @@ export function useAdCoupons(subscriptionId?: string) {
     await fetchCoupons();
   };
 
+  /**
+   * 检查优惠券是否可以兑换（预算检查）
+   * 关键：防止预算超支，保护餐厅业主
+   */
+  const checkRedemption = async (
+    couponId: string,
+    subscriptionId: string,
+    redemptionAmount: number
+  ): Promise<RedemptionCheckResult> => {
+    try {
+      // 1. 获取订阅信息，检查预算
+      const { data: subscription, error: subError } = await supabase
+        .from('restaurant_ad_subscriptions')
+        .select('coupon_budget, total_redeemed_amount, status')
+        .eq('id', subscriptionId)
+        .single();
+
+      if (subError || !subscription) {
+        return {
+          can_redeem: false,
+          reason: 'invalid',
+          remaining_budget: 0,
+          budget_usage_percent: 100,
+        };
+      }
+
+      // 2. 检查订阅状态
+      if (subscription.status !== 'active') {
+        return {
+          can_redeem: false,
+          reason: 'budget_exhausted',
+          remaining_budget: 0,
+          budget_usage_percent: 100,
+        };
+      }
+
+      // 3. 计算剩余预算
+      const remainingBudget = subscription.coupon_budget - subscription.total_redeemed_amount;
+      const usagePercent = (subscription.total_redeemed_amount / subscription.coupon_budget) * 100;
+
+      // 4. 检查是否超过预算上限
+      if (remainingBudget < redemptionAmount) {
+        return {
+          can_redeem: false,
+          reason: 'budget_exhausted',
+          remaining_budget: Math.max(0, remainingBudget),
+          budget_usage_percent: usagePercent,
+        };
+      }
+
+      // 5. 检查优惠券本身状态
+      const { data: coupon, error: couponError } = await supabase
+        .from('restaurant_ad_coupons')
+        .select('status, expires_at')
+        .eq('id', couponId)
+        .single();
+
+      if (couponError || !coupon) {
+        return {
+          can_redeem: false,
+          reason: 'invalid',
+          remaining_budget: remainingBudget,
+          budget_usage_percent: usagePercent,
+        };
+      }
+
+      if (coupon.status !== 'available' && coupon.status !== 'claimed') {
+        return {
+          can_redeem: false,
+          reason: 'coupon_used',
+          remaining_budget: remainingBudget,
+          budget_usage_percent: usagePercent,
+        };
+      }
+
+      if (new Date(coupon.expires_at) < new Date()) {
+        return {
+          can_redeem: false,
+          reason: 'coupon_expired',
+          remaining_budget: remainingBudget,
+          budget_usage_percent: usagePercent,
+        };
+      }
+
+      // 6. 所有检查通过
+      return {
+        can_redeem: true,
+        remaining_budget: remainingBudget,
+        budget_usage_percent: usagePercent,
+      };
+    } catch (err) {
+      console.error('Error checking redemption:', err);
+      return {
+        can_redeem: false,
+        reason: 'invalid',
+        remaining_budget: 0,
+        budget_usage_percent: 100,
+      };
+    }
+  };
+
   return {
     coupons,
     stats,
     loading,
     error,
     generateCoupons,
+    checkRedemption,
     refetch: fetchCoupons,
   };
 }
