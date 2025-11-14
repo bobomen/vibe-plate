@@ -17,6 +17,7 @@ import RestaurantDetail from './RestaurantDetail';
 import CategoryDetail from './CategoryDetail';
 import Admin from './Admin';
 import MonthlyReview from './MonthlyReview';
+import Coupons from './Coupons';
 import RestaurantOwnerDashboard from './RestaurantOwnerDashboard';
 import RestaurantOwnerLayout from './RestaurantOwner/Layout';
 import RestaurantOwnerOverview from './RestaurantOwner/Overview';
@@ -75,6 +76,7 @@ const App = memo(() => {
           <Route path="/" element={<SwipeCards />} />
           <Route path="/restaurant/:id" element={<RestaurantDetail />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/coupons" element={<Coupons />} />
           <Route path="/categories/:categoryId" element={<CategoryDetail />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/groups/:groupId/swipe" element={<GroupSwipeCards />} />

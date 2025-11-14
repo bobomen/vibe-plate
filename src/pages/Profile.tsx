@@ -454,6 +454,41 @@ const Profile = () => {
             </Card>
           )}
 
+          {/* My Coupons - Premium Feature */}
+          <Card className={!isPremium ? "opacity-60" : ""}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-base">🎫</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm truncate flex items-center gap-2">
+                      我的優惠券
+                      {!isPremium && <span className="text-xs text-primary">Premium</span>}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {isPremium ? '查看專屬優惠' : '升級解鎖'}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (isPremium) {
+                      navigate('/app/coupons');
+                    } else {
+                      setShowUpgradeModal(true);
+                    }
+                  }}
+                >
+                  {isPremium ? '查看' : '升級'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Location */}
           <Card>
             <CardHeader>

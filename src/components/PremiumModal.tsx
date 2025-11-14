@@ -41,8 +41,8 @@ const PremiumModal = ({ open, onClose, onUpgrade }: PremiumModalProps) => {
     },
     {
       icon: <Heart className="h-6 w-6 text-primary" />,
-      title: "每月幫助孩子一餐",
-      description: "吃飯同時，也讓別人能吃到飯"
+      title: "專屬優惠券",
+      description: "領取餐廳優惠券，享受會員專屬折扣"
     }
   ];
 
