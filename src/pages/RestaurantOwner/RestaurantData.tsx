@@ -8,11 +8,15 @@ import { Separator } from '@/components/ui/separator';
 import { Building2, Save, Loader2 } from 'lucide-react';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { useRestaurantDataEdit } from '@/hooks/useRestaurantDataEdit';
+import { useBatchPhotoUpload } from '@/hooks/useBatchPhotoUpload';
 import { PhotoUploadZone } from '@/components/RestaurantOwner/PhotoUploadZone';
+import { PhotoUploadProgress } from '@/components/RestaurantOwner/PhotoUploadProgress';
 import { RestaurantPhotoList } from '@/components/RestaurantOwner/RestaurantPhotoList';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export default function RestaurantOwnerData() {
+  const { user } = useAuth();
   const { ownerData, isOwner, loading: ownerLoading } = useRestaurantOwner();
   const {
     restaurant,
@@ -22,6 +26,24 @@ export default function RestaurantOwnerData() {
     uploadPhoto,
     deletePhoto,
   } = useRestaurantDataEdit(ownerData?.restaurantId || '');
+
+  // 批量上傳 hook
+  const {
+    tasks,
+    addFiles,
+    retryTask,
+    cancelTask,
+    clearCompleted,
+    isUploading: isBatchUploading,
+  } = useBatchPhotoUpload({
+    restaurantId: ownerData?.restaurantId || '',
+    userId: user?.id || '',
+    maxConcurrent: 3,
+    onUploadComplete: () => {
+      // 上傳完成後重新載入照片列表
+      window.location.reload();
+    },
+  });
 
   const [formData, setFormData] = useState({
     name: '',
@@ -202,17 +224,23 @@ export default function RestaurantOwnerData() {
         <CardHeader>
           <CardTitle>照片管理</CardTitle>
           <CardDescription>
-            上傳餐廳照片，照片將在 24 小時後自動發布
+            上傳餐廳照片，照片將在 24 小時後自動發布。支援批量上傳，最多 3 個並發。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <PhotoUploadZone
-            onUpload={async (file) => {
-              await uploadPhoto.mutateAsync(file);
-            }}
+            onBatchUpload={addFiles}
             currentPhotoCount={photos.length}
             maxPhotos={15}
-            isUploading={uploadPhoto.isPending}
+            isUploading={isBatchUploading}
+            batchMode={true}
+          />
+
+          <PhotoUploadProgress
+            tasks={tasks}
+            onRetry={retryTask}
+            onCancel={cancelTask}
+            onClearCompleted={clearCompleted}
           />
 
           <RestaurantPhotoList
