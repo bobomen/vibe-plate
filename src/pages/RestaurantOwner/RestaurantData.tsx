@@ -1,46 +1,226 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Building2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Building2, Save, Loader2 } from 'lucide-react';
+import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
+import { useRestaurantDataEdit } from '@/hooks/useRestaurantDataEdit';
+import { PhotoUploadZone } from '@/components/RestaurantOwner/PhotoUploadZone';
+import { RestaurantPhotoList } from '@/components/RestaurantOwner/RestaurantPhotoList';
+import { toast } from 'sonner';
 
 export default function RestaurantOwnerData() {
+  const { ownerData, isOwner, loading: ownerLoading } = useRestaurantOwner();
+  const {
+    restaurant,
+    photos,
+    isLoading,
+    updateTextData,
+    uploadPhoto,
+    deletePhoto,
+  } = useRestaurantDataEdit(ownerData?.restaurantId || '');
+
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    phone: '',
+    website: '',
+    menu_url: '',
+    cuisine_type: '',
+  });
+
+  // 當餐廳資料載入後，更新表單
+  useState(() => {
+    if (restaurant) {
+      setFormData({
+        name: restaurant.name || '',
+        address: restaurant.address || '',
+        phone: restaurant.phone || '',
+        website: restaurant.website || '',
+        menu_url: restaurant.menu_url || '',
+        cuisine_type: restaurant.cuisine_type || '',
+      });
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // 檢查是否有變更
+    const changes: any = {};
+    if (restaurant) {
+      Object.keys(formData).forEach((key) => {
+        const k = key as keyof typeof formData;
+        if (formData[k] !== (restaurant[k] || '')) {
+          changes[k] = formData[k];
+        }
+      });
+    }
+
+    if (Object.keys(changes).length === 0) {
+      toast.info('沒有變更需要儲存');
+      return;
+    }
+
+    await updateTextData.mutateAsync(changes);
+  };
+
+  if (ownerLoading || isLoading) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isOwner || !ownerData) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">請先認領餐廳</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
+      {/* 基本資料編輯 */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
               <Building2 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <CardTitle>商家資料管理</CardTitle>
-              <CardDescription>即將推出</CardDescription>
+              <CardTitle>基本資料編輯</CardTitle>
+              <CardDescription>編輯餐廳基本資訊，修改後立即生效</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            此功能正在開發中，預計將包含：
-          </p>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <span className="text-primary">✓</span>
-              <span>餐廳基本資料編輯</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary">✓</span>
-              <span>菜單與照片上傳</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary">✓</span>
-              <span>營業時間與聯繫方式更新</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary">✓</span>
-              <span>信任分數即時顯示</span>
-            </li>
-          </ul>
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm font-medium">預計上線時間：Phase 2</p>
-          </div>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">餐廳名稱 *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="請輸入餐廳名稱"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cuisine_type">料理類型</Label>
+                <Input
+                  id="cuisine_type"
+                  value={formData.cuisine_type}
+                  onChange={(e) => setFormData({ ...formData, cuisine_type: e.target.value })}
+                  placeholder="例如：日式料理、義式餐廳"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">聯絡電話</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+886-2-1234-5678"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">官方網站</Label>
+                <Input
+                  id="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="menu_url">線上菜單</Label>
+                <Input
+                  id="menu_url"
+                  type="url"
+                  value={formData.menu_url}
+                  onChange={(e) => setFormData({ ...formData, menu_url: e.target.value })}
+                  placeholder="https://menu.example.com"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">餐廳地址 *</Label>
+              <Textarea
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="請輸入完整地址"
+                rows={2}
+                required
+              />
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button
+                type="submit"
+                disabled={updateTextData.isPending}
+              >
+                {updateTextData.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    儲存中...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    儲存變更
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* 照片管理 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>照片管理</CardTitle>
+          <CardDescription>
+            上傳餐廳照片，照片將在 24 小時後自動發布
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <PhotoUploadZone
+            onUpload={async (file) => {
+              await uploadPhoto.mutateAsync(file);
+            }}
+            currentPhotoCount={photos.length}
+            maxPhotos={15}
+            isUploading={uploadPhoto.isPending}
+          />
+
+          <RestaurantPhotoList
+            photos={photos}
+            onDelete={async (photoId) => {
+              await deletePhoto.mutateAsync(photoId);
+            }}
+          />
         </CardContent>
       </Card>
     </div>
