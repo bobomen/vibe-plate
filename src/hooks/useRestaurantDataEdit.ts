@@ -82,7 +82,6 @@ export function useRestaurantDataEdit(restaurantId: string) {
       queryClient.invalidateQueries({ queryKey: ['restaurant-edit', restaurantId] });
     },
     onError: (error) => {
-      console.error('Update error:', error);
       toast.error('更新失敗：' + (error as Error).message);
     },
   });
@@ -101,41 +100,66 @@ export function useRestaurantDataEdit(restaurantId: string) {
         throw new Error('圖片大小不得超過 5MB');
       }
 
-      // 2. 上傳到 Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${restaurantId}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('restaurant-photos')
-        .upload(fileName, file);
-      
-      if (uploadError) throw uploadError;
+      // 2. 檢查圖片尺寸
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          if (img.width < 800 || img.height < 600) {
+            reject(new Error('圖片尺寸至少需為 800x600 像素'));
+          }
+          resolve();
+        };
+        img.onerror = () => reject(new Error('無法讀取圖片'));
+        img.src = URL.createObjectURL(file);
+      });
 
-      // 3. 獲取公開 URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('restaurant-photos')
-        .getPublicUrl(fileName);
+      let uploadedFileName: string | null = null;
 
-      // 4. 記錄到 restaurant_photos 表（status = pending）
-      const { error: insertError } = await supabase
-        .from('restaurant_photos')
-        .insert({
-          restaurant_id: restaurantId,
-          photo_url: publicUrl,
-          status: 'pending',
-          uploaded_by: user.id,
-          file_size_bytes: file.size,
-          file_format: file.type,
-        });
-      
-      if (insertError) throw insertError;
+      try {
+        // 3. 上傳到 Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${restaurantId}/${Date.now()}.${fileExt}`;
+        uploadedFileName = fileName;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('restaurant-photos')
+          .upload(fileName, file);
+        
+        if (uploadError) throw uploadError;
+
+        // 4. 獲取公開 URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('restaurant-photos')
+          .getPublicUrl(fileName);
+
+        // 5. 記錄到 restaurant_photos 表（status = pending）
+        const { error: insertError } = await supabase
+          .from('restaurant_photos')
+          .insert({
+            restaurant_id: restaurantId,
+            photo_url: publicUrl,
+            status: 'pending',
+            uploaded_by: user.id,
+            file_size_bytes: file.size,
+            file_format: file.type,
+          });
+        
+        if (insertError) throw insertError;
+      } catch (error) {
+        // 回滾：刪除已上傳的 Storage 文件
+        if (uploadedFileName) {
+          await supabase.storage
+            .from('restaurant-photos')
+            .remove([uploadedFileName]);
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success('照片已上傳，24小時後自動發布');
       queryClient.invalidateQueries({ queryKey: ['restaurant-photos', restaurantId] });
     },
     onError: (error) => {
-      console.error('Upload error:', error);
       toast.error('上傳失敗：' + (error as Error).message);
     },
   });
@@ -167,7 +191,6 @@ export function useRestaurantDataEdit(restaurantId: string) {
       queryClient.invalidateQueries({ queryKey: ['restaurant-photos', restaurantId] });
     },
     onError: (error) => {
-      console.error('Delete error:', error);
       toast.error('刪除失敗：' + (error as Error).message);
     },
   });
