@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface PhotoUploadZoneProps {
   onUpload: (file: File) => Promise<void>;
@@ -25,7 +26,7 @@ export function PhotoUploadZone({
 
     const files = Array.from(e.dataTransfer.files);
     if (currentPhotoCount + files.length > maxPhotos) {
-      alert(`最多只能上傳 ${maxPhotos} 張照片`);
+      toast.error(`最多只能上傳 ${maxPhotos} 張照片`);
       return;
     }
 
@@ -39,7 +40,7 @@ export function PhotoUploadZone({
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (currentPhotoCount + files.length > maxPhotos) {
-      alert(`最多只能上傳 ${maxPhotos} 張照片`);
+      toast.error(`最多只能上傳 ${maxPhotos} 張照片`);
       return;
     }
 

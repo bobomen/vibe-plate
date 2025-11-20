@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,7 @@ export default function RestaurantOwnerData() {
   });
 
   // 當餐廳資料載入後，更新表單
-  useState(() => {
+  useEffect(() => {
     if (restaurant) {
       setFormData({
         name: restaurant.name || '',
@@ -44,7 +44,7 @@ export default function RestaurantOwnerData() {
         cuisine_type: restaurant.cuisine_type || '',
       });
     }
-  });
+  }, [restaurant]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
