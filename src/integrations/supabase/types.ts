@@ -882,6 +882,51 @@ export type Database = {
           },
         ]
       }
+      restaurant_data_changes: {
+        Row: {
+          changed_by: string
+          created_at: string | null
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          restaurant_id: string
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string | null
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          restaurant_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string | null
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_data_changes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_data_changes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_owners: {
         Row: {
           created_at: string
@@ -914,6 +959,60 @@ export type Database = {
           },
           {
             foreignKeyName: "restaurant_owners_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_photos: {
+        Row: {
+          approved_at: string | null
+          file_format: string | null
+          file_size_bytes: number | null
+          id: string
+          photo_url: string
+          rejection_reason: string | null
+          restaurant_id: string
+          status: string | null
+          uploaded_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          approved_at?: string | null
+          file_format?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          photo_url: string
+          rejection_reason?: string | null
+          restaurant_id: string
+          status?: string | null
+          uploaded_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          approved_at?: string | null
+          file_format?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          photo_url?: string
+          rejection_reason?: string | null
+          restaurant_id?: string
+          status?: string | null
+          uploaded_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_photos_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "popular_restaurants_7d"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_photos_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
@@ -1583,6 +1682,7 @@ export type Database = {
       }
     }
     Functions: {
+      auto_approve_pending_photos: { Args: never; Returns: undefined }
       calculate_restaurant_data_completeness: {
         Args: { p_restaurant_id: string }
         Returns: number
