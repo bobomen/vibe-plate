@@ -13,7 +13,7 @@ import { useRestaurantDataEdit } from '@/hooks/useRestaurantDataEdit';
 import { useBatchPhotoUpload } from '@/hooks/useBatchPhotoUpload';
 import { PhotoUploadZone } from '@/components/RestaurantOwner/PhotoUploadZone';
 import { PhotoUploadProgress } from '@/components/RestaurantOwner/PhotoUploadProgress';
-import { RestaurantPhotoList } from '@/components/RestaurantOwner/RestaurantPhotoList';
+import { SortablePhotoGrid } from '@/components/RestaurantOwner/SortablePhotoGrid';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -25,8 +25,8 @@ export default function RestaurantOwnerData() {
     photos,
     isLoading,
     updateTextData,
-    uploadPhoto,
     deletePhoto,
+    updatePhotoOrder,
   } = useRestaurantDataEdit(ownerData?.restaurantId || '');
 
   // 批量上傳 hook
@@ -238,13 +238,13 @@ export default function RestaurantOwnerData() {
         <CardHeader>
           <CardTitle>照片管理</CardTitle>
           <CardDescription>
-            上傳餐廳照片，照片將在 24 小時後自動發布。支援批量上傳，最多 3 個並發。
+            上傳餐廳照片，AI 將自動審核（數秒內完成）。支援批量上傳，最多 3 個並發。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <PhotoUploadZone
             onBatchUpload={addFiles}
-            currentPhotoCount={photos.length}
+            currentPhotoCount={photos?.length || 0}
             maxPhotos={15}
             isUploading={isBatchUploading}
             batchMode={true}
@@ -257,11 +257,10 @@ export default function RestaurantOwnerData() {
             onClearCompleted={clearCompleted}
           />
 
-          <RestaurantPhotoList
-            photos={photos}
-            onDelete={async (photoId) => {
-              await deletePhoto.mutateAsync(photoId);
-            }}
+          <SortablePhotoGrid
+            photos={photos || []}
+            onDelete={deletePhoto.mutateAsync}
+            onReorder={updatePhotoOrder.mutateAsync}
           />
         </CardContent>
       </Card>

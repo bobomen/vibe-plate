@@ -968,7 +968,10 @@ export type Database = {
       }
       restaurant_photos: {
         Row: {
+          ai_review_result: Json | null
+          ai_reviewed_at: string | null
           approved_at: string | null
+          display_order: number | null
           file_format: string | null
           file_size_bytes: number | null
           id: string
@@ -980,7 +983,10 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          ai_review_result?: Json | null
+          ai_reviewed_at?: string | null
           approved_at?: string | null
+          display_order?: number | null
           file_format?: string | null
           file_size_bytes?: number | null
           id?: string
@@ -992,7 +998,10 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          ai_review_result?: Json | null
+          ai_reviewed_at?: string | null
           approved_at?: string | null
+          display_order?: number | null
           file_format?: string | null
           file_size_bytes?: number | null
           id?: string

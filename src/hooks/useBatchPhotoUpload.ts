@@ -93,7 +93,7 @@ export function useBatchPhotoUpload({
         .getPublicUrl(fileName);
 
       // 插入資料庫
-      const { error: insertError } = await supabase
+      const { data: photoData, error: insertError } = await supabase
         .from('restaurant_photos')
         .insert({
           restaurant_id: restaurantId,
@@ -102,9 +102,39 @@ export function useBatchPhotoUpload({
           uploaded_by: userId,
           file_size_bytes: task.file.size,
           file_format: task.file.type,
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
+
+      // 更新進度：AI 審核中
+      setTasks(prev =>
+        prev.map(t => (t.id === task.id ? { ...t, progress: 90 } : t))
+      );
+
+      // 呼叫 AI 審核
+      try {
+        const { data: reviewData, error: reviewError } = await supabase.functions.invoke(
+          'review-restaurant-photo',
+          {
+            body: { 
+              photoId: photoData.id,
+              photoUrl: publicUrl 
+            }
+          }
+        );
+
+        if (reviewError) {
+          console.error('AI review error:', reviewError);
+          // AI 審核失敗不影響上傳成功
+        } else {
+          console.log('AI review result:', reviewData);
+        }
+      } catch (reviewError) {
+        console.error('AI review failed:', reviewError);
+        // AI 審核失敗不影響上傳成功
+      }
 
       // 更新狀態：成功
       setTasks(prev =>
