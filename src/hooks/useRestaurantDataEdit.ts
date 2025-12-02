@@ -15,6 +15,14 @@ interface RestaurantPhoto {
   rejection_reason: string | null;
   file_size_bytes: number | null;
   file_format: string | null;
+  display_order: number;
+  ai_review_result?: {
+    approved: boolean;
+    category: string;
+    reason: string;
+    confidence?: number;
+  };
+  ai_reviewed_at?: string | null;
 }
 
 export function useRestaurantDataEdit(restaurantId: string) {
@@ -36,7 +44,7 @@ export function useRestaurantDataEdit(restaurantId: string) {
     enabled: !!restaurantId,
   });
 
-  // 獲取照片（包含 pending）
+  // 獲取照片（包含 pending），按 display_order 排序
   const { data: photos = [], isLoading: isLoadingPhotos } = useQuery({
     queryKey: ['restaurant-photos', restaurantId],
     queryFn: async () => {
@@ -44,9 +52,13 @@ export function useRestaurantDataEdit(restaurantId: string) {
         .from('restaurant_photos')
         .select('*')
         .eq('restaurant_id', restaurantId)
+        .order('display_order', { ascending: true })
         .order('uploaded_at', { ascending: false });
       if (error) throw error;
-      return data as RestaurantPhoto[];
+      return (data || []).map(photo => ({
+        ...photo,
+        ai_review_result: photo.ai_review_result as RestaurantPhoto['ai_review_result'],
+      })) as RestaurantPhoto[];
     },
     enabled: !!restaurantId,
   });
@@ -195,6 +207,32 @@ export function useRestaurantDataEdit(restaurantId: string) {
     },
   });
 
+  // 更新照片順序
+  const updatePhotoOrder = useMutation({
+    mutationFn: async (photoIds: string[]) => {
+      // 批量更新 display_order
+      const updates = photoIds.map((id, index) => 
+        supabase
+          .from('restaurant_photos')
+          .update({ display_order: index + 1 })
+          .eq('id', id)
+      );
+
+      const results = await Promise.all(updates);
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        throw errors[0].error;
+      }
+    },
+    onSuccess: () => {
+      toast.success('照片順序已更新');
+      queryClient.invalidateQueries({ queryKey: ['restaurant-photos', restaurantId] });
+    },
+    onError: (error) => {
+      toast.error('更新失敗：' + (error as Error).message);
+    },
+  });
+
   return {
     restaurant,
     photos,
@@ -202,5 +240,6 @@ export function useRestaurantDataEdit(restaurantId: string) {
     updateTextData,
     uploadPhoto,
     deletePhoto,
+    updatePhotoOrder,
   };
 }
