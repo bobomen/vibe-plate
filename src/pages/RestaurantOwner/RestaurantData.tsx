@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Save, Loader2 } from 'lucide-react';
+import { CUISINE_OPTIONS } from '@/config/cuisineTypes';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { useRestaurantDataEdit } from '@/hooks/useRestaurantDataEdit';
 import { useBatchPhotoUpload } from '@/hooks/useBatchPhotoUpload';
@@ -141,12 +143,24 @@ export default function RestaurantOwnerData() {
 
               <div className="space-y-2">
                 <Label htmlFor="cuisine_type">料理類型</Label>
-                <Input
-                  id="cuisine_type"
+                <Select
                   value={formData.cuisine_type}
-                  onChange={(e) => setFormData({ ...formData, cuisine_type: e.target.value })}
-                  placeholder="例如：日式料理、義式餐廳"
-                />
+                  onValueChange={(value) => setFormData({ ...formData, cuisine_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="請選擇料理類型" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    {CUISINE_OPTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        <span className="flex items-center gap-2">
+                          <span>{option.icon}</span>
+                          <span>{option.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
