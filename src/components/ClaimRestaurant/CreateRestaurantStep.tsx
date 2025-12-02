@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CUISINE_OPTIONS } from '@/config/cuisineTypes';
 import type { CreateRestaurantForm } from '@/types/claimRestaurant';
 
 const createRestaurantSchema = z.object({
@@ -135,7 +137,24 @@ export function CreateRestaurantStep({ onSubmit, onBack, isSubmitting }: CreateR
                   <FormItem>
                     <FormLabel>菜系</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="例：義大利菜、日本料理" />
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="請選擇料理類型" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border z-50">
+                          {CUISINE_OPTIONS.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              <span className="flex items-center gap-2">
+                                <span>{option.icon}</span>
+                                <span>{option.label}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -11,6 +11,7 @@ import { usePremium } from '@/hooks/usePremium';
 import PremiumModal from '@/components/PremiumModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { ContextualTip } from '@/components/Onboarding/ContextualTip';
+import { CUISINE_OPTIONS } from '@/config/cuisineTypes';
 
 export interface FilterOptions {
   searchTerm: string;
@@ -42,19 +43,6 @@ const DISTANCE_OPTIONS = [
 ];
 
 const PRICE_LABELS = ['$0', '$100', '$200', '$300', '$400', '$500', '$600', '$700', '$800', '$900', '$1000+'];
-
-const CUISINE_OPTIONS = [
-  { id: 'chinese', label: '中式', icon: '🥢' },
-  { id: 'taiwanese', label: '台式', icon: '🍜' },
-  { id: 'japanese', label: '日式', icon: '🍣' },
-  { id: 'korean', label: '韓式', icon: '🍲' },
-  { id: 'thai', label: '泰式', icon: '🍛' },
-  { id: 'american', label: '美式', icon: '🍔' },
-  { id: 'italian', label: '義式', icon: '🍝' },
-  { id: 'french', label: '法式', icon: '🥐' },
-  { id: 'mediterranean', label: '地中海', icon: '🫒' },
-  { id: 'other', label: '其他', icon: '🍴' },
-];
 
 const DIETARY_OPTIONS = [
   { id: 'vegetarian', label: '素食', icon: '🥬' },
