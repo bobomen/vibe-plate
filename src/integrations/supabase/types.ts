@@ -980,7 +980,7 @@ export type Database = {
           restaurant_id: string
           status: string | null
           uploaded_at: string | null
-          uploaded_by: string
+          uploaded_by: string | null
         }
         Insert: {
           ai_review_result?: Json | null
@@ -995,7 +995,7 @@ export type Database = {
           restaurant_id: string
           status?: string | null
           uploaded_at?: string | null
-          uploaded_by: string
+          uploaded_by?: string | null
         }
         Update: {
           ai_review_result?: Json | null
@@ -1010,7 +1010,7 @@ export type Database = {
           restaurant_id?: string
           status?: string | null
           uploaded_at?: string | null
-          uploaded_by?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
