@@ -4,6 +4,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -178,7 +179,17 @@ export function SortablePhotoGrid({ photos, onDelete, onReorder }: SortablePhoto
   const [items, setItems] = useState(photos);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 需要移動 8px 才開始拖曳，避免誤觸
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,    // 長按 200ms 才開始拖曳
+        tolerance: 5,  // 允許 5px 的移動誤差
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -229,7 +240,7 @@ export function SortablePhotoGrid({ photos, onDelete, onReorder }: SortablePhoto
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            可拖拽調整照片順序（用戶會按此順序看到照片）
+            拖曳右上角圖示調整順序（手機請長按後拖曳）
           </p>
           <DndContext
             sensors={sensors}
