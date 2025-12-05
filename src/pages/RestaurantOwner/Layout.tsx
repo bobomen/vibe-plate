@@ -1,12 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight, Home, Megaphone, Building2, Settings as SettingsIcon, Menu } from 'lucide-react';
+import { ArrowLeftRight, Home, Megaphone, Building2, Menu, Eye, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OwnerGuard } from '@/components/RestaurantOwner/OwnerGuard';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItem {
   path: string;
@@ -19,6 +20,7 @@ interface NavItem {
 export default function RestaurantOwnerLayout() {
   const navigate = useNavigate();
   const { ownerData } = useRestaurantOwner();
+  const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
@@ -26,7 +28,6 @@ export default function RestaurantOwnerLayout() {
     { path: 'overview', label: '成效總覽', icon: Home, enabled: true },
     { path: 'promotions', label: '廣告投放', icon: Megaphone, enabled: true },
     { path: 'data', label: '商家資料', icon: Building2, enabled: true },
-    { path: 'settings', label: '個人設定', icon: SettingsIcon, enabled: false, comingSoon: true },
   ];
 
   const handleSwitchToUserMode = () => {
@@ -42,14 +43,32 @@ export default function RestaurantOwnerLayout() {
     }
   };
 
+  const handlePreviewRestaurant = () => {
+    if (ownerData?.restaurantId) {
+      navigate(`/app/restaurant/${ownerData.restaurantId}`);
+      setOpen(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+    setOpen(false);
+  };
+
   // 侧边栏内容组件
   const SidebarContent = () => (
     <>
       <div className="p-4 border-b">
-        <h2 className="font-bold text-lg mb-2">業者後台</h2>
+        <h2 className="font-bold text-lg mb-1">業者後台</h2>
         {ownerData && (
-          <p className="text-xs text-muted-foreground truncate" title={ownerData.restaurantName}>
+          <p className="text-sm font-medium truncate" title={ownerData.restaurantName}>
             {ownerData.restaurantName}
+          </p>
+        )}
+        {user?.email && (
+          <p className="text-xs text-muted-foreground truncate" title={user.email}>
+            {user.email}
           </p>
         )}
       
@@ -87,10 +106,26 @@ export default function RestaurantOwnerLayout() {
         ))}
       </nav>
 
-      <div className="p-4 border-t">
-        <p className="text-xs text-muted-foreground text-center">
-          更多功能開發中...
-        </p>
+      <div className="p-4 border-t space-y-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handlePreviewRestaurant}
+          className="w-full justify-start"
+          disabled={!ownerData?.restaurantId}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          預覽我的餐廳
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          登出
+        </Button>
       </div>
     </>
   );

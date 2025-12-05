@@ -23,7 +23,6 @@ import RestaurantOwnerLayout from './RestaurantOwner/Layout';
 import RestaurantOwnerOverview from './RestaurantOwner/Overview';
 import RestaurantOwnerPromotions from './RestaurantOwner/Promotions';
 import RestaurantOwnerData from './RestaurantOwner/RestaurantData';
-import RestaurantOwnerSettings from './RestaurantOwner/Settings';
 import ClaimRestaurant from './ClaimRestaurant';
 
 const App = memo(() => {
@@ -92,7 +91,6 @@ const App = memo(() => {
             <Route path="overview" element={<RestaurantOwnerOverview />} />
             <Route path="promotions" element={<RestaurantOwnerPromotions />} />
             <Route path="data" element={<RestaurantOwnerData />} />
-            <Route path="settings" element={<RestaurantOwnerSettings />} />
           </Route>
         </Routes>
       </main>
