@@ -12,6 +12,7 @@ import PremiumModal from '@/components/PremiumModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { ContextualTip } from '@/components/Onboarding/ContextualTip';
 import { CUISINE_OPTIONS } from '@/config/cuisineTypes';
+import { PRICE_RANGE_OPTIONS } from '@/config/priceRanges';
 
 export interface FilterOptions {
   searchTerm: string;
@@ -42,7 +43,7 @@ const DISTANCE_OPTIONS = [
   { value: 999, label: '不限距離' },
 ];
 
-const PRICE_LABELS = ['$0', '$100', '$200', '$300', '$400', '$500', '$600', '$700', '$800', '$900', '$1000+'];
+// Price range now uses 1-5 levels instead of 0-10 slider
 
 const DIETARY_OPTIONS = [
   { id: 'vegetarian', label: '素食', icon: '🥬' },
@@ -191,7 +192,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const clearAllFilters = () => {
     onFiltersChange({
       searchTerm: '',
-      priceRange: [0, 10],
+      priceRange: [1, 5],
       distanceRange: 999,
       minRating: 0,
       hasMichelinStars: false,
@@ -207,7 +208,7 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.searchTerm) count++;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 10) count++;
+    if (filters.priceRange[0] > 1 || filters.priceRange[1] < 5) count++;
     if (filters.distanceRange < 999) count++;
     if (filters.minRating > 0) count++;
     if (filters.hasMichelinStars) count++;
@@ -321,20 +322,23 @@ const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                     <Slider
                       value={filters.priceRange}
                       onValueChange={(value) => handleFilterChange('priceRange', value)}
-                      max={10}
-                      min={0}
+                      max={5}
+                      min={1}
                       step={1}
                       className="w-full"
                     />
                     <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                      <span className={filters.priceRange[0] <= 0 ? 'text-primary font-semibold' : ''}>$0</span>
-                      <span className={filters.priceRange[0] <= 2 && filters.priceRange[1] >= 2 ? 'text-primary font-semibold' : ''}>$200</span>
-                      <span className={filters.priceRange[0] <= 5 && filters.priceRange[1] >= 5 ? 'text-primary font-semibold' : ''}>$500</span>
-                      <span className={filters.priceRange[0] <= 7 && filters.priceRange[1] >= 7 ? 'text-primary font-semibold' : ''}>$700</span>
-                      <span className={filters.priceRange[1] >= 10 ? 'text-primary font-semibold' : ''}>$1000+</span>
+                      {PRICE_RANGE_OPTIONS.map((option) => (
+                        <span 
+                          key={option.id}
+                          className={filters.priceRange[0] <= option.id && filters.priceRange[1] >= option.id ? 'text-primary font-semibold' : ''}
+                        >
+                          {option.shortLabel}
+                        </span>
+                      ))}
                     </div>
                     <div className="mt-2 text-center text-sm text-foreground">
-                      選擇範圍: ${filters.priceRange[0] * 100} - {filters.priceRange[1] === 10 ? '$1000+' : `$${filters.priceRange[1] * 100}`}
+                      選擇範圍: {PRICE_RANGE_OPTIONS.find(o => o.id === filters.priceRange[0])?.label || '$0-200'} - {PRICE_RANGE_OPTIONS.find(o => o.id === filters.priceRange[1])?.label || '$1200+'}
                     </div>
                   </div>
                 </div>

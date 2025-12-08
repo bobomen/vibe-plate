@@ -1,9 +1,11 @@
 import React, { memo, useState, useCallback } from 'react';
-import { Heart, X, Star, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, X, Star, MapPin, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LazyImage } from '@/components/ui/LazyImage';
+import { PRICE_RANGE_OPTIONS } from '@/config/priceRanges';
+import type { TemporaryNotice } from '@/types/restaurant';
 
 interface Restaurant {
   id: string;
@@ -19,6 +21,7 @@ interface Restaurant {
   cuisine_type: string;
   price_range: number;
   bib_gourmand: boolean;
+  temporary_notice?: TemporaryNotice | null;
 }
 
 interface SwipeCardProps {
@@ -61,6 +64,14 @@ export const SwipeCard = memo(({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   
   const photos = restaurant.photos?.slice(0, 3) || ['/placeholder.svg'];
+
+  // 檢查臨時公告是否有效（未過期）
+  const hasActiveNotice = restaurant.temporary_notice && 
+    new Date(restaurant.temporary_notice.expires_at) > new Date() &&
+    restaurant.temporary_notice.type === 'closed';
+
+  // 獲取價格範圍標籤
+  const priceLabel = PRICE_RANGE_OPTIONS.find(o => o.id === restaurant.price_range)?.label || '$0-200';
 
   const nextPhoto = useCallback(() => {
     const newIndex = (currentPhotoIndex + 1) % photos.length;
@@ -177,6 +188,13 @@ export const SwipeCard = memo(({
         
         {/* Special badges */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-2 z-20">
+          {/* 今日休息 Badge */}
+          {hasActiveNotice && (
+            <Badge className="bg-destructive text-destructive-foreground font-semibold">
+              <Clock className="h-3 w-3 mr-1" />
+              今日休息
+            </Badge>
+          )}
           {restaurant.michelin_stars > 0 && (
             <Badge className="bg-yellow-500 text-black font-semibold">
               <Star className="h-3 w-3 mr-1 fill-current" />
@@ -245,12 +263,7 @@ export const SwipeCard = memo(({
           <div className="flex items-center gap-1">
             <span className="text-sm font-medium">價位：</span>
             <span className="text-sm font-medium text-primary">
-              {(() => {
-                const priceRanges = [
-                  '$0-100', '$100-200', '$200-300', '$300+'
-                ];
-                return priceRanges[Math.min(restaurant.price_range - 1, 3)] || '$0-100';
-              })()}
+              {priceLabel}
             </span>
           </div>
           

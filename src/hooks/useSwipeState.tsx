@@ -43,10 +43,10 @@ export const useSwipeState = ({ groupId, maxRetries = 3, showCoreOnboarding = fa
     timestamp: Date;
   }>>([]);
   
-  // Filter state
+  // Filter state - price range now uses 1-5 levels
   const [filters, setFilters] = useState<FilterOptions>({
     searchTerm: '',
-    priceRange: [0, 10],
+    priceRange: [1, 5],
     distanceRange: 999,
     minRating: 0,
     hasMichelinStars: false,

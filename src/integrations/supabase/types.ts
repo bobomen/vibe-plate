@@ -1248,6 +1248,7 @@ export type Database = {
           price_range: number | null
           status: string | null
           subscription_tier: string | null
+          temporary_notice: Json | null
           trust_score: number | null
           verified_at: string | null
           view_count: number | null
@@ -1284,6 +1285,7 @@ export type Database = {
           price_range?: number | null
           status?: string | null
           subscription_tier?: string | null
+          temporary_notice?: Json | null
           trust_score?: number | null
           verified_at?: string | null
           view_count?: number | null
@@ -1320,6 +1322,7 @@ export type Database = {
           price_range?: number | null
           status?: string | null
           subscription_tier?: string | null
+          temporary_notice?: Json | null
           trust_score?: number | null
           verified_at?: string | null
           view_count?: number | null

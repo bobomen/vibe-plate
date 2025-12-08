@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, Save, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Building2, Save, Loader2, AlertCircle, DollarSign } from 'lucide-react';
 import { CUISINE_OPTIONS } from '@/config/cuisineTypes';
+import { PRICE_RANGE_OPTIONS } from '@/config/priceRanges';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { useRestaurantDataEdit } from '@/hooks/useRestaurantDataEdit';
 import { useBatchPhotoUpload } from '@/hooks/useBatchPhotoUpload';
@@ -16,6 +18,7 @@ import { PhotoUploadProgress } from '@/components/RestaurantOwner/PhotoUploadPro
 import { SortablePhotoGrid } from '@/components/RestaurantOwner/SortablePhotoGrid';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import type { TemporaryNotice } from '@/types/restaurant';
 
 export default function RestaurantOwnerData() {
   const { user } = useAuth();
@@ -54,7 +57,12 @@ export default function RestaurantOwnerData() {
     website: '',
     menu_url: '',
     cuisine_type: '',
+    price_range: 2,
   });
+
+  // 臨時公告狀態
+  const [isTodayClosed, setIsTodayClosed] = useState(false);
+  const [closedNote, setClosedNote] = useState('');
 
   // 當餐廳資料載入後，更新表單
   useEffect(() => {
@@ -66,22 +74,60 @@ export default function RestaurantOwnerData() {
         website: restaurant.website || '',
         menu_url: restaurant.menu_url || '',
         cuisine_type: restaurant.cuisine_type || '',
+        price_range: restaurant.price_range || 2,
       });
+
+      // 檢查是否有未過期的臨時公告
+      if (restaurant.temporary_notice) {
+        const notice = restaurant.temporary_notice;
+        const isExpired = new Date(notice.expires_at) < new Date();
+        if (!isExpired && notice.type === 'closed') {
+          setIsTodayClosed(true);
+          setClosedNote(notice.message || '');
+        }
+      }
     }
   }, [restaurant]);
+
+  // 處理臨時公告的設定/清除
+  const handleTemporaryNoticeChange = async (closed: boolean) => {
+    setIsTodayClosed(closed);
+    
+    if (closed) {
+      // 設定今日休息公告，自動在今天 23:59:59 過期
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      
+      const notice: TemporaryNotice = {
+        message: closedNote || '今日臨時休息',
+        type: 'closed',
+        expires_at: today.toISOString(),
+      };
+      
+      await updateTextData.mutateAsync({ temporary_notice: notice as any });
+    } else {
+      // 清除公告
+      await updateTextData.mutateAsync({ temporary_notice: null as any });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // 檢查是否有變更
-    const changes: any = {};
+    const changes: Record<string, unknown> = {};
     if (restaurant) {
-      Object.keys(formData).forEach((key) => {
-        const k = key as keyof typeof formData;
-        if (formData[k] !== (restaurant[k] || '')) {
-          changes[k] = formData[k];
+      // 檢查基本欄位變更
+      (['name', 'address', 'phone', 'website', 'menu_url', 'cuisine_type'] as const).forEach((key) => {
+        if (formData[key] !== (restaurant[key] || '')) {
+          changes[key] = formData[key];
         }
       });
+      
+      // 檢查價格範圍變更
+      if (formData.price_range !== restaurant.price_range) {
+        changes.price_range = formData.price_range;
+      }
     }
 
     if (Object.keys(changes).length === 0) {
@@ -195,6 +241,28 @@ export default function RestaurantOwnerData() {
                   placeholder="https://menu.example.com"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price_range">人均消費</Label>
+                <Select
+                  value={formData.price_range.toString()}
+                  onValueChange={(value) => setFormData({ ...formData, price_range: parseInt(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="請選擇價格範圍" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    {PRICE_RANGE_OPTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id.toString()}>
+                        <span className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          <span>{option.label} - {option.description}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -228,6 +296,54 @@ export default function RestaurantOwnerData() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* 臨時公告 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-destructive/10 rounded-lg flex items-center justify-center">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+            </div>
+            <div>
+              <CardTitle>臨時公告</CardTitle>
+              <CardDescription>設定今日臨時休息，將會在滑卡上顯示提示，於今日結束後自動取消</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="today-closed">今日臨時休息</Label>
+              <p className="text-sm text-muted-foreground">
+                開啟後，用戶將會在滑卡和餐廳頁面看到休息提示
+              </p>
+            </div>
+            <Switch
+              id="today-closed"
+              checked={isTodayClosed}
+              onCheckedChange={handleTemporaryNoticeChange}
+              disabled={updateTextData.isPending}
+            />
+          </div>
+          
+          {isTodayClosed && (
+            <div className="space-y-2">
+              <Label htmlFor="closed-note">備註說明（選填）</Label>
+              <Input
+                id="closed-note"
+                value={closedNote}
+                onChange={(e) => setClosedNote(e.target.value)}
+                placeholder="例如：店休一天、員工旅遊"
+                onBlur={() => {
+                  if (isTodayClosed && closedNote) {
+                    handleTemporaryNoticeChange(true);
+                  }
+                }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
