@@ -75,20 +75,20 @@ export const CouponList = () => {
           </div>
           <Badge variant="secondary" className="ml-2">
             <Gift className="h-3 w-3 mr-1" />
-            {coupon.discount_type === 'fixed' ? `¥${coupon.discount_value}` : `${coupon.discount_value}%`}
+            {coupon.discount_type === 'fixed' ? `${coupon.discount_value} 元` : `${coupon.discount_value}%`}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">最低消費</span>
-          <span className="font-medium">¥{coupon.min_spend}</span>
+          <span className="font-medium">{coupon.min_spend} 元</span>
         </div>
         
         {coupon.max_discount && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">最高折扣</span>
-            <span className="font-medium">¥{coupon.max_discount}</span>
+            <span className="font-medium">{coupon.max_discount} 元</span>
           </div>
         )}
         

@@ -94,7 +94,7 @@ export function useAdCoupons(subscriptionId?: string) {
       });
     } catch (err) {
       console.error('Error in fetchCoupons:', err);
-      setError(err instanceof Error ? err.message : '未知错误');
+      setError(err instanceof Error ? err.message : '未知錯誤');
       setCoupons([]);
     } finally {
       setLoading(false);
@@ -140,8 +140,8 @@ export function useAdCoupons(subscriptionId?: string) {
   };
 
   /**
-   * 检查优惠券是否可以兑换（预算检查）
-   * 关键：防止预算超支，保护餐厅业主
+   * 檢查優惠券是否可以兌換（預算檢查）
+   * 關鍵：防止預算超支，保護餐廳業主
    */
   const checkRedemption = async (
     couponId: string,
@@ -149,7 +149,7 @@ export function useAdCoupons(subscriptionId?: string) {
     redemptionAmount: number
   ): Promise<RedemptionCheckResult> => {
     try {
-      // 1. 获取订阅信息，检查预算
+      // 1. 取得訂閱資訊，檢查預算
       const { data: subscription, error: subError } = await supabase
         .from('restaurant_ad_subscriptions')
         .select('coupon_budget, total_redeemed_amount, status')
@@ -165,7 +165,7 @@ export function useAdCoupons(subscriptionId?: string) {
         };
       }
 
-      // 2. 检查订阅状态
+      // 2. 檢查訂閱狀態
       if (subscription.status !== 'active') {
         return {
           can_redeem: false,
@@ -175,11 +175,11 @@ export function useAdCoupons(subscriptionId?: string) {
         };
       }
 
-      // 3. 计算剩余预算
+      // 3. 計算剩餘預算
       const remainingBudget = subscription.coupon_budget - subscription.total_redeemed_amount;
       const usagePercent = (subscription.total_redeemed_amount / subscription.coupon_budget) * 100;
 
-      // 4. 检查是否超过预算上限
+      // 4. 檢查是否超過預算上限
       if (remainingBudget < redemptionAmount) {
         return {
           can_redeem: false,
@@ -189,7 +189,7 @@ export function useAdCoupons(subscriptionId?: string) {
         };
       }
 
-      // 5. 检查优惠券本身状态
+      // 5. 檢查優惠券本身狀態
       const { data: coupon, error: couponError } = await supabase
         .from('restaurant_ad_coupons')
         .select('status, expires_at')
@@ -223,7 +223,7 @@ export function useAdCoupons(subscriptionId?: string) {
         };
       }
 
-      // 6. 所有检查通过
+      // 6. 所有檢查通過
       return {
         can_redeem: true,
         remaining_budget: remainingBudget,

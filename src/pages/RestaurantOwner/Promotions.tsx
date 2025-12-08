@@ -151,7 +151,7 @@ export default function RestaurantOwnerPromotions() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  自定義現金+優惠券組合，每核銷¥500優惠券，流量提升5%
+                  自定義現金+優惠券組合，每核銷 500 元優惠券，流量提升 5%
                 </p>
               </CardContent>
             </Card>

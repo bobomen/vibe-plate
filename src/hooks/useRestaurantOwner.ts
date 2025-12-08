@@ -50,7 +50,7 @@ export function useRestaurantOwner() {
         setIsOwner(true);
         setOwnerData({
           restaurantId: data.restaurant_id,
-          restaurantName: (data.restaurants as any)?.name || '未知餐厅',
+          restaurantName: (data.restaurants as any)?.name || '未知餐廳',
           verified: data.verified,
         });
       } else {
@@ -59,7 +59,7 @@ export function useRestaurantOwner() {
       }
     } catch (err) {
       console.error('Error in checkOwnership:', err);
-      setError(err instanceof Error ? err.message : '未知错误');
+      setError(err instanceof Error ? err.message : '未知錯誤');
       setIsOwner(false);
       setOwnerData(null);
     } finally {
