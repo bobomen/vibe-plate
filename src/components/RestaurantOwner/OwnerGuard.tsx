@@ -28,14 +28,14 @@ export function OwnerGuard({ children }: OwnerGuardProps) {
             <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
               <AlertCircle className="w-6 h-6 text-destructive" />
             </div>
-            <CardTitle className="text-center">载入错误</CardTitle>
+            <CardTitle className="text-center">載入錯誤</CardTitle>
             <CardDescription className="text-center">
-              无法验证您的餐厅老板身份
+              無法驗證您的餐廳老闆身分
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">{error}</p>
-            <Button onClick={() => window.location.reload()}>重新加载</Button>
+            <Button onClick={() => window.location.reload()}>重新載入</Button>
           </CardContent>
         </Card>
       </div>
@@ -50,21 +50,21 @@ export function OwnerGuard({ children }: OwnerGuardProps) {
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <Building2 className="w-6 h-6 text-primary" />
             </div>
-            <CardTitle className="text-center">认领您的餐厅</CardTitle>
+            <CardTitle className="text-center">認領您的餐廳</CardTitle>
             <CardDescription className="text-center">
-              您还没有认领任何餐厅
+              您還沒有認領任何餐廳
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              认领您的餐厅以访问餐厅管理后台，管理餐厅信息、查看数据分析、设置优惠活动等。
+              認領您的餐廳以進入餐廳管理後台，管理餐廳資訊、查看數據分析、設定優惠活動等。
             </p>
             <div className="space-y-2">
               <Button asChild className="w-full">
-                <a href="/claim-restaurant">立即认领餐厅</a>
+                <a href="/claim-restaurant">立即認領餐廳</a>
               </Button>
               <Button asChild variant="outline" className="w-full">
-                <a href="/">返回首页</a>
+                <a href="/">返回首頁</a>
               </Button>
             </div>
           </CardContent>

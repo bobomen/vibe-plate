@@ -70,21 +70,21 @@ export const CouponClaimDialog = ({ open, onClose, onConfirm, coupon }: CouponCl
                 優惠金額
               </span>
               <Badge variant="secondary" className="text-base">
-                {coupon.discount_type === 'fixed' ? `¥${coupon.discount_value}` : `${coupon.discount_value}%`}
+                {coupon.discount_type === 'fixed' ? `${coupon.discount_value} 元` : `${coupon.discount_value}%`}
               </Badge>
             </div>
 
             {coupon.min_spend && (
               <div className="flex items-center justify-between p-3 bg-background border rounded-lg">
                 <span className="text-sm text-muted-foreground">最低消費</span>
-                <span className="font-medium">¥{coupon.min_spend}</span>
+                <span className="font-medium">{coupon.min_spend} 元</span>
               </div>
             )}
 
             {coupon.max_discount && (
               <div className="flex items-center justify-between p-3 bg-background border rounded-lg">
                 <span className="text-sm text-muted-foreground">最高折扣</span>
-                <span className="font-medium">¥{coupon.max_discount}</span>
+                <span className="font-medium">{coupon.max_discount} 元</span>
               </div>
             )}
 
