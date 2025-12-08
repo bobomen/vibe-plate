@@ -1,4 +1,13 @@
 /**
+ * Temporary notice structure for restaurant announcements
+ */
+export interface TemporaryNotice {
+  message: string;
+  type: 'closed' | 'notice';
+  expires_at: string; // ISO timestamp
+}
+
+/**
  * Shared Restaurant type definition
  * Used across all restaurant-related components and hooks
  */
@@ -32,6 +41,7 @@ export interface Restaurant {
   google_maps_url?: string | null;
   view_count?: number;
   last_viewed_at?: string | null;
+  temporary_notice?: TemporaryNotice | null;
 }
 
 /**

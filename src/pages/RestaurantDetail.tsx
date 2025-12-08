@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, Clock, Heart, ExternalLink, Phone, Globe, BookOpen } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Clock, Heart, ExternalLink, Phone, Globe, BookOpen, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LazyImage } from '@/components/ui/LazyImage';
 import { RestaurantDetailSkeleton } from '@/components/ui/RestaurantDetailSkeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import type { TemporaryNotice } from '@/types/restaurant';
 
 interface Restaurant {
   id: string;
@@ -20,13 +22,14 @@ interface Restaurant {
   google_reviews_count: number;
   michelin_stars: number;
   has_500_dishes: boolean;
-  business_hours: any;
+  business_hours: unknown;
   klook_url: string | null;
   photos: string[];
   phone?: string | null;
   menu_url?: string | null;
   website?: string | null;
   google_maps_url?: string | null;
+  temporary_notice?: TemporaryNotice | null;
 }
 
 export default function RestaurantDetail() {
@@ -112,7 +115,10 @@ export default function RestaurantDetail() {
         .single();
 
       if (error) throw error;
-      setRestaurant(data);
+      setRestaurant({
+        ...data,
+        temporary_notice: data.temporary_notice as unknown as TemporaryNotice | null,
+      });
     } catch (error) {
       console.error('Error fetching restaurant:', error);
       toast({
@@ -217,9 +223,22 @@ export default function RestaurantDetail() {
 
   const photos = restaurant.photos || ['/placeholder.svg'];
   const distance = calculateDistance(restaurant.lat, restaurant.lng);
+  
+  // 檢查臨時公告是否有效
+  const hasActiveNotice = restaurant.temporary_notice && 
+    new Date(restaurant.temporary_notice.expires_at) > new Date();
 
   return (
     <div className="min-h-screen bg-background">
+      {/* 臨時公告警示條 */}
+      {hasActiveNotice && (
+        <Alert variant="destructive" className="rounded-none border-x-0 border-t-0">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="font-medium">
+            {restaurant.temporary_notice?.message || '今日臨時休息'}
+          </AlertDescription>
+        </Alert>
+      )}
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between p-4">

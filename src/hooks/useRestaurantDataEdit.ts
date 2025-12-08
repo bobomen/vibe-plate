@@ -39,7 +39,11 @@ export function useRestaurantDataEdit(restaurantId: string) {
         .eq('id', restaurantId)
         .single();
       if (error) throw error;
-      return data as Restaurant;
+      // Map the database response to our Restaurant type
+      return {
+        ...data,
+        temporary_notice: data.temporary_notice as unknown as Restaurant['temporary_notice'],
+      } as Restaurant;
     },
     enabled: !!restaurantId,
   });
@@ -65,19 +69,21 @@ export function useRestaurantDataEdit(restaurantId: string) {
 
   // 更新文字資料
   const updateTextData = useMutation({
-    mutationFn: async (updates: Partial<Restaurant>) => {
+    mutationFn: async (updates: Record<string, unknown>) => {
       if (!user?.id) throw new Error('請先登入');
 
-      // 記錄變更到 audit log
-      const changePromises = Object.entries(updates).map(([field, newValue]) =>
-        supabase.from('restaurant_data_changes').insert({
-          restaurant_id: restaurantId,
-          changed_by: user.id,
-          field_name: field,
-          old_value: restaurant?.[field as keyof Restaurant]?.toString() || null,
-          new_value: newValue?.toString() || null,
-        })
-      );
+      // 記錄變更到 audit log（排除 temporary_notice 的詳細記錄）
+      const changePromises = Object.entries(updates)
+        .filter(([field]) => field !== 'temporary_notice')
+        .map(([field, newValue]) =>
+          supabase.from('restaurant_data_changes').insert({
+            restaurant_id: restaurantId,
+            changed_by: user.id,
+            field_name: field,
+            old_value: restaurant?.[field as keyof Restaurant]?.toString() || null,
+            new_value: newValue?.toString() || null,
+          })
+        );
 
       await Promise.all(changePromises);
 
