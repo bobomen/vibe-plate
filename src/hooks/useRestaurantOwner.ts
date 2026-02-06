@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ENABLE_MOCK_DATA } from '@/config/featureFlags';
+import { generateMockOwnerData } from '@/utils/mockRestaurantOwnerData';
 
 interface RestaurantOwnerData {
   restaurantId: string;
@@ -16,6 +18,15 @@ export function useRestaurantOwner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // 模擬數據模式
+    if (ENABLE_MOCK_DATA) {
+      const mockData = generateMockOwnerData();
+      setIsOwner(true);
+      setOwnerData(mockData);
+      setLoading(false);
+      return;
+    }
+
     if (user) {
       checkOwnership();
     } else {
@@ -68,7 +79,9 @@ export function useRestaurantOwner() {
   };
 
   const refetch = () => {
-    checkOwnership();
+    if (!ENABLE_MOCK_DATA) {
+      checkOwnership();
+    }
   };
 
   return {

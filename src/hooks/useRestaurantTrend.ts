@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { TrendDataPoint, TimeRange } from '@/types/restaurantOwner';
+import { ENABLE_MOCK_DATA } from '@/config/featureFlags';
+import { generateMockTrendData } from '@/utils/mockRestaurantOwnerData';
 
 interface UseRestaurantTrendOptions {
   restaurantId: string;
@@ -20,9 +22,14 @@ export function useRestaurantTrend({
   daysBack = 30,
   enabled = true,
 }: UseRestaurantTrendOptions) {
-  return useQuery({
-    queryKey: ['restaurant-trend', restaurantId, daysBack],
+  const query = useQuery({
+    queryKey: ['restaurant-trend', restaurantId, daysBack, ENABLE_MOCK_DATA],
     queryFn: async () => {
+      // 模擬數據模式
+      if (ENABLE_MOCK_DATA) {
+        return generateMockTrendData(daysBack);
+      }
+
       const { data, error } = await supabase.rpc('get_restaurant_trend', {
         target_restaurant_id: restaurantId,
         days_back: daysBack,
@@ -49,9 +56,11 @@ export function useRestaurantTrend({
 
       return trendData;
     },
-    enabled: enabled && !!restaurantId,
-    staleTime: 5 * 60 * 1000,
+    enabled: ENABLE_MOCK_DATA || (enabled && !!restaurantId),
+    staleTime: ENABLE_MOCK_DATA ? Infinity : 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    retry: 2,
+    retry: ENABLE_MOCK_DATA ? 0 : 2,
   });
+
+  return query;
 }
