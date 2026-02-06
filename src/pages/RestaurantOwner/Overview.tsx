@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Eye, Heart, MousePointerClick, Award, Star } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { TrendingUp, Eye, Heart, MousePointerClick, Award, Star, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useRestaurantOwner } from '@/hooks/useRestaurantOwner';
 import { ClaimPrompt } from '@/components/RestaurantOwner/ClaimPrompt';
@@ -14,6 +15,8 @@ import { TrendCharts } from '@/components/RestaurantOwner/TrendCharts';
 import { ErrorFallback } from '@/components/RestaurantOwner/ErrorFallback';
 import { useRestaurantExposureMetrics } from '@/hooks/useRestaurantExposureMetrics';
 import { useRestaurantTrend } from '@/hooks/useRestaurantTrend';
+import { ENABLE_MOCK_DATA } from '@/config/featureFlags';
+import { generateMockRestaurantStats, type MockRestaurantStats } from '@/utils/mockRestaurantOwnerData';
 import type { TimeRange } from '@/types/restaurantOwner';
 
 interface RestaurantStats {
@@ -42,16 +45,23 @@ export default function RestaurantOwnerOverview() {
   const { data: exposureMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = useRestaurantExposureMetrics({
     restaurantId: ownerData?.restaurantId || '',
     daysBack: timeRange,
-    enabled: !!ownerData?.restaurantId,
+    enabled: !!ownerData?.restaurantId || ENABLE_MOCK_DATA,
   });
 
   const { data: trendData, isLoading: trendLoading, error: trendError, refetch: refetchTrend } = useRestaurantTrend({
     restaurantId: ownerData?.restaurantId || '',
     daysBack: timeRange,
-    enabled: !!ownerData?.restaurantId,
+    enabled: !!ownerData?.restaurantId || ENABLE_MOCK_DATA,
   });
 
   useEffect(() => {
+    // 模擬數據模式
+    if (ENABLE_MOCK_DATA) {
+      setStats(generateMockRestaurantStats());
+      setLoading(false);
+      return;
+    }
+
     if (user && ownerData) {
       fetchRestaurantData();
     } else {
@@ -108,6 +118,19 @@ export default function RestaurantOwnerOverview() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
+      {/* 模擬數據模式提示 */}
+      {ENABLE_MOCK_DATA && (
+        <div className="max-w-7xl mx-auto mb-4">
+          <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertTitle className="text-amber-600">模擬數據模式</AlertTitle>
+            <AlertDescription className="text-amber-600/80">
+              當前顯示的是模擬數據，僅供開發測試使用。設置 <code className="bg-amber-500/20 px-1 rounded">VITE_ENABLE_MOCK_DATA=false</code> 可關閉此模式。
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
       {/* 頂部工具欄 */}
       <div className="max-w-7xl mx-auto mb-6">
         <h1 className="text-2xl font-bold">成效總覽</h1>
